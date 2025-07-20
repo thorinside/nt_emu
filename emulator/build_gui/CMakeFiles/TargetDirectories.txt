@@ -1,0 +1,14 @@
+/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles/DistingNTEmulator.dir
+/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles/edit_cache.dir
+/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles/rebuild_cache.dir
+/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles/list_install_components.dir
+/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles/install.dir
+/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles/install/local.dir
+/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles/install/strip.dir
+/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/test_plugins/CMakeFiles/simple_gain.dir
+/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/test_plugins/CMakeFiles/edit_cache.dir
+/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/test_plugins/CMakeFiles/rebuild_cache.dir
+/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/test_plugins/CMakeFiles/list_install_components.dir
+/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/test_plugins/CMakeFiles/install.dir
+/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/test_plugins/CMakeFiles/install/local.dir
+/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/test_plugins/CMakeFiles/install/strip.dir

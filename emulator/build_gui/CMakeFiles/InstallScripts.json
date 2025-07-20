@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/cmake_install.cmake",
+		"/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/test_plugins/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

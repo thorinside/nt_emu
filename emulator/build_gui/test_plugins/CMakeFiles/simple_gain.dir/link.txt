@@ -1,0 +1,1 @@
+/usr/bin/c++  -arch arm64 -mmacosx-version-min=10.15 -dynamiclib -Wl,-headerpad_max_install_names -o simple_gain.dylib -install_name @rpath/simple_gain.dylib CMakeFiles/simple_gain.dir/simple_gain/simple_gain.cpp.o
