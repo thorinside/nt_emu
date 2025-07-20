@@ -783,19 +783,47 @@ CMakeFiles/DistingNTEmulator.dir/src/core/emulator.cpp.o: \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/default_searcher.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/not_fn.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/perfect_forward.h \
-  /Users/nealsanche/nosuch/nt_emu/emulator/src/core/api_shim.h \
-  /Users/nealsanche/nosuch/nt_emu/emulator/src/core/../hardware/display.h \
-  /Users/nealsanche/nosuch/nt_emu/emulator/src/core/../hardware/../core/api_shim.h \
-  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imgui.h \
-  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imconfig.h \
-  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/float.h \
-  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/include/float.h \
-  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/float.h \
+  /Users/nealsanche/nosuch/nt_emu/emulator/src/core/../utils/config.h \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/json.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/adl_serializer.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/abi_macros.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/conversions/from_json.hpp \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/forward_list \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/map \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__tree \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/valarray \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/exceptions.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/value_t.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/macro_scope.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/meta/detected.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/meta/void_t.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/thirdparty/hedley/hedley.hpp \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/cassert \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/assert.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_assert.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_static_assert.h \
-  /Users/nealsanche/nosuch/nt_emu/emulator/src/core/../hardware/hardware_interface.h \
-  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/iostream \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/string_escape.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/input/position_t.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/meta/cpp_future.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/meta/type_traits.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/iterators/iterator_traits.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/meta/call_std/begin.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/meta/call_std/end.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/json_fwd.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/string_concat.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/meta/identity_tag.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/meta/std_fs.hpp \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/filesystem \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/copy_options.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/directory_entry.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/file_status.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/file_type.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/perms.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/file_time_type.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__chrono/file_clock.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/filesystem_error.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/path.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/iomanip \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/istream \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__ostream/basic_ostream.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/bitset \
@@ -809,4 +837,64 @@ CMakeFiles/DistingNTEmulator.dir/src/core/emulator.cpp.o: \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/stack \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__fwd/stack.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/print \
-  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/unistd.h
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/unistd.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/operations.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/perm_options.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/space_info.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/directory_iterator.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/directory_options.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/path_iterator.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/recursive_directory_iterator.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__filesystem/u8path.h \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/conversions/to_json.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/iterators/iteration_proxy.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/byte_container_with_subtype.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/hash.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/input/binary_reader.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/input/input_adapters.hpp \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/numeric \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__numeric/accumulate.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__numeric/adjacent_difference.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__numeric/inner_product.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__numeric/iota.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__numeric/partial_sum.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__numeric/exclusive_scan.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__numeric/gcd_lcm.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__numeric/inclusive_scan.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__numeric/pstl.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__numeric/reduce.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__numeric/transform_exclusive_scan.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__numeric/transform_inclusive_scan.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__numeric/transform_reduce.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/execution \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/is_execution_policy.h \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/input/json_sax.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/input/lexer.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/meta/is_sax.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/input/parser.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/iterators/internal_iterator.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/iterators/primitive_iterator.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/iterators/iter_impl.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/iterators/json_reverse_iterator.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/json_custom_base_class.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/json_pointer.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/json_ref.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/output/binary_writer.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/output/output_adapters.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/output/serializer.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/conversions/to_chars.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/ordered_map.hpp \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/any \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/chrono \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/detail/macro_unscope.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include/nlohmann/thirdparty/hedley/hedley_undef.hpp \
+  /Users/nealsanche/nosuch/nt_emu/emulator/src/core/api_shim.h \
+  /Users/nealsanche/nosuch/nt_emu/emulator/src/core/../hardware/display.h \
+  /Users/nealsanche/nosuch/nt_emu/emulator/src/core/../hardware/../core/api_shim.h \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imgui.h \
+  /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imconfig.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/float.h \
+  /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/17/include/float.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/float.h \
+  /Users/nealsanche/nosuch/nt_emu/emulator/src/core/../hardware/hardware_interface.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/iostream

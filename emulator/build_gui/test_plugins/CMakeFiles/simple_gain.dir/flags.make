@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = -Dsimple_gain_EXPORTS
 
-CXX_INCLUDES = -I/Users/nealsanche/nosuch/nt_emu/emulator/include -I/Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui -I/Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/backends -I/opt/homebrew/Cellar/portaudio/19.7.0/include
+CXX_INCLUDES = -I/Users/nealsanche/nosuch/nt_emu/emulator/include -I/Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui -I/Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/backends -I/Users/nealsanche/nosuch/nt_emu/emulator/third_party/json/include -I/opt/homebrew/Cellar/portaudio/19.7.0/include
 
 CXX_FLAGSarm64 = -std=gnu++17 -arch arm64 -mmacosx-version-min=10.15 -fPIC
 

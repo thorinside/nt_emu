@@ -142,10 +142,24 @@ CMakeFiles/DistingNTEmulator.dir/src/core/audio_engine.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/DistingNTEmulator.dir/src/core/audio_engine.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/nealsanche/nosuch/nt_emu/emulator/src/core/audio_engine.cpp -o CMakeFiles/DistingNTEmulator.dir/src/core/audio_engine.cpp.s
 
+CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
+CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/src/core/audio_device_manager.cpp
+CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/src/core/audio_device_manager.cpp
+
+CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/nealsanche/nosuch/nt_emu/emulator/src/core/audio_device_manager.cpp > CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.i
+
+CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/nealsanche/nosuch/nt_emu/emulator/src/core/audio_device_manager.cpp -o CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.s
+
 CMakeFiles/DistingNTEmulator.dir/src/core/midi_handler.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/src/core/midi_handler.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/src/core/midi_handler.cpp
 CMakeFiles/DistingNTEmulator.dir/src/core/midi_handler.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/core/midi_handler.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/core/midi_handler.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/src/core/midi_handler.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/src/core/midi_handler.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/src/core/midi_handler.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/src/core/midi_handler.cpp
 
 CMakeFiles/DistingNTEmulator.dir/src/core/midi_handler.cpp.i: cmake_force
@@ -159,7 +173,7 @@ CMakeFiles/DistingNTEmulator.dir/src/core/midi_handler.cpp.s: cmake_force
 CMakeFiles/DistingNTEmulator.dir/src/hardware/display.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/src/hardware/display.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/src/hardware/display.cpp
 CMakeFiles/DistingNTEmulator.dir/src/hardware/display.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/hardware/display.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/hardware/display.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/src/hardware/display.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/src/hardware/display.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/src/hardware/display.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/src/hardware/display.cpp
 
 CMakeFiles/DistingNTEmulator.dir/src/hardware/display.cpp.i: cmake_force
@@ -173,7 +187,7 @@ CMakeFiles/DistingNTEmulator.dir/src/hardware/display.cpp.s: cmake_force
 CMakeFiles/DistingNTEmulator.dir/src/hardware/hardware_interface.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/src/hardware/hardware_interface.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/src/hardware/hardware_interface.cpp
 CMakeFiles/DistingNTEmulator.dir/src/hardware/hardware_interface.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/hardware/hardware_interface.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/hardware/hardware_interface.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/src/hardware/hardware_interface.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/src/hardware/hardware_interface.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/src/hardware/hardware_interface.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/src/hardware/hardware_interface.cpp
 
 CMakeFiles/DistingNTEmulator.dir/src/hardware/hardware_interface.cpp.i: cmake_force
@@ -187,7 +201,7 @@ CMakeFiles/DistingNTEmulator.dir/src/hardware/hardware_interface.cpp.s: cmake_fo
 CMakeFiles/DistingNTEmulator.dir/src/hardware/io_manager.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/src/hardware/io_manager.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/src/hardware/io_manager.cpp
 CMakeFiles/DistingNTEmulator.dir/src/hardware/io_manager.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/hardware/io_manager.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/hardware/io_manager.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/src/hardware/io_manager.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/src/hardware/io_manager.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/src/hardware/io_manager.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/src/hardware/io_manager.cpp
 
 CMakeFiles/DistingNTEmulator.dir/src/hardware/io_manager.cpp.i: cmake_force
@@ -201,7 +215,7 @@ CMakeFiles/DistingNTEmulator.dir/src/hardware/io_manager.cpp.s: cmake_force
 CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/src/ui/main_window.cpp
 CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/src/ui/main_window.cpp
 
 CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.i: cmake_force
@@ -212,10 +226,24 @@ CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/nealsanche/nosuch/nt_emu/emulator/src/ui/main_window.cpp -o CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.s
 
+CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
+CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/src/ui/audio_settings_dialog.cpp
+CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/src/ui/audio_settings_dialog.cpp
+
+CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/nealsanche/nosuch/nt_emu/emulator/src/ui/audio_settings_dialog.cpp > CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.i
+
+CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/nealsanche/nosuch/nt_emu/emulator/src/ui/audio_settings_dialog.cpp -o CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.s
+
 CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/src/ui/audio_panel.cpp
 CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/src/ui/audio_panel.cpp
 
 CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.i: cmake_force
@@ -229,7 +257,7 @@ CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.s: cmake_force
 CMakeFiles/DistingNTEmulator.dir/src/ui/midi_panel.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/src/ui/midi_panel.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/src/ui/midi_panel.cpp
 CMakeFiles/DistingNTEmulator.dir/src/ui/midi_panel.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/ui/midi_panel.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/ui/midi_panel.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/src/ui/midi_panel.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/src/ui/midi_panel.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/src/ui/midi_panel.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/src/ui/midi_panel.cpp
 
 CMakeFiles/DistingNTEmulator.dir/src/ui/midi_panel.cpp.i: cmake_force
@@ -243,7 +271,7 @@ CMakeFiles/DistingNTEmulator.dir/src/ui/midi_panel.cpp.s: cmake_force
 CMakeFiles/DistingNTEmulator.dir/src/ui/plugin_panel.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/src/ui/plugin_panel.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/src/ui/plugin_panel.cpp
 CMakeFiles/DistingNTEmulator.dir/src/ui/plugin_panel.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/ui/plugin_panel.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/ui/plugin_panel.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/src/ui/plugin_panel.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/src/ui/plugin_panel.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/src/ui/plugin_panel.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/src/ui/plugin_panel.cpp
 
 CMakeFiles/DistingNTEmulator.dir/src/ui/plugin_panel.cpp.i: cmake_force
@@ -257,7 +285,7 @@ CMakeFiles/DistingNTEmulator.dir/src/ui/plugin_panel.cpp.s: cmake_force
 CMakeFiles/DistingNTEmulator.dir/src/utils/file_watcher.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/src/utils/file_watcher.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/src/utils/file_watcher.cpp
 CMakeFiles/DistingNTEmulator.dir/src/utils/file_watcher.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/utils/file_watcher.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/utils/file_watcher.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/src/utils/file_watcher.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/src/utils/file_watcher.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/src/utils/file_watcher.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/src/utils/file_watcher.cpp
 
 CMakeFiles/DistingNTEmulator.dir/src/utils/file_watcher.cpp.i: cmake_force
@@ -271,7 +299,7 @@ CMakeFiles/DistingNTEmulator.dir/src/utils/file_watcher.cpp.s: cmake_force
 CMakeFiles/DistingNTEmulator.dir/src/utils/logger.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/src/utils/logger.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/src/utils/logger.cpp
 CMakeFiles/DistingNTEmulator.dir/src/utils/logger.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/utils/logger.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/utils/logger.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/src/utils/logger.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/src/utils/logger.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/src/utils/logger.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/src/utils/logger.cpp
 
 CMakeFiles/DistingNTEmulator.dir/src/utils/logger.cpp.i: cmake_force
@@ -285,7 +313,7 @@ CMakeFiles/DistingNTEmulator.dir/src/utils/logger.cpp.s: cmake_force
 CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/src/utils/config.cpp
 CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/src/utils/config.cpp
 
 CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.i: cmake_force
@@ -296,10 +324,24 @@ CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/nealsanche/nosuch/nt_emu/emulator/src/utils/config.cpp -o CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.s
 
+CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.o: CMakeFiles/DistingNTEmulator.dir/flags.make
+CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.o: /Users/nealsanche/nosuch/nt_emu/emulator/src/utils/file_dialog.mm
+CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building OBJCXX object CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.o"
+	/usr/bin/clang++ $(OBJCXX_DEFINES) $(OBJCXX_INCLUDES) -x objective-c++ $(OBJCXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.o -MF CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.o.d -o CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.o -c /Users/nealsanche/nosuch/nt_emu/emulator/src/utils/file_dialog.mm
+
+CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing OBJCXX source to CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.i"
+	/usr/bin/clang++ $(OBJCXX_DEFINES) $(OBJCXX_INCLUDES) $(OBJCXX_FLAGS) -E /Users/nealsanche/nosuch/nt_emu/emulator/src/utils/file_dialog.mm > CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.i
+
+CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling OBJCXX source to assembly CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.s"
+	/usr/bin/clang++ $(OBJCXX_DEFINES) $(OBJCXX_INCLUDES) $(OBJCXX_FLAGS) -S /Users/nealsanche/nosuch/nt_emu/emulator/src/utils/file_dialog.mm -o CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.s
+
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imgui.cpp
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imgui.cpp
 
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui.cpp.i: cmake_force
@@ -313,7 +355,7 @@ CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui.cpp.s: cmake_force
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_demo.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_demo.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imgui_demo.cpp
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_demo.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_demo.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_demo.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_demo.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_demo.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_demo.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imgui_demo.cpp
 
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_demo.cpp.i: cmake_force
@@ -327,7 +369,7 @@ CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_demo.cpp.s: cmake_force
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_draw.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_draw.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imgui_draw.cpp
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_draw.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_draw.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_draw.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_draw.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_draw.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_draw.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imgui_draw.cpp
 
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_draw.cpp.i: cmake_force
@@ -341,7 +383,7 @@ CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_draw.cpp.s: cmake_force
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_tables.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_tables.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imgui_tables.cpp
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_tables.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_tables.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building CXX object CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_tables.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_tables.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_tables.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_tables.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imgui_tables.cpp
 
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_tables.cpp.i: cmake_force
@@ -355,7 +397,7 @@ CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_tables.cpp.s: cmake_for
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_widgets.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_widgets.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imgui_widgets.cpp
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_widgets.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_widgets.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building CXX object CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_widgets.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_widgets.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_widgets.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_widgets.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imgui_widgets.cpp
 
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_widgets.cpp.i: cmake_force
@@ -369,7 +411,7 @@ CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_widgets.cpp.s: cmake_fo
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/backends/imgui_impl_glfw.cpp
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/backends/imgui_impl_glfw.cpp
 
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.i: cmake_force
@@ -383,7 +425,7 @@ CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_glfw.cpp.
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o: CMakeFiles/DistingNTEmulator.dir/flags.make
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o: /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/backends/imgui_impl_opengl3.cpp
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o: CMakeFiles/DistingNTEmulator.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building CXX object CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o -MF CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o.d -o CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.o -c /Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/backends/imgui_impl_opengl3.cpp
 
 CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/imgui_impl_opengl3.cpp.i: cmake_force
@@ -401,17 +443,20 @@ DistingNTEmulator_OBJECTS = \
 "CMakeFiles/DistingNTEmulator.dir/src/core/plugin_loader.cpp.o" \
 "CMakeFiles/DistingNTEmulator.dir/src/core/api_shim.cpp.o" \
 "CMakeFiles/DistingNTEmulator.dir/src/core/audio_engine.cpp.o" \
+"CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.o" \
 "CMakeFiles/DistingNTEmulator.dir/src/core/midi_handler.cpp.o" \
 "CMakeFiles/DistingNTEmulator.dir/src/hardware/display.cpp.o" \
 "CMakeFiles/DistingNTEmulator.dir/src/hardware/hardware_interface.cpp.o" \
 "CMakeFiles/DistingNTEmulator.dir/src/hardware/io_manager.cpp.o" \
 "CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.o" \
+"CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.o" \
 "CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.o" \
 "CMakeFiles/DistingNTEmulator.dir/src/ui/midi_panel.cpp.o" \
 "CMakeFiles/DistingNTEmulator.dir/src/ui/plugin_panel.cpp.o" \
 "CMakeFiles/DistingNTEmulator.dir/src/utils/file_watcher.cpp.o" \
 "CMakeFiles/DistingNTEmulator.dir/src/utils/logger.cpp.o" \
 "CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.o" \
+"CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.o" \
 "CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui.cpp.o" \
 "CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_demo.cpp.o" \
 "CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_draw.cpp.o" \
@@ -428,17 +473,20 @@ DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/core/emulator.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/core/plugin_loader.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/core/api_shim.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/core/audio_engine.cpp.o
+DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/core/midi_handler.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/hardware/display.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/hardware/hardware_interface.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/hardware/io_manager.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.o
+DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/ui/midi_panel.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/ui/plugin_panel.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/utils/file_watcher.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/utils/logger.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.o
+DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_demo.cpp.o
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_draw.cpp.o
@@ -449,7 +497,7 @@ DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/third_party/imgui/backends/i
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/build.make
 DistingNTEmulator: /opt/homebrew/lib/libglfw.3.4.dylib
 DistingNTEmulator: CMakeFiles/DistingNTEmulator.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Linking CXX executable DistingNTEmulator"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/nealsanche/nosuch/nt_emu/emulator/build_gui/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Linking CXX executable DistingNTEmulator"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/DistingNTEmulator.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

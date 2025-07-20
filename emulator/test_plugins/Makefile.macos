@@ -1,0 +1,17 @@
+
+ifndef NT_API_PATH
+	NT_API_PATH := /Users/nealsanche/github/distingNT_API
+endif
+
+INCLUDE_PATH := $(NT_API_PATH)/include
+
+inputs := gainCustomUI.cpp
+outputs := $(patsubst %.cpp,%.dylib,$(inputs))
+
+all: $(outputs)
+
+clean:
+	rm -f $(outputs)
+
+%.dylib: %.cpp
+	clang++ -std=c++11 -fno-rtti -fno-exceptions -Os -fPIC -Wall -I$(INCLUDE_PATH) -shared -o $@ $^

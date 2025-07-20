@@ -9,6 +9,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/nealsanche/nosuch/nt_emu/emulator/src/core/api_shim.cpp" "CMakeFiles/DistingNTEmulator.dir/src/core/api_shim.cpp.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/src/core/api_shim.cpp.o.d"
+  "/Users/nealsanche/nosuch/nt_emu/emulator/src/core/audio_device_manager.cpp" "CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.o.d"
   "/Users/nealsanche/nosuch/nt_emu/emulator/src/core/audio_engine.cpp" "CMakeFiles/DistingNTEmulator.dir/src/core/audio_engine.cpp.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/src/core/audio_engine.cpp.o.d"
   "/Users/nealsanche/nosuch/nt_emu/emulator/src/core/emulator.cpp" "CMakeFiles/DistingNTEmulator.dir/src/core/emulator.cpp.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/src/core/emulator.cpp.o.d"
   "/Users/nealsanche/nosuch/nt_emu/emulator/src/core/midi_handler.cpp" "CMakeFiles/DistingNTEmulator.dir/src/core/midi_handler.cpp.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/src/core/midi_handler.cpp.o.d"
@@ -18,6 +19,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/nealsanche/nosuch/nt_emu/emulator/src/hardware/io_manager.cpp" "CMakeFiles/DistingNTEmulator.dir/src/hardware/io_manager.cpp.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/src/hardware/io_manager.cpp.o.d"
   "/Users/nealsanche/nosuch/nt_emu/emulator/src/main.cpp" "CMakeFiles/DistingNTEmulator.dir/src/main.cpp.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/src/main.cpp.o.d"
   "/Users/nealsanche/nosuch/nt_emu/emulator/src/ui/audio_panel.cpp" "CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.o.d"
+  "/Users/nealsanche/nosuch/nt_emu/emulator/src/ui/audio_settings_dialog.cpp" "CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.o.d"
   "/Users/nealsanche/nosuch/nt_emu/emulator/src/ui/main_window.cpp" "CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.o.d"
   "/Users/nealsanche/nosuch/nt_emu/emulator/src/ui/midi_panel.cpp" "CMakeFiles/DistingNTEmulator.dir/src/ui/midi_panel.cpp.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/src/ui/midi_panel.cpp.o.d"
   "/Users/nealsanche/nosuch/nt_emu/emulator/src/ui/plugin_panel.cpp" "CMakeFiles/DistingNTEmulator.dir/src/ui/plugin_panel.cpp.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/src/ui/plugin_panel.cpp.o.d"
@@ -31,6 +33,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imgui_draw.cpp" "CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_draw.cpp.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_draw.cpp.o.d"
   "/Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imgui_tables.cpp" "CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_tables.cpp.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_tables.cpp.o.d"
   "/Users/nealsanche/nosuch/nt_emu/emulator/third_party/imgui/imgui_widgets.cpp" "CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_widgets.cpp.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/third_party/imgui/imgui_widgets.cpp.o.d"
+  "/Users/nealsanche/nosuch/nt_emu/emulator/src/utils/file_dialog.mm" "CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.o" "gcc" "CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

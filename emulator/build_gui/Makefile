@@ -211,6 +211,30 @@ src/core/api_shim.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DistingNTEmulator.dir/build.make CMakeFiles/DistingNTEmulator.dir/src/core/api_shim.cpp.s
 .PHONY : src/core/api_shim.cpp.s
 
+src/core/audio_device_manager.o: src/core/audio_device_manager.cpp.o
+.PHONY : src/core/audio_device_manager.o
+
+# target to build an object file
+src/core/audio_device_manager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/DistingNTEmulator.dir/build.make CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.o
+.PHONY : src/core/audio_device_manager.cpp.o
+
+src/core/audio_device_manager.i: src/core/audio_device_manager.cpp.i
+.PHONY : src/core/audio_device_manager.i
+
+# target to preprocess a source file
+src/core/audio_device_manager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/DistingNTEmulator.dir/build.make CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.i
+.PHONY : src/core/audio_device_manager.cpp.i
+
+src/core/audio_device_manager.s: src/core/audio_device_manager.cpp.s
+.PHONY : src/core/audio_device_manager.s
+
+# target to generate assembly for a file
+src/core/audio_device_manager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/DistingNTEmulator.dir/build.make CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.s
+.PHONY : src/core/audio_device_manager.cpp.s
+
 src/core/audio_engine.o: src/core/audio_engine.cpp.o
 .PHONY : src/core/audio_engine.o
 
@@ -427,6 +451,30 @@ src/ui/audio_panel.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DistingNTEmulator.dir/build.make CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.s
 .PHONY : src/ui/audio_panel.cpp.s
 
+src/ui/audio_settings_dialog.o: src/ui/audio_settings_dialog.cpp.o
+.PHONY : src/ui/audio_settings_dialog.o
+
+# target to build an object file
+src/ui/audio_settings_dialog.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/DistingNTEmulator.dir/build.make CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.o
+.PHONY : src/ui/audio_settings_dialog.cpp.o
+
+src/ui/audio_settings_dialog.i: src/ui/audio_settings_dialog.cpp.i
+.PHONY : src/ui/audio_settings_dialog.i
+
+# target to preprocess a source file
+src/ui/audio_settings_dialog.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/DistingNTEmulator.dir/build.make CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.i
+.PHONY : src/ui/audio_settings_dialog.cpp.i
+
+src/ui/audio_settings_dialog.s: src/ui/audio_settings_dialog.cpp.s
+.PHONY : src/ui/audio_settings_dialog.s
+
+# target to generate assembly for a file
+src/ui/audio_settings_dialog.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/DistingNTEmulator.dir/build.make CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.s
+.PHONY : src/ui/audio_settings_dialog.cpp.s
+
 src/ui/main_window.o: src/ui/main_window.cpp.o
 .PHONY : src/ui/main_window.o
 
@@ -522,6 +570,14 @@ src/utils/config.s: src/utils/config.cpp.s
 src/utils/config.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/DistingNTEmulator.dir/build.make CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.s
 .PHONY : src/utils/config.cpp.s
+
+src/utils/file_dialog.o: src/utils/file_dialog.mm.o
+.PHONY : src/utils/file_dialog.o
+
+# target to build an object file
+src/utils/file_dialog.mm.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/DistingNTEmulator.dir/build.make CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.o
+.PHONY : src/utils/file_dialog.mm.o
 
 src/utils/file_watcher.o: src/utils/file_watcher.cpp.o
 .PHONY : src/utils/file_watcher.o
@@ -756,6 +812,9 @@ help:
 	@echo "... src/core/api_shim.o"
 	@echo "... src/core/api_shim.i"
 	@echo "... src/core/api_shim.s"
+	@echo "... src/core/audio_device_manager.o"
+	@echo "... src/core/audio_device_manager.i"
+	@echo "... src/core/audio_device_manager.s"
 	@echo "... src/core/audio_engine.o"
 	@echo "... src/core/audio_engine.i"
 	@echo "... src/core/audio_engine.s"
@@ -783,6 +842,9 @@ help:
 	@echo "... src/ui/audio_panel.o"
 	@echo "... src/ui/audio_panel.i"
 	@echo "... src/ui/audio_panel.s"
+	@echo "... src/ui/audio_settings_dialog.o"
+	@echo "... src/ui/audio_settings_dialog.i"
+	@echo "... src/ui/audio_settings_dialog.s"
 	@echo "... src/ui/main_window.o"
 	@echo "... src/ui/main_window.i"
 	@echo "... src/ui/main_window.s"
@@ -795,6 +857,7 @@ help:
 	@echo "... src/utils/config.o"
 	@echo "... src/utils/config.i"
 	@echo "... src/utils/config.s"
+	@echo "... src/utils/file_dialog.o"
 	@echo "... src/utils/file_watcher.o"
 	@echo "... src/utils/file_watcher.i"
 	@echo "... src/utils/file_watcher.s"

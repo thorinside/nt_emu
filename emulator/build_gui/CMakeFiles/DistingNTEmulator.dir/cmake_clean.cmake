@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/DistingNTEmulator.dir/src/core/api_shim.cpp.o"
   "CMakeFiles/DistingNTEmulator.dir/src/core/api_shim.cpp.o.d"
+  "CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.o"
+  "CMakeFiles/DistingNTEmulator.dir/src/core/audio_device_manager.cpp.o.d"
   "CMakeFiles/DistingNTEmulator.dir/src/core/audio_engine.cpp.o"
   "CMakeFiles/DistingNTEmulator.dir/src/core/audio_engine.cpp.o.d"
   "CMakeFiles/DistingNTEmulator.dir/src/core/emulator.cpp.o"
@@ -19,6 +21,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/DistingNTEmulator.dir/src/main.cpp.o.d"
   "CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.o"
   "CMakeFiles/DistingNTEmulator.dir/src/ui/audio_panel.cpp.o.d"
+  "CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.o"
+  "CMakeFiles/DistingNTEmulator.dir/src/ui/audio_settings_dialog.cpp.o.d"
   "CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.o"
   "CMakeFiles/DistingNTEmulator.dir/src/ui/main_window.cpp.o.d"
   "CMakeFiles/DistingNTEmulator.dir/src/ui/midi_panel.cpp.o"
@@ -27,6 +31,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/DistingNTEmulator.dir/src/ui/plugin_panel.cpp.o.d"
   "CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.o"
   "CMakeFiles/DistingNTEmulator.dir/src/utils/config.cpp.o.d"
+  "CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.o"
+  "CMakeFiles/DistingNTEmulator.dir/src/utils/file_dialog.mm.o.d"
   "CMakeFiles/DistingNTEmulator.dir/src/utils/file_watcher.cpp.o"
   "CMakeFiles/DistingNTEmulator.dir/src/utils/file_watcher.cpp.o.d"
   "CMakeFiles/DistingNTEmulator.dir/src/utils/logger.cpp.o"
@@ -50,6 +56,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang CXX)
+foreach(lang CXX OBJCXX)
   include(CMakeFiles/DistingNTEmulator.dir/cmake_clean_${lang}.cmake OPTIONAL)
 endforeach()
