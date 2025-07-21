@@ -774,88 +774,74 @@ struct DistingNT : Module {
             return;
         }
         
-        // Left pot: Page selection (always active - hardware-style)
-        float leftPotValue = params[POT_L_PARAM].getValue();
-        if (parameterPages.size() > 1) {
-            int newPageIndex = (int)(leftPotValue * (parameterPages.size() - 1));
-            if (newPageIndex != currentPageIndex && newPageIndex < parameterPages.size()) {
-                currentPageIndex = newPageIndex;
-                currentParamIndex = 0; // Reset to first parameter when changing pages
-                displayDirty = true;
-            }
-        }
-        
-        // Center pot: Parameter selection (hardware-style)
+        // Track last values to detect changes
+        static float lastLeftPotValue = -1.0f;
         static float lastCenterPotValue = -1.0f;
-        float centerPotValue = params[POT_C_PARAM].getValue();
-        if (std::fabs(centerPotValue - lastCenterPotValue) > 0.001f) {  // Only update when pot moves
-            lastCenterPotValue = centerPotValue;
-            if (currentPageIndex < parameterPages.size()) {
-                const _NT_parameterPage& currentPage = parameterPages[currentPageIndex];
-                if (currentPage.numParams > 1) {
-                    int newParamIndex = (int)(centerPotValue * (currentPage.numParams - 1));
-                    if (newParamIndex >= 0 && newParamIndex < currentPage.numParams) {
-                        currentParamIndex = newParamIndex;
-                        displayDirty = true;
-                    }
-                }
-            }
-        }
-        
-        // Right pot: Parameter value editing (hardware-style)
         static float lastRightPotValue = -1.0f;
-        float rightPotValue = params[POT_R_PARAM].getValue();
-        if (std::fabs(rightPotValue - lastRightPotValue) > 0.001f) {  // Only update when pot moves
-            lastRightPotValue = rightPotValue;
-            int currentParamGlobalIdx = getCurrentParameterIndex();
-            if (currentParamGlobalIdx >= 0 && currentParamGlobalIdx < parameters.size()) {
-                const _NT_parameter& param = parameters[currentParamGlobalIdx];
-                int newValue = (int)(rightPotValue * (param.max - param.min)) + param.min;
-                if (newValue != routingMatrix[currentParamGlobalIdx]) {
-                    routingMatrix[currentParamGlobalIdx] = newValue;
-                    // Notify plugin of parameter change
-                    if (pluginFactory && pluginFactory->parameterChanged) {
-                        pluginFactory->parameterChanged(pluginAlgorithm, currentParamGlobalIdx);
-                    }
-                    displayDirty = true;
-                }
-            }
-        }
-        
-        // Left encoder: Parameter selection (track changes)
         static int lastLeftEncoder = 0;
-        int currentLeftEncoder = (int)params[ENCODER_L_PARAM].getValue();
-        int leftDelta = currentLeftEncoder - lastLeftEncoder;
-        lastLeftEncoder = currentLeftEncoder;
+        static int lastRightEncoder = 0;
         
-        if (leftDelta != 0 && currentPageIndex < parameterPages.size()) {
-            const _NT_parameterPage& currentPage = parameterPages[currentPageIndex];
-            if (currentPage.numParams > 0) {
-                currentParamIndex = clamp(currentParamIndex + leftDelta, 0, (int)currentPage.numParams - 1);
-                displayDirty = true;
+        // Read current values
+        float leftPotValue = params[POT_L_PARAM].getValue();
+        float centerPotValue = params[POT_C_PARAM].getValue();
+        float rightPotValue = params[POT_R_PARAM].getValue();
+        int currentLeftEncoder = (int)params[ENCODER_L_PARAM].getValue();
+        int currentRightEncoder = (int)params[ENCODER_R_PARAM].getValue();
+        
+        // === Page Selection (Left Pot) ===
+        if (std::fabs(leftPotValue - lastLeftPotValue) > 0.00001f && parameterPages.size() > 1) {
+            int newPageIndex = (int)(leftPotValue * (parameterPages.size() - 1));
+            if (newPageIndex != currentPageIndex && newPageIndex >= 0 && newPageIndex < parameterPages.size()) {
+                setCurrentPage(newPageIndex);
             }
+            lastLeftPotValue = leftPotValue;
         }
         
-        // Right encoder: Value editing (track changes)
-        static int lastRightEncoder = 0;
-        int currentRightEncoder = (int)params[ENCODER_R_PARAM].getValue();
-        int rightDelta = currentRightEncoder - lastRightEncoder;
-        lastRightEncoder = currentRightEncoder;
+        // === Parameter Selection (Center Pot or Left Encoder) ===
+        const _NT_parameterPage& currentPage = parameterPages[currentPageIndex];
         
-        if (rightDelta != 0) {
-            int currentParamGlobalIdx = getCurrentParameterIndex();
-            if (currentParamGlobalIdx >= 0 && currentParamGlobalIdx < parameters.size()) {
-                const _NT_parameter& param = parameters[currentParamGlobalIdx];
-                int newValue = routingMatrix[currentParamGlobalIdx] + rightDelta;
-                newValue = clamp(newValue, (int)param.min, (int)param.max);
-                
-                if (newValue != routingMatrix[currentParamGlobalIdx]) {
-                    routingMatrix[currentParamGlobalIdx] = newValue;
-                    if (pluginFactory && pluginFactory->parameterChanged) {
-                        pluginFactory->parameterChanged(pluginAlgorithm, currentParamGlobalIdx);
-                    }
-                    displayDirty = true;
+        // Center pot
+        if (std::fabs(centerPotValue - lastCenterPotValue) > 0.00001f && currentPage.numParams > 1) {
+            int newParamIndex = (int)(centerPotValue * (currentPage.numParams - 1));
+            if (newParamIndex != currentParamIndex && newParamIndex >= 0 && newParamIndex < currentPage.numParams) {
+                setCurrentParam(newParamIndex);
+            }
+            lastCenterPotValue = centerPotValue;
+        }
+        
+        // Left encoder (relative)
+        int leftDelta = currentLeftEncoder - lastLeftEncoder;
+        if (leftDelta != 0 && currentPage.numParams > 0) {
+            int newParamIndex = clamp(currentParamIndex + leftDelta, 0, (int)currentPage.numParams - 1);
+            if (newParamIndex != currentParamIndex) {
+                setCurrentParam(newParamIndex);
+            }
+            lastLeftEncoder = currentLeftEncoder;
+        }
+        
+        // === Parameter Value Editing (Right Pot or Right Encoder) ===
+        int paramIdx = getCurrentParameterIndex();
+        if (paramIdx >= 0 && paramIdx < parameters.size()) {
+            const _NT_parameter& param = parameters[paramIdx];
+            int currentValue = routingMatrix[paramIdx];
+            
+            // Right pot (absolute)
+            if (std::fabs(rightPotValue - lastRightPotValue) > 0.00001f) {
+                int newValue = (int)(rightPotValue * (param.max - param.min)) + param.min;
+                if (newValue != currentValue) {
+                    setParameterValue(paramIdx, newValue);
                 }
+                lastRightPotValue = rightPotValue;
+            }
+            
+            // Right encoder (relative)
+            int rightDelta = currentRightEncoder - lastRightEncoder;
+            if (rightDelta != 0) {
+                int newValue = clamp(currentValue + rightDelta, (int)param.min, (int)param.max);
+                if (newValue != currentValue) {
+                    setParameterValue(paramIdx, newValue);
+                }
+                lastRightEncoder = currentRightEncoder;
             }
         }
         
@@ -890,21 +876,38 @@ struct DistingNT : Module {
         return processDiscreteEncoder(paramId);
     }
     
-    void navigateParameter(int delta) {
-        if (currentPageIndex >= parameterPages.size() || parameterPages.empty()) return;
-        
-        const _NT_parameterPage& page = parameterPages[currentPageIndex];
-        if (page.numParams == 0) return;
-        
-        currentParamIndex = clamp(currentParamIndex + delta, 0, (int)page.numParams - 1);
+    // State update methods - single point of control
+    void setCurrentPage(int pageIndex) {
+        if (pageIndex != currentPageIndex && pageIndex >= 0 && pageIndex < parameterPages.size()) {
+            currentPageIndex = pageIndex;
+            currentParamIndex = 0; // Reset to first parameter when changing pages
+            displayDirty = true;
+        }
     }
     
-    void adjustParameterValue(int delta) {
-        int paramIdx = getCurrentParameterIndex();
-        if (paramIdx < 0 || paramIdx >= parameters.size()) return;
-        
-        const _NT_parameter& param = parameters[paramIdx];
-        parameterEditValue = clamp(parameterEditValue + delta, (int)param.min, (int)param.max);
+    void setCurrentParam(int paramIndex) {
+        if (paramIndex != currentParamIndex && currentPageIndex < parameterPages.size()) {
+            const _NT_parameterPage& page = parameterPages[currentPageIndex];
+            if (paramIndex >= 0 && paramIndex < page.numParams) {
+                currentParamIndex = paramIndex;
+                displayDirty = true;
+            }
+        }
+    }
+    
+    void setParameterValue(int paramIdx, int value) {
+        if (paramIdx >= 0 && paramIdx < parameters.size()) {
+            const _NT_parameter& param = parameters[paramIdx];
+            value = clamp(value, (int)param.min, (int)param.max);
+            if (routingMatrix[paramIdx] != value) {
+                routingMatrix[paramIdx] = value;
+                // Notify plugin of parameter change
+                if (pluginFactory && pluginFactory->parameterChanged) {
+                    pluginFactory->parameterChanged(pluginAlgorithm, paramIdx);
+                }
+                displayDirty = true;
+            }
+        }
     }
     
     int getCurrentParameterIndex() {
