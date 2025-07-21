@@ -1,0 +1,40 @@
+{
+  "slug": "DistingNT",
+  "name": "Disting NT",
+  "version": "2.0.0",
+  "license": "MIT",
+  "brand": "Expert Sleepers",
+  "author": "Expert Sleepers Ltd",
+  "authorEmail": "support@expert-sleepers.co.uk",
+  "authorUrl": "https://www.expert-sleepers.co.uk/",
+  "pluginUrl": "https://github.com/expertsleepers/disting-nt-vcv",
+  "manualUrl": "https://www.expert-sleepers.co.uk/disting.html",
+  "sourceUrl": "https://github.com/expertsleepers/disting-nt-vcv",
+  "donateUrl": "",
+  "changelogUrl": "",
+  "modules": [
+    {
+      "slug": "TestModule",
+      "name": "Test Module",
+      "description": "Simple test module",
+      "tags": [
+        "Utility"
+      ]
+    },
+    {
+      "slug": "DistingNT",
+      "name": "Disting NT",
+      "description": "Multi-algorithm eurorack module emulation with 256x64 OLED display",
+      "tags": [
+        "Effect",
+        "Oscillator", 
+        "Utility",
+        "Multiple",
+        "Granular",
+        "Reverb",
+        "Delay",
+        "Filter"
+      ]
+    }
+  ]
+}
