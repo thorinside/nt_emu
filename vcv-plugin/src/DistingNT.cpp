@@ -96,12 +96,24 @@ struct DistingNT : Module {
         INPUT_LIGHT_9, INPUT_LIGHT_10, INPUT_LIGHT_11, INPUT_LIGHT_12,
         OUTPUT_LIGHT_1, OUTPUT_LIGHT_2, OUTPUT_LIGHT_3, 
         OUTPUT_LIGHT_4, OUTPUT_LIGHT_5, OUTPUT_LIGHT_6,
+        MIDI_INPUT_LIGHT, MIDI_OUTPUT_LIGHT,
         NUM_LIGHTS
     };
 
     // Core components
     BusSystem busSystem;
     EmulatorCore emulatorCore;
+    
+    // MIDI ports
+    midi::InputQueue midiInput;
+    midi::Output midiOutput;
+    
+    // MIDI activity lights
+    dsp::ClockDivider midiActivityDivider;
+    float midiInputLight = 0.f;
+    float midiOutputLight = 0.f;
+    
+    // Note: USB/Breakout routing is handled by hardware, not relevant in VCV emulation
     
     // Plugin loading
     void* pluginHandle = nullptr;
@@ -250,6 +262,76 @@ struct DistingNT : Module {
         // (This ensures first delta calculation works correctly)
         encoderLSteps = (int)params[ENCODER_L_PARAM].getValue();
         encoderRSteps = (int)params[ENCODER_R_PARAM].getValue();
+        
+        // Configure MIDI activity divider
+        midiActivityDivider.setDivision(512);
+        
+        // Setup MIDI output callback
+        setupMidiOutput();
+    }
+    
+    // MIDI setup method
+    void setupMidiOutput() {
+        // Connect MidiHandler callback to VCV MIDI output
+        emulatorCore.getMidiHandler().setMidiOutputCallback(
+            [this](const uint8_t* data, size_t size) {
+                // Convert raw bytes to VCV Message
+                midi::Message msg;
+                msg.setSize(size);
+                for (size_t i = 0; i < size; i++) {
+                    msg.bytes[i] = data[i];
+                }
+                
+                // In VCV Rack, all MIDI goes to the selected VCV MIDI output
+                // Hardware-level USB/Breakout routing is not applicable here
+                
+                // Apply channel filter if set
+                if (midiOutput.channel >= 0) {
+                    uint8_t status = data[0] & 0xF0;
+                    // Only filter channel messages (0x80-0xEF)
+                    if (status >= 0x80 && status < 0xF0) {
+                        uint8_t channel = data[0] & 0x0F;
+                        if (channel != midiOutput.channel) {
+                            return;  // Skip if wrong channel
+                        }
+                    }
+                }
+                
+                // Send to VCV MIDI output
+                midiOutput.sendMessage(msg);
+                
+                // Flash activity light
+                midiOutputLight = 1.f;
+            }
+        );
+    }
+    
+    // MIDI input processing
+    void processMidiMessage(const midi::Message& msg) {
+        // Route to plugin if loaded
+        if (isPluginLoaded() && pluginAlgorithm && pluginFactory && msg.bytes.size() > 0) {
+            uint8_t status = msg.bytes[0] & 0xF0;
+            
+            // Route real-time messages (0xF0-0xFF)
+            if (status >= 0xF0) {
+                if (pluginFactory->midiRealtime) {
+                    pluginFactory->midiRealtime(pluginAlgorithm, msg.bytes[0]);
+                }
+            }
+            // Route channel messages (Note On/Off, CC, Program Change, etc.)
+            else if (msg.bytes.size() >= 2) {
+                if (pluginFactory->midiMessage) {
+                    uint8_t byte0 = msg.bytes[0];
+                    uint8_t byte1 = msg.bytes[1];
+                    uint8_t byte2 = (msg.bytes.size() >= 3) ? msg.bytes[2] : 0;
+                    
+                    pluginFactory->midiMessage(pluginAlgorithm, byte0, byte1, byte2);
+                }
+            }
+        }
+        
+        // Note: Individual plugins handle their own channel filtering
+        // Module-level MIDI learn could be added here in the future if needed
     }
     
     // Plugin loading methods
@@ -1253,6 +1335,18 @@ struct DistingNT : Module {
             loadingMessageTimer -= args.sampleTime;
         }
         
+        // Process MIDI input
+        midi::Message msg;
+        while (midiInput.tryPop(&msg, args.frame)) {
+            processMidiMessage(msg);
+            midiInputLight = 1.f;
+        }
+        
+        // Update MIDI activity lights
+        if (midiActivityDivider.process()) {
+            midiInputLight *= 0.9f;  // Decay
+            midiOutputLight *= 0.9f;
+        }
         
         // Handle menu navigation
         if (params[ENCODER_L_PRESS_PARAM].getValue() > 0 && !leftEncoderPressed) {
@@ -1391,6 +1485,10 @@ struct DistingNT : Module {
             }
             lights[OUTPUT_LIGHT_1 + i].setBrightness(isRouted ? 1.0f : 0.0f);
         }
+        
+        // Update MIDI activity lights
+        lights[MIDI_INPUT_LIGHT].setBrightness(midiInputLight);
+        lights[MIDI_OUTPUT_LIGHT].setBrightness(midiOutputLight);
     }
     
     void onParameterChange(int parameter, float value) {
@@ -1483,6 +1581,10 @@ struct DistingNT : Module {
         }
         json_object_set_new(rootJ, "routing", routingJ);
         
+        // Save MIDI settings
+        json_object_set_new(rootJ, "midiInput", midiInput.toJson());
+        json_object_set_new(rootJ, "midiOutput", midiOutput.toJson());
+        
         return rootJ;
     }
     
@@ -1541,6 +1643,17 @@ struct DistingNT : Module {
             
             // Apply routing
             updateBusRouting();
+        }
+        
+        // Restore MIDI settings
+        json_t* midiInputJ = json_object_get(rootJ, "midiInput");
+        if (midiInputJ) {
+            midiInput.fromJson(midiInputJ);
+        }
+        
+        json_t* midiOutputJ = json_object_get(rootJ, "midiOutput");
+        if (midiOutputJ) {
+            midiOutput.fromJson(midiOutputJ);
         }
         
         displayDirty = true;
@@ -2068,6 +2181,10 @@ struct DistingNTWidget : ModuleWidget {
                 addOutput(outputPort);
             }
         }
+        
+        // MIDI activity LEDs (near the display)
+        addChild(createLightCentered<SmallLight<YellowLight>>(mm2px(Vec(5.0, 8.0)), module, DistingNT::MIDI_INPUT_LIGHT));
+        addChild(createLightCentered<SmallLight<YellowLight>>(mm2px(Vec(66.0, 8.0)), module, DistingNT::MIDI_OUTPUT_LIGHT));
     }
     
     void appendContextMenu(Menu* menu) override {
@@ -2102,6 +2219,18 @@ struct DistingNTWidget : ModuleWidget {
                 std::string filename = rack::system::getFilename(module->pluginPath);
                 menu->addChild(createMenuLabel(string::f("Current: %s", filename.c_str())));
             }
+        }));
+        
+        menu->addChild(new MenuSeparator);
+        
+        // MIDI Input submenu
+        menu->addChild(createSubmenuItem("MIDI Input", "", [=](Menu* menu) {
+            appendMidiMenu(menu, &module->midiInput);
+        }));
+        
+        // MIDI Output submenu
+        menu->addChild(createSubmenuItem("MIDI Output", "", [=](Menu* menu) {
+            appendMidiMenu(menu, &module->midiOutput);
         }));
         
         menu->addChild(new MenuSeparator);

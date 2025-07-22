@@ -10,6 +10,37 @@
 
 using namespace rack;
 
+// Simple MidiHandler implementation for VCV plugin
+class MidiHandler {
+public:
+    void setMidiOutputCallback(std::function<void(const uint8_t*, size_t)> callback) {
+        output_callback_ = callback;
+    }
+    
+    void sendMidi3ByteMessage(uint8_t byte0, uint8_t byte1, uint8_t byte2) {
+        if (output_callback_) {
+            uint8_t msg[3] = {byte0, byte1, byte2};
+            output_callback_(msg, 3);
+        }
+    }
+    
+    void sendMidi2ByteMessage(uint8_t byte0, uint8_t byte1) {
+        if (output_callback_) {
+            uint8_t msg[2] = {byte0, byte1};
+            output_callback_(msg, 2);
+        }
+    }
+    
+    void sendMidiByte(uint8_t byte) {
+        if (output_callback_) {
+            output_callback_(&byte, 1);
+        }
+    }
+
+private:
+    std::function<void(const uint8_t*, size_t)> output_callback_;
+};
+
 // Hardware state adapted for VCV Rack
 struct VCVHardwareState {
     std::array<float, 3> pots{0.5f, 0.5f, 0.5f};       // 3 potentiometers [0.0-1.0]
@@ -97,6 +128,10 @@ public:
     const VCVDisplayBuffer& getDisplayBuffer() const { return display_buffer_; }
     void updateDisplay();
     
+    // MIDI
+    MidiHandler& getMidiHandler() { return midi_handler_; }
+    const MidiHandler& getMidiHandler() const { return midi_handler_; }
+    
     // Parameter handling
     void setParameter(int param, float value);
     float getParameter(int param) const;
@@ -122,6 +157,7 @@ private:
     VCVHardwareState hardware_state_;
     VCVHardwareState previous_hardware_state_;
     VCVDisplayBuffer display_buffer_;
+    MidiHandler midi_handler_;
     
     float sample_rate_ = 44100.0f;
     bool initialized_ = false;
