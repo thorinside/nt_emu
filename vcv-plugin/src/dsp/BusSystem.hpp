@@ -10,7 +10,8 @@ struct DistingNT;
 class BusSystem {
 private:
     // 28 buses, each with 4 samples for block processing
-    alignas(16) float buses[28][4];
+    // Layout: [Bus0_S0-S3][Bus1_S0-S3]...[Bus27_S0-S3] for plugin compatibility
+    alignas(16) float buses[28 * 4];
     int sampleIndex = 0;
     
 public:
@@ -24,7 +25,7 @@ public:
     }
     
     float* getBuses() {
-        return &buses[0][0];
+        return buses;
     }
     
     template<typename ModuleType>
@@ -37,8 +38,7 @@ public:
         for (int i = 0; i < 12; i++) {
             if (module->inputs[ModuleType::AUDIO_INPUT_1 + i].isConnected()) {
                 float voltage = module->inputs[ModuleType::AUDIO_INPUT_1 + i].getVoltage();
-                // Convert from ±5V to ±1.0 range for Disting NT processing
-                setBus(i, currentSample, voltage / 5.0f);
+                setBus(i, currentSample, voltage);
             } else {
                 setBus(i, currentSample, 0.0f);
             }
@@ -57,9 +57,7 @@ public:
         // Route buses 20-25 to 6 outputs (matches hardware specification)
         for (int i = 0; i < 6; i++) {
             float busValue = getBus(20 + i, currentSample);
-            // Convert from ±1.0 range back to ±5V for VCV Rack
-            float voltage = busValue * 5.0f;
-            module->outputs[ModuleType::AUDIO_OUTPUT_1 + i].setVoltage(voltage);
+            module->outputs[ModuleType::AUDIO_OUTPUT_1 + i].setVoltage(busValue);
         }
         
         // Advance to next sample in the block
@@ -69,7 +67,8 @@ public:
     // Get specific bus for reading
     float getBus(int busIndex, int sampleOffset = 0) {
         if (busIndex >= 0 && busIndex < 28 && sampleOffset >= 0 && sampleOffset < 4) {
-            return buses[busIndex][sampleOffset];
+            // Data layout: [Bus0_S0-S3][Bus1_S0-S3]...[Bus27_S0-S3]
+            return buses[busIndex * 4 + sampleOffset];
         }
         return 0.0f;
     }
@@ -77,7 +76,8 @@ public:
     // Set specific bus value
     void setBus(int busIndex, int sampleOffset, float value) {
         if (busIndex >= 0 && busIndex < 28 && sampleOffset >= 0 && sampleOffset < 4) {
-            buses[busIndex][sampleOffset] = value;
+            // Data layout: [Bus0_S0-S3][Bus1_S0-S3]...[Bus27_S0-S3]
+            buses[busIndex * 4 + sampleOffset] = value;
         }
     }
     

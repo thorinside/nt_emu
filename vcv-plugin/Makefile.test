@@ -1,0 +1,12 @@
+# Simple test makefile
+CXX = clang++
+CXXFLAGS = -std=c++11 -I../emulator/include -g -O0
+LDFLAGS = -ldl
+
+test_distingnt: test_distingnt.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
+
+clean:
+	rm -f test_distingnt
+
+.PHONY: clean

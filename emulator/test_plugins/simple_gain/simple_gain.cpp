@@ -21,223 +21,155 @@ public:
         // For now, just a simple placeholder that doesn't call NT functions
     }
     
-    void setParameterValue(unsigned int parameterIndex, _NT_parameterValue value) {
+    void setParameterValue(unsigned int parameterIndex, float value) {
         if (parameterIndex == 0) {
-            gain_ = value.asFloat;
+            gain_ = value;
         }
     }
     
-    _NT_parameterValue getParameterValue(unsigned int parameterIndex) {
-        _NT_parameterValue value;
+    float getParameterValue(unsigned int parameterIndex) {
         if (parameterIndex == 0) {
-            value.asFloat = gain_;
+            return gain_;
         } else {
-            value.asFloat = 0.0f;
+            return 0.0f;
         }
-        return value;
     }
     
 private:
     float gain_;
 };
 
-// Plugin factory implementation
-class SimpleGainFactory {
-public:
-    SimpleGainFactory() {}
+// Simple factory helper functions (no longer need a class)
+_NT_algorithm* construct_simple_gain(_NT_algorithmMemoryPtrs memPtrs, _NT_algorithmRequirements /* reqs */, const int32_t* /* specifications */) {
+    // Need to place both SimpleGain and _NT_algorithm in memory
+    // Put SimpleGain at the beginning of SRAM
+    new(memPtrs.sram) SimpleGain();
     
-    unsigned int getAPIVersion() {
-        return kNT_apiVersion;
+    // Put _NT_algorithm structure right after SimpleGain
+    uint8_t* algoPtr = (uint8_t*)memPtrs.sram + sizeof(SimpleGain);
+    _NT_algorithm* algorithm = (_NT_algorithm*)algoPtr;
+    
+    // Initialize algorithm structure for current API (no function pointers, just data)
+    algorithm->parameters = nullptr;      // No parameters for simple gain
+    algorithm->parameterPages = nullptr;  // No parameter pages
+    algorithm->vIncludingCommon = nullptr; // Will be managed by system
+    algorithm->v = nullptr;               // Will be managed by system
+    
+    return algorithm;
+}
+
+// Create factory wrapper for current API
+static struct _NT_factory g_factory_wrapper = {
+    NT_MULTICHAR('S', 'G', 'A', 'N'),  // guid
+    "Simple Gain",                      // name  
+    "A simple gain plugin for testing", // description
+    0,                                  // numSpecifications
+    nullptr,                           // specifications
+    
+    // calculateStaticRequirements
+    [](_NT_staticRequirements &req) {
+        req.dram = 0; // No shared memory needed
+    },
+    
+    // initialise  
+    [](_NT_staticMemoryPtrs & /* ptrs */, const _NT_staticRequirements & /* req */) {
+        // Nothing to initialize
+    },
+    
+    // calculateRequirements
+    [](_NT_algorithmRequirements &req, const int32_t * /* specifications */) {
+        req.numParameters = 1;  // One gain parameter
+        req.sram = sizeof(SimpleGain) + sizeof(_NT_algorithm);
+        req.dram = 0;
+        req.dtc = 0; 
+        req.itc = 0;
+    },
+    
+    // construct
+    [](const _NT_algorithmMemoryPtrs &ptrs, const _NT_algorithmRequirements &req, const int32_t *specifications) -> _NT_algorithm* {
+        return construct_simple_gain(const_cast<_NT_algorithmMemoryPtrs&>(ptrs), const_cast<_NT_algorithmRequirements&>(req), specifications);
+    },
+    
+    // parameterChanged
+    [](_NT_algorithm * /* self */, int /* p */) {
+        // Parameter changes will be handled by VCV system
+    },
+    
+    // step
+    [](_NT_algorithm *self, float *busFrames, int numFramesBy4) {
+        // The SimpleGain plugin is at the start of SRAM, before the _NT_algorithm structure
+        uint8_t* sramPtr = (uint8_t*)self - sizeof(SimpleGain);
+        SimpleGain* plugin = (SimpleGain*)sramPtr;
+        float* buffers[1] = { busFrames };
+        plugin->step(buffers, numFramesBy4 * 4);
+    },
+    
+    // draw
+    [](_NT_algorithm *self) -> bool {
+        // The SimpleGain plugin is at the start of SRAM, before the _NT_algorithm structure
+        uint8_t* sramPtr = (uint8_t*)self - sizeof(SimpleGain);
+        SimpleGain* plugin = (SimpleGain*)sramPtr;
+        plugin->draw();
+        return false; // Don't suppress standard parameter display
+    },
+    
+    // midiRealtime
+    [](_NT_algorithm * /* self */, uint8_t /* byte */) {
+        // No MIDI realtime handling
+    },
+    
+    // midiMessage
+    [](_NT_algorithm * /* self */, uint8_t /* byte0 */, uint8_t /* byte1 */, uint8_t /* byte2 */) {
+        // No MIDI message handling
+    },
+    
+    0, // tags (no special tags)
+    
+    // hasCustomUi
+    [](_NT_algorithm * /* self */) -> uint32_t {
+        return 0; // No custom UI
+    },
+    
+    // customUi
+    [](_NT_algorithm * /* self */, const _NT_uiData & /* data */) {
+        // No custom UI handling
+    },
+    
+    // setupUi
+    [](_NT_algorithm * /* self */, _NT_float3 & /* pots */) {
+        // No UI setup needed
+    },
+    
+    // serialise
+    [](_NT_algorithm * /* self */, class _NT_jsonStream & /* stream */) {
+        // No serialization needed
+    },
+    
+    // deserialise
+    [](_NT_algorithm * /* self */, class _NT_jsonParse & /* parse */) -> bool {
+        return true; // Always succeed (no data to deserialize)
     }
-    
-    int getValue(enum _NT_selector selector, void* value, unsigned int maxLength) {
+};
+
+// Export the plugin entry function for current API
+extern "C" {
+    uintptr_t pluginEntry(_NT_selector selector, uint32_t data) {
         switch (selector) {
-            case kNT_selector_factoryName:
-                strncpy((char*)value, "Simple Gain Factory", maxLength);
-                return 0;
-            case kNT_selector_factoryVersion:
-                strncpy((char*)value, "1.0.0", maxLength);
-                return 0;
-            case kNT_selector_algorithmName:
-                strncpy((char*)value, "Simple Gain", maxLength);
-                return 0;
-            case kNT_selector_algorithmAuthor:
-                strncpy((char*)value, "Test Author", maxLength);
-                return 0;
-            case kNT_selector_algorithmDescription:
-                strncpy((char*)value, "A simple gain plugin for testing", maxLength);
-                return 0;
-            case kNT_selector_numInputs:
-                *(int*)value = 1;
-                return 0;
-            case kNT_selector_numOutputs:
-                *(int*)value = 1;
-                return 0;
-            case kNT_selector_numParameters:
-                *(int*)value = 1;
-                return 0;
-            case kNT_selector_canReceiveMIDI:
-                *(int*)value = 0;
-                return 0;
-            case kNT_selector_canTransmitMIDI:
-                *(int*)value = 0;
+            case kNT_selector_version:
+                return kNT_apiVersionCurrent;
+            case kNT_selector_numFactories:
+                return 1;  // We have one factory
+            case kNT_selector_factoryInfo:
+                if (data == 0) {
+                    return (uintptr_t)&g_factory_wrapper;
+                }
                 return 0;
             default:
-                return -1;
+                return 0;
         }
     }
     
-    struct _NT_staticRequirements getStaticRequirements() {
-        struct _NT_staticRequirements reqs;
-        reqs.memorySize = 0;
-        reqs.numRequirements = 0;
-        reqs.requirements = nullptr;
-        return reqs;
-    }
-    
-    int initialise(void* sharedMemory) {
-        (void)sharedMemory;
-        return 0;
-    }
-    
-    struct _NT_memoryRequirements getRequirements() {
-        struct _NT_memoryRequirements reqs;
-        reqs.memorySize = sizeof(SimpleGain);
-        reqs.numRequirements = 0;
-        reqs.requirements = nullptr;
-        return reqs;
-    }
-    
-    struct _NT_algorithm* construct(void* memory) {
-        // Placement new to construct the plugin in provided memory
-        SimpleGain* plugin = new(memory) SimpleGain();
-        
-        // Create algorithm wrapper
-        static struct _NT_algorithm algorithm;
-        algorithm.refCon = plugin;
-        
-        algorithm.getAPIVersion = [](struct _NT_algorithm* self) -> unsigned int {
-            return kNT_apiVersion;
-        };
-        
-        algorithm.getValue = [](struct _NT_algorithm* self, enum _NT_selector selector, void* value, unsigned int maxLength) -> int {
-            (void)self; (void)selector; (void)value; (void)maxLength;
-            return -1; // Not implemented
-        };
-        
-        algorithm.getRequirements = [](struct _NT_algorithm* self) -> struct _NT_memoryRequirements {
-            (void)self;
-            struct _NT_memoryRequirements reqs;
-            reqs.memorySize = 0;
-            reqs.numRequirements = 0;
-            reqs.requirements = nullptr;
-            return reqs;
-        };
-        
-        algorithm.setParameterValue = [](struct _NT_algorithm* self, unsigned int parameterIndex, _NT_parameterValue value) {
-            SimpleGain* plugin = static_cast<SimpleGain*>(self->refCon);
-            plugin->setParameterValue(parameterIndex, value);
-        };
-        
-        algorithm.getParameterValue = [](struct _NT_algorithm* self, unsigned int parameterIndex) -> _NT_parameterValue {
-            SimpleGain* plugin = static_cast<SimpleGain*>(self->refCon);
-            return plugin->getParameterValue(parameterIndex);
-        };
-        
-        algorithm.step = [](struct _NT_algorithm* self, float** buffers, unsigned int numSamples) {
-            SimpleGain* plugin = static_cast<SimpleGain*>(self->refCon);
-            plugin->step(buffers, numSamples);
-        };
-        
-        algorithm.draw = [](struct _NT_algorithm* self) {
-            SimpleGain* plugin = static_cast<SimpleGain*>(self->refCon);
-            plugin->draw();
-        };
-        
-        // Null out MIDI handlers
-        algorithm.controllerChange = nullptr;
-        algorithm.noteOn = nullptr;
-        algorithm.noteOff = nullptr;
-        algorithm.pitchBend = nullptr;
-        algorithm.programChange = nullptr;
-        algorithm.channelPressure = nullptr;
-        algorithm.polyKeyPressure = nullptr;
-        algorithm.systemExclusive = nullptr;
-        algorithm.clockTick = nullptr;
-        algorithm.clockStart = nullptr;
-        algorithm.clockStop = nullptr;
-        algorithm.clockContinue = nullptr;
-        algorithm.activeSense = nullptr;
-        algorithm.systemReset = nullptr;
-        algorithm.getPresetChunk = nullptr;
-        algorithm.setPresetChunk = nullptr;
-        algorithm.postPresetLoad = nullptr;
-        
-        return &algorithm;
-    }
-    
-    void destruct(struct _NT_algorithm* algorithm) {
-        if (algorithm && algorithm->refCon) {
-            SimpleGain* plugin = static_cast<SimpleGain*>(algorithm->refCon);
-            plugin->~SimpleGain();
-        }
-    }
-    
-    void terminate() {
-        // Nothing to do
-    }
-};
-
-// Global factory instance
-static SimpleGainFactory g_factory;
-
-// Create factory wrapper
-static struct _NT_factory g_factory_wrapper = {
-    &g_factory,  // refCon
-    
-    [](struct _NT_factory* self) -> unsigned int {
-        SimpleGainFactory* factory = static_cast<SimpleGainFactory*>(self->refCon);
-        return factory->getAPIVersion();
-    },
-    
-    [](struct _NT_factory* self, enum _NT_selector selector, void* value, unsigned int maxLength) -> int {
-        SimpleGainFactory* factory = static_cast<SimpleGainFactory*>(self->refCon);
-        return factory->getValue(selector, value, maxLength);
-    },
-    
-    [](struct _NT_factory* self) -> struct _NT_staticRequirements {
-        SimpleGainFactory* factory = static_cast<SimpleGainFactory*>(self->refCon);
-        return factory->getStaticRequirements();
-    },
-    
-    [](struct _NT_factory* self, void* sharedMemory) -> int {
-        SimpleGainFactory* factory = static_cast<SimpleGainFactory*>(self->refCon);
-        return factory->initialise(sharedMemory);
-    },
-    
-    [](struct _NT_factory* self, void* memory) -> struct _NT_algorithm* {
-        SimpleGainFactory* factory = static_cast<SimpleGainFactory*>(self->refCon);
-        return factory->construct(memory);
-    },
-    
-    [](struct _NT_factory* self, struct _NT_algorithm* algorithm) {
-        SimpleGainFactory* factory = static_cast<SimpleGainFactory*>(self->refCon);
-        factory->destruct(algorithm);
-    },
-    
-    [](struct _NT_factory* self) {
-        SimpleGainFactory* factory = static_cast<SimpleGainFactory*>(self->refCon);
-        factory->terminate();
-    },
-    
-    [](struct _NT_factory* self) -> struct _NT_memoryRequirements {
-        SimpleGainFactory* factory = static_cast<SimpleGainFactory*>(self->refCon);
-        return factory->getRequirements();
-    }
-};
-
-// Export the factory function
-extern "C" {
+    // Keep old function for backward compatibility
     struct _NT_factory* NT_getFactoryPtr() {
         return &g_factory_wrapper;
     }

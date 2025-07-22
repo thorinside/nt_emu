@@ -6,6 +6,8 @@
 #include "InfiniteEncoder.hpp"
 #include <componentlibrary.hpp>
 #include <osdialog.h>
+#include <map>
+#include <cstring>
 
 // For plugin loading
 #ifdef ARCH_WIN
@@ -31,6 +33,25 @@ struct _NT_staticRequirements_old {
     uint32_t memorySize;
     uint32_t numRequirements;
     void* requirements;
+};
+
+// Forward declaration
+struct DistingNT;
+
+// Context-aware encoder parameter quantity
+struct ContextAwareEncoderQuantity : EncoderParamQuantity {
+    DistingNT* distingModule = nullptr;
+    bool isLeftEncoder = true;
+    
+    std::string getDisplayValueString() override;
+};
+
+// Custom output port widget with dynamic tooltips
+struct DistingNTOutputPort : PJ301MPort {
+    DistingNT* distingModule = nullptr;
+    int outputIndex = 0;
+    
+    void onHover(const HoverEvent& e) override;
 };
 
 struct DistingNT : Module {
@@ -138,6 +159,25 @@ struct DistingNT : Module {
     std::array<int, 28> busOutputMap;
     bool routingDirty = false;
     
+    // Parameter-based routing structures
+    struct InputRouting {
+        int paramIndex;      // Which parameter controls this routing
+        int busIndex;        // Target bus (0-27)
+        bool isCV;           // Audio or CV input
+    };
+    
+    struct OutputRouting {
+        int paramIndex;           // Which parameter controls this routing
+        int busIndex;             // Source bus (0-27)
+        bool isCV;                // Audio or CV output
+        bool hasOutputMode;       // Has associated output mode parameter
+        int outputModeParamIndex; // Index of output mode parameter
+    };
+    
+    // Maps from parameter index to routing info
+    std::map<int, InputRouting> paramInputRouting;
+    std::map<int, OutputRouting> paramOutputRouting;
+    
     // Sample accumulation for 4-sample processing blocks
     int sampleCounter = 0;
     static constexpr int BLOCK_SIZE = 4;
@@ -166,6 +206,19 @@ struct DistingNT : Module {
         // Disable snapping so encoders don't snap back to center
         getParamQuantity(ENCODER_L_PARAM)->snapEnabled = false;
         getParamQuantity(ENCODER_R_PARAM)->snapEnabled = false;
+        
+        // Replace with context-aware encoder quantities
+        paramQuantities[ENCODER_L_PARAM] = new ContextAwareEncoderQuantity();
+        paramQuantities[ENCODER_L_PARAM]->module = this;
+        paramQuantities[ENCODER_L_PARAM]->paramId = ENCODER_L_PARAM;
+        ((ContextAwareEncoderQuantity*)paramQuantities[ENCODER_L_PARAM])->distingModule = this;
+        ((ContextAwareEncoderQuantity*)paramQuantities[ENCODER_L_PARAM])->isLeftEncoder = true;
+        
+        paramQuantities[ENCODER_R_PARAM] = new ContextAwareEncoderQuantity();
+        paramQuantities[ENCODER_R_PARAM]->module = this;
+        paramQuantities[ENCODER_R_PARAM]->paramId = ENCODER_R_PARAM;
+        ((ContextAwareEncoderQuantity*)paramQuantities[ENCODER_R_PARAM])->distingModule = this;
+        ((ContextAwareEncoderQuantity*)paramQuantities[ENCODER_R_PARAM])->isLeftEncoder = false;
         
         configParam(ENCODER_L_PRESS_PARAM, 0.f, 1.f, 0.f, "Encoder L Press");
         configParam(ENCODER_R_PRESS_PARAM, 0.f, 1.f, 0.f, "Encoder R Press");
@@ -741,6 +794,39 @@ struct DistingNT : Module {
             defaultPage.params = nullptr; // Will handle this in navigation functions
             parameterPages.push_back(defaultPage);
         }
+        
+        // Initialize routing matrix with default parameter values
+        if (!parameters.empty() && pluginAlgorithm) {
+            for (size_t i = 0; i < parameters.size() && i < routingMatrix.size(); i++) {
+                routingMatrix[i] = parameters[i].def;
+            }
+            
+            // Call parameterChanged for each parameter to let plugin initialize
+            if (pluginFactory && pluginFactory->parameterChanged) {
+                for (size_t i = 0; i < parameters.size(); i++) {
+                    safeExecutePlugin([&]() {
+                        pluginFactory->parameterChanged(pluginAlgorithm, i);
+                    }, "parameterChanged");
+                }
+            }
+        }
+        
+        // Update parameter-based routing after extracting parameters
+        if (!parameters.empty()) {
+            updateParameterRouting();
+            
+            // Debug: Log routing information
+            INFO("Parameter routing updated. Input mappings: %zu, Output mappings: %zu", 
+                 paramInputRouting.size(), paramOutputRouting.size());
+            for (const auto& [idx, routing] : paramInputRouting) {
+                INFO("Input routing: param[%d]='%s' value=%d -> bus %d", 
+                     idx, parameters[idx].name, routingMatrix[idx], routing.busIndex);
+            }
+            for (const auto& [idx, routing] : paramOutputRouting) {
+                INFO("Output routing: param[%d]='%s' value=%d -> bus %d", 
+                     idx, parameters[idx].name, routingMatrix[idx], routing.busIndex);
+            }
+        }
     }
     
     void toggleMenuMode() {
@@ -963,50 +1049,53 @@ struct DistingNT : Module {
         routingDirty = true;
     }
     
+    void updateParameterRouting() {
+        // Clear existing routing
+        paramInputRouting.clear();
+        paramOutputRouting.clear();
+        
+        // Scan parameters for input/output types
+        for (size_t i = 0; i < parameters.size(); i++) {
+            const _NT_parameter& param = parameters[i];
+            
+            if (param.unit == kNT_unitAudioInput || param.unit == kNT_unitCvInput) {
+                // This parameter controls an input routing
+                paramInputRouting[i] = {
+                    .paramIndex = (int)i,
+                    .busIndex = routingMatrix[i] > 0 ? routingMatrix[i] - 1 : -1,  // Convert to 0-based
+                    .isCV = (param.unit == kNT_unitCvInput)
+                };
+            }
+            else if (param.unit == kNT_unitAudioOutput || param.unit == kNT_unitCvOutput) {
+                // This parameter controls an output routing
+                paramOutputRouting[i] = {
+                    .paramIndex = (int)i,
+                    .busIndex = routingMatrix[i] > 0 ? routingMatrix[i] - 1 : -1,  // Convert to 0-based
+                    .isCV = (param.unit == kNT_unitCvOutput),
+                    .hasOutputMode = false,
+                    .outputModeParamIndex = -1
+                };
+                
+                // Check if next parameter is output mode
+                if (i + 1 < parameters.size() && parameters[i + 1].unit == kNT_unitOutputMode) {
+                    paramOutputRouting[i].hasOutputMode = true;
+                    paramOutputRouting[i].outputModeParamIndex = i + 1;
+                }
+            }
+        }
+        
+        // Update the busInputMap and busOutputMap for compatibility
+        updateBusRouting();
+    }
+    
     void updateBusRouting() {
         // Validate plugin state before updating routing
         if (!pluginAlgorithm || parameters.empty()) {
             return;
         }
         
-        // Clear existing routing
-        for (int i = 0; i < 28; i++) {
-            busInputMap[i] = -1;
-            busOutputMap[i] = -1;
-        }
-        
-        // Apply routing from parameters
-        for (size_t i = 0; i < parameters.size(); i++) {
-            const _NT_parameter& param = parameters[i];
-            int busIndex = routingMatrix[i];
-            
-            if (busIndex == 0) continue; // 0 = disconnected
-            
-            // Map based on parameter unit type
-            switch (param.unit) {
-                case kNT_unitAudioInput:
-                case kNT_unitCvInput:
-                    // Map VCV input to bus
-                    if (busIndex >= 1 && busIndex <= 28) {
-                        int vcvInput = getVCVInputForParameter(i);
-                        if (vcvInput >= 0) {
-                            busInputMap[busIndex - 1] = vcvInput;
-                        }
-                    }
-                    break;
-                    
-                case kNT_unitAudioOutput:
-                case kNT_unitCvOutput:
-                    // Map bus to VCV output
-                    if (busIndex >= 1 && busIndex <= 28) {
-                        int vcvOutput = getVCVOutputForParameter(i);
-                        if (vcvOutput >= 0) {
-                            busOutputMap[busIndex - 1] = vcvOutput;
-                        }
-                    }
-                    break;
-            }
-        }
+        // This method is now called from updateParameterRouting()
+        // and uses the paramInputRouting and paramOutputRouting maps
     }
     
     int getVCVInputForParameter(int paramIndex) {
@@ -1031,13 +1120,46 @@ struct DistingNT : Module {
             busSystem.setBus(bus, currentSample, 0.0f);
         }
         
-        // Apply input routing from mapping
-        for (int bus = 0; bus < 28; bus++) {
-            int vcvInput = busInputMap[bus];
-            if (vcvInput >= 0 && vcvInput < NUM_INPUTS) {
-                if (inputs[vcvInput].isConnected()) {
-                    float voltage = inputs[vcvInput].getVoltage() / 5.0f; // Convert to ±1.0 range
-                    busSystem.setBus(bus, currentSample, voltage);
+        // Route inputs based on parameter mapping
+        for (const auto& [paramIdx, routing] : paramInputRouting) {
+            if (routing.busIndex < 0 || routing.busIndex >= 28) continue;
+            
+            // Get the current bus assignment from the parameter value
+            int targetBus = routingMatrix[paramIdx] - 1; // Convert to 0-based
+            if (targetBus < 0 || targetBus >= 28) continue;
+            
+            // Debug output (only log once)
+            static bool logged = false;
+            if (!logged && currentSample == 0) {
+                INFO("Input routing: param[%d] value=%d targetBus=%d", 
+                     paramIdx, routingMatrix[paramIdx], targetBus);
+                logged = true;
+            }
+            
+            // Parse parameter name to determine which VCV input this controls
+            // Example: "Input 1" -> VCV input 0, "Input 2" -> VCV input 1, etc.
+            const std::string& paramName = parameters[paramIdx].name;
+            int vcvInput = -1;
+            
+            // Try to extract input number from parameter name
+            if (sscanf(paramName.c_str(), "Input %d", &vcvInput) == 1) {
+                vcvInput--; // Convert to 0-based
+            } else if (sscanf(paramName.c_str(), "In %d", &vcvInput) == 1) {
+                vcvInput--; // Convert to 0-based
+            } else if (strcmp(paramName.c_str(), "Input") == 0) {
+                // Simple "Input" parameter maps to first input
+                vcvInput = 0;
+            }
+            
+            // Route the VCV input to the target bus
+            if (vcvInput >= 0 && vcvInput < NUM_INPUTS && inputs[AUDIO_INPUT_1 + vcvInput].isConnected()) {
+                float voltage = inputs[AUDIO_INPUT_1 + vcvInput].getVoltage();
+                busSystem.setBus(targetBus, currentSample, voltage);
+                
+                // Debug output
+                static int debugCount = 0;
+                if (debugCount++ < 10) {
+                    INFO("Routing VCV input %d (voltage=%.3f) to bus %d", vcvInput, voltage, targetBus);
                 }
             }
         }
@@ -1052,13 +1174,51 @@ struct DistingNT : Module {
             outputs[i].setVoltage(0.0f);
         }
         
-        // Apply output routing from mapping
-        for (int bus = 0; bus < 28; bus++) {
-            int vcvOutput = busOutputMap[bus];
+        // Route outputs based on parameter mapping
+        for (const auto& [paramIdx, routing] : paramOutputRouting) {
+            // Get the current bus assignment from the parameter value
+            int sourceBus = routingMatrix[paramIdx] - 1; // Convert to 0-based
+            if (sourceBus < 0 || sourceBus >= 28) continue;
+            
+            // Parse parameter name to determine which VCV output this controls
+            // Example: "Output 1" -> VCV output 0, "Output 2" -> VCV output 1, etc.
+            const std::string& paramName = parameters[paramIdx].name;
+            int vcvOutput = -1;
+            
+            // Try to extract output number from parameter name
+            if (sscanf(paramName.c_str(), "Output %d", &vcvOutput) == 1) {
+                vcvOutput--; // Convert to 0-based
+            } else if (sscanf(paramName.c_str(), "Out %d", &vcvOutput) == 1) {
+                vcvOutput--; // Convert to 0-based
+            } else if (strcmp(paramName.c_str(), "Output") == 0) {
+                // Simple "Output" parameter maps to first output
+                vcvOutput = 0;
+            }
+            
+            // Route the bus to the VCV output
             if (vcvOutput >= 0 && vcvOutput < NUM_OUTPUTS) {
-                // Get current sample from the bus (after processing)
-                float voltage = busSystem.getBus(bus, currentSample) * 5.0f; // Convert back to ±5V range
-                outputs[vcvOutput].setVoltage(voltage);
+                float busValue = busSystem.getBus(sourceBus, currentSample);
+                
+                // Check if this output has an output mode parameter (add vs replace)
+                bool replace = true;  // Default to replace mode
+                if (routing.hasOutputMode && routing.outputModeParamIndex < (int)routingMatrix.size()) {
+                    replace = routingMatrix[routing.outputModeParamIndex] > 0;
+                }
+                
+                // Debug output
+                static int debugCount = 0;
+                if (debugCount++ < 10) {
+                    INFO("Routing bus %d (value=%.3f) to VCV output %d (replace=%d)", 
+                         sourceBus, busValue, vcvOutput, replace);
+                }
+                
+                if (replace) {
+                    outputs[AUDIO_OUTPUT_1 + vcvOutput].setVoltage(busValue);
+                } else {
+                    // Add mode - accumulate with existing voltage
+                    float existing = outputs[AUDIO_OUTPUT_1 + vcvOutput].getVoltage();
+                    outputs[AUDIO_OUTPUT_1 + vcvOutput].setVoltage(existing + busValue);
+                }
             }
         }
         
@@ -1109,10 +1269,16 @@ struct DistingNT : Module {
         // Handle control inputs
         processControls();
         
-        // Apply custom routing if available, otherwise use default routing
-        if (!parameters.empty() && routingDirty) {
+        // Sync routing matrix with plugin algorithm values if plugin is loaded
+        if (isPluginLoaded() && pluginAlgorithm) {
+            for (size_t i = 0; i < parameters.size() && i < routingMatrix.size(); i++) {
+                routingMatrix[i] = pluginAlgorithm->v[i];
+            }
+        }
+        
+        // Apply custom routing if plugin is loaded, otherwise use default routing
+        if (isPluginLoaded() && !parameters.empty()) {
             applyCustomRouting();
-            routingDirty = false;
         } else {
             // Route inputs to buses (default behavior)
             busSystem.routeInputs(this);
@@ -1136,8 +1302,8 @@ struct DistingNT : Module {
             sampleCounter = 0;
         }
         
-        // Apply custom output routing if available, otherwise use default routing
-        if (!parameters.empty()) {
+        // Apply custom output routing if plugin is loaded, otherwise use default routing
+        if (isPluginLoaded() && !parameters.empty()) {
             applyCustomOutputRouting();
         } else {
             // Route buses to outputs (default behavior)
@@ -1634,7 +1800,7 @@ struct DistingNTOLEDWidget : FramebufferWidget {
         
     }
     
-    void formatParameterValue(char* str, const _NT_parameter& param, int value) {
+    void formatParameterValue(char* str, const _NT_parameter& param, int value) const {
         // Apply scaling first
         float scaledValue = value;
         switch (param.scaling) {
@@ -1646,13 +1812,30 @@ struct DistingNTOLEDWidget : FramebufferWidget {
         // Format based on unit type
         switch (param.unit) {
             case kNT_unitNone:
-                sprintf(str, "%d", value);
+                // Check if this is a Boolean parameter (min=0, max=1, no enum strings)
+                if (param.min == 0 && param.max == 1 && param.enumStrings == nullptr) {
+                    // Boolean parameter without enum strings
+                    if (value == 0) {
+                        strcpy(str, "Off");
+                    } else {
+                        strcpy(str, "On");
+                    }
+                } else {
+                    sprintf(str, "%d", value);
+                }
                 break;
                 
             case kNT_unitEnum:
                 if (param.enumStrings && value >= param.min && value <= param.max) {
                     strncpy(str, param.enumStrings[value - param.min], 31);
                     str[31] = '\0';
+                } else if (param.min == 0 && param.max == 1 && param.enumStrings == nullptr) {
+                    // Boolean enum without strings
+                    if (value == 0) {
+                        strcpy(str, "Off");
+                    } else {
+                        strcpy(str, "On");
+                    }
                 } else {
                     sprintf(str, "%d", value);
                 }
@@ -1724,42 +1907,32 @@ struct DistingNTOLEDWidget : FramebufferWidget {
                 break;
                 
             case kNT_unitAudioInput:
-                if (value == 0) {
-                    strcpy(str, "Off");
-                } else if (value <= 4) {
-                    sprintf(str, "In %d", value);
-                } else if (value <= 28) {
-                    sprintf(str, "Bus %d", value);
-                }
-                break;
-                
             case kNT_unitCvInput:
                 if (value == 0) {
-                    strcpy(str, "Off");
+                    strcpy(str, "None");
+                } else if (value >= 1 && value <= 12) {
+                    sprintf(str, "Input %d", value);
                 } else if (value >= 13 && value <= 20) {
-                    sprintf(str, "CV %d", value - 12);
-                } else if (value <= 28) {
-                    sprintf(str, "Bus %d", value);
+                    sprintf(str, "Output %d", value - 12);
+                } else if (value >= 21 && value <= 28) {
+                    sprintf(str, "Aux %d", value - 20);
+                } else {
+                    sprintf(str, "%d", value);
                 }
                 break;
                 
             case kNT_unitAudioOutput:
-                if (value >= 21 && value <= 24) {
-                    sprintf(str, "Out %d", value - 20);
-                } else if (value <= 28) {
-                    sprintf(str, "Bus %d", value);
-                } else {
-                    strcpy(str, "Off");
-                }
-                break;
-                
             case kNT_unitCvOutput:
-                if (value >= 25 && value <= 28) {
-                    sprintf(str, "CV %d", value - 24);
-                } else if (value <= 28) {
-                    sprintf(str, "Bus %d", value);
+                if (value == 0) {
+                    strcpy(str, "None");
+                } else if (value >= 1 && value <= 12) {
+                    sprintf(str, "Input %d", value);
+                } else if (value >= 13 && value <= 20) {
+                    sprintf(str, "Output %d", value - 12);
+                } else if (value >= 21 && value <= 28) {
+                    sprintf(str, "Aux %d", value - 20);
                 } else {
-                    strcpy(str, "Off");
+                    sprintf(str, "%d", value);
                 }
                 break;
                 
@@ -1776,6 +1949,51 @@ struct DistingNTOLEDWidget : FramebufferWidget {
         }
     }
 };
+
+// Implementation of ContextAwareEncoderQuantity
+std::string ContextAwareEncoderQuantity::getDisplayValueString() {
+    if (!distingModule || distingModule->menuMode == DistingNT::MENU_OFF) {
+        return EncoderParamQuantity::getDisplayValueString();
+    }
+    
+    // Show current parameter name and value
+    int paramIdx = distingModule->currentParamIndex;
+    if (paramIdx >= 0 && paramIdx < (int)distingModule->parameters.size()) {
+        const _NT_parameter& param = distingModule->parameters[paramIdx];
+        int value = distingModule->routingMatrix[paramIdx];
+        
+        // Simple value display for now
+        return std::string(param.name) + ": " + std::to_string(value);
+    }
+    
+    return EncoderParamQuantity::getDisplayValueString();
+}
+
+// Implementation of DistingNTOutputPort
+void DistingNTOutputPort::onHover(const HoverEvent& e) {
+    PJ301MPort::onHover(e);
+    
+    // Update tooltip based on current routing
+    if (distingModule && distingModule->isPluginLoaded()) {
+        // Find parameter that routes to this output
+        for (const auto& [paramIdx, routing] : distingModule->paramOutputRouting) {
+            // Check if this parameter's routing would send to this output
+            const std::string& paramName = distingModule->parameters[paramIdx].name;
+            int targetOutput = -1;
+            
+            // Extract output number from parameter name
+            if (sscanf(paramName.c_str(), "Output %d", &targetOutput) == 1 ||
+                sscanf(paramName.c_str(), "Out %d", &targetOutput) == 1) {
+                targetOutput--; // Convert to 0-based
+                
+                if (targetOutput == outputIndex) {
+                    // Tooltip will be displayed through VCV's mechanism
+                    return;
+                }
+            }
+        }
+    }
+}
 
 struct DistingNTWidget : ModuleWidget {
     DistingNTWidget(DistingNT* module) {
@@ -1839,7 +2057,15 @@ struct DistingNTWidget : ModuleWidget {
                 int index = row * 2 + col;
                 float x = outputStartX + col * jackSpacing;
                 float y = inputStartY + row * rowSpacing;
-                addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(x, y)), module, DistingNT::AUDIO_OUTPUT_1 + index));
+                
+                // Create custom output port with dynamic tooltips
+                DistingNTOutputPort* outputPort = createOutputCentered<DistingNTOutputPort>(
+                    mm2px(Vec(x, y)), module, DistingNT::AUDIO_OUTPUT_1 + index);
+                if (module) {
+                    outputPort->distingModule = module;
+                    outputPort->outputIndex = index;
+                }
+                addOutput(outputPort);
             }
         }
     }
