@@ -82,9 +82,10 @@ struct DistingNT : Module {
     };
     
     enum OutputIds {
-        // 6 outputs (as per hardware specification)
+        // 8 outputs (as per hardware specification)
         AUDIO_OUTPUT_1, AUDIO_OUTPUT_2, AUDIO_OUTPUT_3, 
         AUDIO_OUTPUT_4, AUDIO_OUTPUT_5, AUDIO_OUTPUT_6,
+        AUDIO_OUTPUT_7, AUDIO_OUTPUT_8,
         
         NUM_OUTPUTS
     };
@@ -96,6 +97,7 @@ struct DistingNT : Module {
         INPUT_LIGHT_9, INPUT_LIGHT_10, INPUT_LIGHT_11, INPUT_LIGHT_12,
         OUTPUT_LIGHT_1, OUTPUT_LIGHT_2, OUTPUT_LIGHT_3, 
         OUTPUT_LIGHT_4, OUTPUT_LIGHT_5, OUTPUT_LIGHT_6,
+        OUTPUT_LIGHT_7, OUTPUT_LIGHT_8,
         MIDI_INPUT_LIGHT, MIDI_OUTPUT_LIGHT,
         NUM_LIGHTS
     };
@@ -242,8 +244,8 @@ struct DistingNT : Module {
             configInput(AUDIO_INPUT_1 + i, string::f("Input %d", i + 1));
         }
         
-        // Configure 6 outputs  
-        for (int i = 0; i < 6; i++) {
+        // Configure 8 outputs  
+        for (int i = 0; i < 8; i++) {
             configOutput(AUDIO_OUTPUT_1 + i, string::f("Output %d", i + 1));
         }
         
@@ -1364,7 +1366,8 @@ struct DistingNT : Module {
         processControls();
         
         // Sync routing matrix with plugin algorithm values if plugin is loaded
-        if (isPluginLoaded() && pluginAlgorithm) {
+        // Skip sync during menu mode to avoid conflicts with parameter editing
+        if (isPluginLoaded() && pluginAlgorithm && menuMode == MENU_OFF) {
             for (size_t i = 0; i < parameters.size() && i < routingMatrix.size(); i++) {
                 routingMatrix[i] = pluginAlgorithm->v[i];
             }
@@ -2163,9 +2166,9 @@ struct DistingNTWidget : ModuleWidget {
             }
         }
 
-        // 6 Outputs (3 rows of 2) - balanced margins
+        // 8 Outputs (4 rows of 2) - balanced margins
         float outputStartX = 55.0;  // Balanced positioning
-        for (int row = 0; row < 3; row++) {
+        for (int row = 0; row < 4; row++) {
             for (int col = 0; col < 2; col++) {
                 int index = row * 2 + col;
                 float x = outputStartX + col * jackSpacing;

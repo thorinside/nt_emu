@@ -6,9 +6,9 @@
    version="1.1"
    xmlns="http://www.w3.org/2000/svg">
   
-  <!-- Panel Background -->
+  <!-- Panel Background - Dark Blue -->
   <rect
-     style="fill:#3A3A3F;stroke-width:0.264583"
+     style="fill:#1A365D;stroke-width:0.264583"
      width="71.12"
      height="128.5"
      x="0"
@@ -20,10 +20,6 @@
   <circle cx="7.62" cy="125.5" r="1.6" fill="#C0C0C0" stroke="#808080" stroke-width="0.1"/>
   <circle cx="63.5" cy="125.5" r="1.6" fill="#C0C0C0" stroke="#808080" stroke-width="0.1"/>
   
-  <!-- Lightning Bolt Logo at top center -->
-  <g transform="translate(35.56, 8.0)">
-    <path d="M-2,-3 L1,-1 L-1,0 L2,3 L-1,1 L1,0 Z" fill="#00FFFF" stroke="#00FFFF" stroke-width="0.1"/>
-  </g>
   
   <!-- OLED Display Area (larger) -->
   <rect
@@ -35,17 +31,51 @@
      stroke="#404040" 
      stroke-width="0.2" />
   
-  <!-- Brand Text (Cyan) -->
-  <text x="35.56" y="26.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="2.5" fill="#00FFFF">expert sleepers</text>
-  <text x="35.56" y="28.5" text-anchor="middle" font-family="Arial, sans-serif" font-size="2.5" fill="#00FFFF">disting NT</text>
+  <!-- Module Name - nt_emu (as paths) -->
+  <g fill="#E2E8F0">
+    <!-- n -->
+    <rect x="25" y="22" width="1.5" height="6"/>
+    <rect x="25" y="22" width="4" height="1.5"/>
+    <rect x="27.5" y="22" width="1.5" height="6"/>
+    
+    <!-- t -->
+    <rect x="31" y="20" width="1.5" height="8"/>
+    <rect x="29.5" y="24" width="4" height="1.5"/>
+    
+    <!-- _ -->
+    <rect x="36" y="27" width="4" height="1"/>
+    
+    <!-- e -->
+    <rect x="42" y="22" width="4" height="1.5"/>
+    <rect x="42" y="22" width="1.5" height="6"/>
+    <rect x="42" y="24.5" width="3" height="1"/>
+    <rect x="42" y="26.5" width="4" height="1.5"/>
+    
+    <!-- m -->
+    <rect x="48" y="22" width="1.5" height="6"/>
+    <rect x="48" y="22" width="2" height="1.5"/>
+    <rect x="50" y="22" width="1.5" height="6"/>
+    <rect x="50" y="22" width="2" height="1.5"/>
+    <rect x="52" y="22" width="1.5" height="6"/>
+    
+    <!-- u -->
+    <rect x="55" y="22" width="1.5" height="5"/>
+    <rect x="55" y="26" width="4" height="1.5"/>
+    <rect x="57.5" y="22" width="1.5" height="5"/>
+  </g>
   
-  <!-- Version text -->
-  <text x="10.0" y="18.0" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">v1.0.0</text>
+  <!-- Version text - simplified -->
+  <g fill="#CBD5E0" transform="translate(10.0, 18.0)">
+    <path d="M0,-1 L1,1 L2,-1 L3,-1 L2,1 L4,1 L4,0 L6,0 L6,1 L7,1 L7,0 L8,0 L8,1 L9,1"/>
+  </g>
   
   <!-- USB-C Socket (left edge) - much smaller -->
   <rect x="3.0" y="37.0" width="4.0" height="6.0" fill="#2A2A2A" stroke="#404040" stroke-width="0.1"/>
   <rect x="3.2" y="38.0" width="3.6" height="4.0" fill="#1A1A1A"/>
-  <text x="5.0" y="46.0" font-family="Arial, sans-serif" font-size="1.0" fill="#808080" text-anchor="middle">USB</text>
+  <!-- USB label as path -->
+  <g fill="#CBD5E0" transform="translate(5.0, 46.0)">
+    <path d="M-1.5,-0.5 L-1.5,0.5 L-1,0.5 L-1,0 L-0.5,0 L-0.5,0.5 L0,0.5 L0,-0.5 Z M0.5,-0.5 L0.5,0.5 L1,0.5 L1,0 L1.5,0 L1.5,-0.5 Z"/>
+  </g>
   
   <!-- Pot Center Markers (Large knobs - 3/4 radius) -->
   <circle cx="17.78" cy="35.0" r="0.6" fill="#808080" opacity="0.3"/>
@@ -61,6 +91,11 @@
   <circle cx="14.5" cy="56.0" r="0.1" fill="#606060" opacity="0.4"/>
   <circle cx="56.5" cy="48.0" r="0.1" fill="#606060" opacity="0.4"/>
   <circle cx="56.5" cy="56.0" r="0.1" fill="#606060" opacity="0.4"/>
+  
+  <!-- Input Row Background Strips (white with opacity) -->
+  <rect x="5" y="68" width="40" height="5" fill="#FFFFFF" opacity="0.1" rx="0.5"/>
+  <rect x="5" y="78" width="40" height="5" fill="#FFFFFF" opacity="0.1" rx="0.5"/>
+  <rect x="5" y="88" width="40" height="5" fill="#FFFFFF" opacity="0.1" rx="0.5"/>
   
   <!-- Input Jack Centers (3 rows x 4 columns) - balanced margins -->
   <!-- Row 1 (Inputs 1-4) -->
@@ -81,7 +116,7 @@
   <circle cx="28.0" cy="90.0" r="0.4" fill="#606060" opacity="0.5"/>
   <circle cx="37.0" cy="90.0" r="0.4" fill="#606060" opacity="0.5"/>
   
-  <!-- Output Jack Centers (3 rows x 2 columns) - balanced margins -->
+  <!-- Output Jack Centers (4 rows x 2 columns) - balanced margins -->
   <!-- Row 1 (Outputs 1-2) -->
   <circle cx="55.0" cy="70.0" r="0.4" fill="#606060" opacity="0.5"/>
   <circle cx="64.0" cy="70.0" r="0.4" fill="#606060" opacity="0.5"/>
@@ -94,34 +129,200 @@
   <circle cx="55.0" cy="90.0" r="0.4" fill="#606060" opacity="0.5"/>
   <circle cx="64.0" cy="90.0" r="0.4" fill="#606060" opacity="0.5"/>
   
-  <!-- Input Labels (1-12) - balanced margins -->
-  <text x="10.0" y="67.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">1</text>
-  <text x="19.0" y="67.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">2</text>
-  <text x="28.0" y="67.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">3</text>
-  <text x="37.0" y="67.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">4</text>
+  <!-- Row 4 (Outputs 7-8) - NEW -->
+  <circle cx="55.0" cy="100.0" r="0.4" fill="#606060" opacity="0.5"/>
+  <circle cx="64.0" cy="100.0" r="0.4" fill="#606060" opacity="0.5"/>
   
-  <text x="10.0" y="77.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">5</text>
-  <text x="19.0" y="77.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">6</text>
-  <text x="28.0" y="77.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">7</text>
-  <text x="37.0" y="77.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">8</text>
+  <!-- Input Labels (1-12) as simple rectangles -->
+  <g fill="#E2E8F0">
+    <!-- Row 1 -->
+    <!-- 1 --> <rect x="9.5" y="65.5" width="1" height="3"/>
+    <!-- 2 --> 
+    <rect x="18.5" y="65.5" width="1.5" height="0.5"/>
+    <rect x="19.5" y="66" width="0.5" height="1"/>
+    <rect x="18.5" y="67" width="1.5" height="0.5"/>
+    <rect x="18.5" y="67.5" width="0.5" height="1"/>
+    <rect x="18.5" y="68" width="1.5" height="0.5"/>
+    <!-- 3 -->
+    <rect x="27.5" y="65.5" width="1.5" height="0.5"/>
+    <rect x="27.5" y="66.5" width="1.5" height="0.5"/>
+    <rect x="29" y="65.5" width="0.5" height="1.5"/>
+    <rect x="27.5" y="68" width="1.5" height="0.5"/>
+    <!-- 4 -->
+    <rect x="36" y="65.5" width="0.5" height="1.5"/>
+    <rect x="37" y="65.5" width="0.5" height="3"/>
+    <rect x="36" y="67" width="1.5" height="0.5"/>
+    
+    <!-- Row 2 -->
+    <!-- 5 -->
+    <rect x="9.5" y="75.5" width="1.5" height="0.5"/>
+    <rect x="9.5" y="75.5" width="0.5" height="1.5"/>
+    <rect x="9.5" y="77" width="1.5" height="0.5"/>
+    <rect x="10.5" y="77" width="0.5" height="1.5"/>
+    <rect x="9.5" y="78" width="1.5" height="0.5"/>
+    <!-- 6 -->
+    <rect x="18.5" y="75.5" width="1.5" height="0.5"/>
+    <rect x="18.5" y="75.5" width="0.5" height="3"/>
+    <rect x="18.5" y="77" width="1.5" height="0.5"/>
+    <rect x="19.5" y="77" width="0.5" height="1.5"/>
+    <rect x="18.5" y="78" width="1.5" height="0.5"/>
+    <!-- 7 -->
+    <rect x="27.5" y="75.5" width="1.5" height="0.5"/>
+    <rect x="29" y="76" width="0.5" height="2.5"/>
+    <!-- 8 -->
+    <rect x="36.5" y="75.5" width="1" height="0.5"/>
+    <rect x="36.5" y="77" width="1" height="0.5"/>
+    <rect x="36.5" y="78" width="1" height="0.5"/>
+    <rect x="36.5" y="75.5" width="0.5" height="1.5"/>
+    <rect x="37" y="75.5" width="0.5" height="1.5"/>
+    <rect x="36.5" y="77.5" width="0.5" height="1"/>
+    <rect x="37" y="77.5" width="0.5" height="1"/>
+    
+    <!-- Row 3 -->
+    <!-- 9 -->
+    <rect x="9.5" y="85.5" width="1.5" height="0.5"/>
+    <rect x="9.5" y="85.5" width="0.5" height="1.5"/>
+    <rect x="9.5" y="87" width="1.5" height="0.5"/>
+    <rect x="10.5" y="85.5" width="0.5" height="3"/>
+    <rect x="9.5" y="88" width="1.5" height="0.5"/>
+    <!-- 10 -->
+    <rect x="18.5" y="85.5" width="0.5" height="3"/>
+    <rect x="20" y="85.5" width="1" height="0.5"/>
+    <rect x="20" y="85.5" width="0.5" height="3"/>
+    <rect x="20.5" y="85.5" width="0.5" height="3"/>
+    <rect x="20" y="88" width="1" height="0.5"/>
+    <!-- 11 -->
+    <rect x="27.5" y="85.5" width="0.5" height="3"/>
+    <rect x="29" y="85.5" width="0.5" height="3"/>
+    <!-- 12 -->
+    <rect x="36.5" y="85.5" width="0.5" height="3"/>
+    <rect x="38.5" y="85.5" width="1" height="0.5"/>
+    <rect x="39" y="86" width="0.5" height="1"/>
+    <rect x="38.5" y="87" width="1" height="0.5"/>
+    <rect x="38.5" y="87.5" width="0.5" height="1"/>
+    <rect x="38.5" y="88" width="1" height="0.5"/>
+  </g>
   
-  <text x="10.0" y="87.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">9</text>
-  <text x="19.0" y="87.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">10</text>
-  <text x="28.0" y="87.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">11</text>
-  <text x="37.0" y="87.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">12</text>
+  <!-- Output Labels (1-8) as simple rectangles -->
+  <g fill="#E2E8F0">
+    <!-- Row 1 -->
+    <!-- 1 --> <rect x="54.5" y="65.5" width="1" height="3"/>
+    <!-- 2 --> 
+    <rect x="63.5" y="65.5" width="1.5" height="0.5"/>
+    <rect x="64.5" y="66" width="0.5" height="1"/>
+    <rect x="63.5" y="67" width="1.5" height="0.5"/>
+    <rect x="63.5" y="67.5" width="0.5" height="1"/>
+    <rect x="63.5" y="68" width="1.5" height="0.5"/>
+    
+    <!-- Row 2 -->
+    <!-- 3 -->
+    <rect x="54.5" y="75.5" width="1.5" height="0.5"/>
+    <rect x="54.5" y="76.5" width="1.5" height="0.5"/>
+    <rect x="55.5" y="75.5" width="0.5" height="1.5"/>
+    <rect x="54.5" y="78" width="1.5" height="0.5"/>
+    <!-- 4 -->
+    <rect x="63.5" y="75.5" width="0.5" height="1.5"/>
+    <rect x="64.5" y="75.5" width="0.5" height="3"/>
+    <rect x="63.5" y="77" width="1.5" height="0.5"/>
+    
+    <!-- Row 3 -->
+    <!-- 5 -->
+    <rect x="54.5" y="85.5" width="1.5" height="0.5"/>
+    <rect x="54.5" y="85.5" width="0.5" height="1.5"/>
+    <rect x="54.5" y="87" width="1.5" height="0.5"/>
+    <rect x="55.5" y="87" width="0.5" height="1.5"/>
+    <rect x="54.5" y="88" width="1.5" height="0.5"/>
+    <!-- 6 -->
+    <rect x="63.5" y="85.5" width="1.5" height="0.5"/>
+    <rect x="63.5" y="85.5" width="0.5" height="3"/>
+    <rect x="63.5" y="87" width="1.5" height="0.5"/>
+    <rect x="64.5" y="87" width="0.5" height="1.5"/>
+    <rect x="63.5" y="88" width="1.5" height="0.5"/>
+    
+    <!-- Row 4 (NEW) -->
+    <!-- 7 -->
+    <rect x="54.5" y="95.5" width="1.5" height="0.5"/>
+    <rect x="55.5" y="96" width="0.5" height="2.5"/>
+    <!-- 8 -->
+    <rect x="63.5" y="95.5" width="1" height="0.5"/>
+    <rect x="63.5" y="97" width="1" height="0.5"/>
+    <rect x="63.5" y="98" width="1" height="0.5"/>
+    <rect x="63.5" y="95.5" width="0.5" height="1.5"/>
+    <rect x="64" y="95.5" width="0.5" height="1.5"/>
+    <rect x="63.5" y="97.5" width="0.5" height="1"/>
+    <rect x="64" y="97.5" width="0.5" height="1"/>
+  </g>
   
-  <!-- Output Labels (1-6) - balanced margins -->
-  <text x="55.0" y="67.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">1</text>
-  <text x="64.0" y="67.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">2</text>
-  
-  <text x="55.0" y="77.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">3</text>
-  <text x="64.0" y="77.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">4</text>
-  
-  <text x="55.0" y="87.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">5</text>
-  <text x="64.0" y="87.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="1.8" fill="#CCCCCC">6</text>
-  
-  <!-- Bottom Branding -->
-  <text x="35.56" y="110.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="2.0" fill="#808080">expert sleepers</text>
-  <text x="35.56" y="115.0" text-anchor="middle" font-family="Arial, sans-serif" font-size="2.0" fill="#808080">disting NT</text>
+  <!-- Bottom Branding - No Such Device (as paths) -->
+  <g fill="#CBD5E0">
+    <!-- No Such Device -->
+    <!-- N -->
+    <rect x="6" y="116" width="1" height="4"/>
+    <rect x="6" y="116" width="3" height="1"/>
+    <rect x="8" y="116" width="1" height="4"/>
+    
+    <!-- o -->
+    <rect x="11" y="116" width="2" height="1"/>
+    <rect x="11" y="116" width="1" height="4"/>
+    <rect x="12" y="119" width="2" height="1"/>
+    <rect x="13" y="116" width="1" height="4"/>
+    
+    <!-- S -->
+    <rect x="16" y="116" width="2" height="1"/>
+    <rect x="16" y="116" width="1" height="2"/>
+    <rect x="16" y="117.5" width="2" height="1"/>
+    <rect x="17" y="117.5" width="1" height="2"/>
+    <rect x="16" y="119" width="2" height="1"/>
+    
+    <!-- u -->
+    <rect x="20" y="116" width="1" height="3"/>
+    <rect x="20" y="119" width="2" height="1"/>
+    <rect x="22" y="116" width="1" height="3"/>
+    
+    <!-- c -->
+    <rect x="25" y="116" width="2" height="1"/>
+    <rect x="25" y="116" width="1" height="4"/>
+    <rect x="25" y="119" width="2" height="1"/>
+    
+    <!-- h -->
+    <rect x="29" y="115" width="1" height="5"/>
+    <rect x="29" y="117" width="2" height="1"/>
+    <rect x="31" y="117" width="1" height="3"/>
+    
+    <!-- D -->
+    <rect x="35" y="116" width="1" height="4"/>
+    <rect x="35" y="116" width="2" height="1"/>
+    <rect x="37" y="116" width="1" height="2"/>
+    <rect x="36" y="118" width="1" height="1"/>
+    <rect x="35" y="119" width="2" height="1"/>
+    
+    <!-- e -->
+    <rect x="40" y="116" width="2" height="1"/>
+    <rect x="40" y="116" width="1" height="4"/>
+    <rect x="40" y="117.5" width="2" height="1"/>
+    <rect x="40" y="119" width="2" height="1"/>
+    
+    <!-- v -->
+    <rect x="44" y="116" width="1" height="2"/>
+    <rect x="45" y="118" width="1" height="1"/>
+    <rect x="46" y="119" width="1" height="1"/>
+    <rect x="47" y="118" width="1" height="1"/>
+    <rect x="48" y="116" width="1" height="2"/>
+    
+    <!-- i -->
+    <rect x="51" y="114.5" width="1" height="1"/>
+    <rect x="51" y="116" width="1" height="4"/>
+    
+    <!-- c -->
+    <rect x="54" y="116" width="2" height="1"/>
+    <rect x="54" y="116" width="1" height="4"/>
+    <rect x="54" y="119" width="2" height="1"/>
+    
+    <!-- e -->
+    <rect x="58" y="116" width="2" height="1"/>
+    <rect x="58" y="116" width="1" height="4"/>
+    <rect x="58" y="117.5" width="2" height="1"/>
+    <rect x="58" y="119" width="2" height="1"/>
+  </g>
   
 </svg>
