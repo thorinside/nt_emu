@@ -1065,16 +1065,31 @@ struct DistingNT : Module {
         }
     }
     
+    bool isRoutingParameter(const _NT_parameter& param) {
+        return param.unit == kNT_unitAudioInput || 
+               param.unit == kNT_unitCvInput ||
+               param.unit == kNT_unitAudioOutput || 
+               param.unit == kNT_unitCvOutput ||
+               param.unit == kNT_unitOutputMode;
+    }
+    
     void setParameterValue(int paramIdx, int value) {
         if (paramIdx >= 0 && paramIdx < parameters.size()) {
             const _NT_parameter& param = parameters[paramIdx];
             value = clamp(value, (int)param.min, (int)param.max);
             if (routingMatrix[paramIdx] != value) {
                 routingMatrix[paramIdx] = value;
+                
                 // Notify plugin of parameter change
                 if (pluginFactory && pluginFactory->parameterChanged) {
                     pluginFactory->parameterChanged(pluginAlgorithm, paramIdx);
                 }
+                
+                // Update routing immediately for routing parameters
+                if (isRoutingParameter(param)) {
+                    updateParameterRouting();
+                }
+                
                 displayDirty = true;
             }
         }
@@ -1251,6 +1266,11 @@ struct DistingNT : Module {
     
     void applyCustomOutputRouting() {
         // Apply output routing based on parameter settings
+        static int debugCount = 0;
+        if (debugCount++ < 20) {
+            INFO("CUSTOM ROUTING: applyCustomOutputRouting called, parameters.size()=%zu", parameters.size());
+        }
+        
         int currentSample = busSystem.getCurrentSampleIndex();
         
         // Clear outputs first
@@ -1258,42 +1278,50 @@ struct DistingNT : Module {
             outputs[i].setVoltage(0.0f);
         }
         
-        // Route outputs based on parameter mapping
-        for (const auto& [paramIdx, routing] : paramOutputRouting) {
-            // Get the current bus assignment from the parameter value
-            int sourceBus = routingMatrix[paramIdx] - 1; // Convert to 0-based
-            if (sourceBus < 0 || sourceBus >= 28) continue;
+        // Simple approach: scan all parameters for output routing
+        for (size_t paramIdx = 0; paramIdx < parameters.size(); paramIdx++) {
+            const _NT_parameter& param = parameters[paramIdx];
             
-            // Parse parameter name to determine which VCV output this controls
-            // Example: "Output 1" -> VCV output 0, "Output 2" -> VCV output 1, etc.
-            const std::string& paramName = parameters[paramIdx].name;
-            int vcvOutput = -1;
-            
-            // Try to extract output number from parameter name
-            if (sscanf(paramName.c_str(), "Output %d", &vcvOutput) == 1) {
-                vcvOutput--; // Convert to 0-based
-            } else if (sscanf(paramName.c_str(), "Out %d", &vcvOutput) == 1) {
-                vcvOutput--; // Convert to 0-based
-            } else if (strcmp(paramName.c_str(), "Output") == 0) {
-                // Simple "Output" parameter maps to first output
-                vcvOutput = 0;
+            // Only process output routing parameters
+            if (param.unit != kNT_unitAudioOutput && param.unit != kNT_unitCvOutput) {
+                continue;
             }
             
+            int paramValue = routingMatrix[paramIdx];
+            
+            // Skip if parameter is set to "None" (value 0)
+            if (paramValue == 0) continue;
+            
+            // Map parameter value to VCV output index
+            // "Output 1" (value 13) -> VCV output 0
+            // "Output 2" (value 14) -> VCV output 1
+            // etc.
+            int vcvOutput = -1;
+            if (paramValue >= 13 && paramValue <= 20) {
+                vcvOutput = paramValue - 13;  // Simple: 13->0, 14->1, 15->2, etc.
+            }
+            
+            // The source bus should be the bus where the plugin algorithm 
+            // stores the processed audio for this output
+            // Since the parameter VALUE tells us which output bus to route from,
+            // we use that as the source bus (converted to 0-based)
+            int sourceBus = paramValue - 1;  // Convert parameter value to 0-based bus index
+            
             // Route the bus to the VCV output
-            if (vcvOutput >= 0 && vcvOutput < NUM_OUTPUTS) {
+            if (vcvOutput >= 0 && vcvOutput < NUM_OUTPUTS && sourceBus < 28) {
                 float busValue = busSystem.getBus(sourceBus, currentSample);
                 
                 // Check if this output has an output mode parameter (add vs replace)
                 bool replace = true;  // Default to replace mode
-                if (routing.hasOutputMode && routing.outputModeParamIndex < (int)routingMatrix.size()) {
-                    replace = routingMatrix[routing.outputModeParamIndex] > 0;
+                if (paramIdx + 1 < parameters.size() && parameters[paramIdx + 1].unit == kNT_unitOutputMode) {
+                    replace = routingMatrix[paramIdx + 1] > 0;
                 }
                 
                 // Debug output
                 static int debugCount = 0;
-                if (debugCount++ < 10) {
-                    INFO("Routing bus %d (value=%.3f) to VCV output %d (replace=%d)", 
-                         sourceBus, busValue, vcvOutput, replace);
+                if (debugCount++ < 50) {  // More debug messages
+                    INFO("Output routing: param[%d]='%s' value=%d -> VCV output %d (sourceBus=%d, busValue=%.3f)", 
+                         paramIdx, parameters[paramIdx].name, paramValue, vcvOutput, sourceBus, busValue);
                 }
                 
                 if (replace) {
@@ -1399,10 +1427,27 @@ struct DistingNT : Module {
             sampleCounter = 0;
         }
         
+        // Add basic debugging every time
+        static int routingDebugCount = 0;
+        if (routingDebugCount++ < 100) {
+            INFO("ROUTING DEBUG: isPluginLoaded()=%d, parameters.size()=%zu", 
+                 isPluginLoaded(), parameters.size());
+        }
+        
         // Apply custom output routing if plugin is loaded, otherwise use default routing
         if (isPluginLoaded() && !parameters.empty()) {
+            static int customRoutingCount = 0;
+            if (customRoutingCount++ < 10) {
+                INFO("Using CUSTOM routing");
+            }
             applyCustomOutputRouting();
         } else {
+            // Debug why we're using default routing
+            static int fallbackDebugCount = 0;
+            if (fallbackDebugCount++ < 10) {
+                INFO("Using DEFAULT routing: isPluginLoaded()=%d, parameters.size()=%zu", 
+                     isPluginLoaded(), parameters.size());
+            }
             // Route buses to outputs (default behavior)
             busSystem.routeOutputs(this);
         }
