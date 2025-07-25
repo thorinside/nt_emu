@@ -10,3 +10,5 @@ wheels/
 .venv
 
 .env
+
+vcv-plugin/plugin.dylib
