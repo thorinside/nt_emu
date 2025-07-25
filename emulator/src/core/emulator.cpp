@@ -255,7 +255,8 @@ void Emulator::updateDisplayInternal() {
     }
     
     auto* algorithm = plugin_loader_->getAlgorithm();
-    if (!algorithm || !algorithm->draw) {
+    auto* factory = plugin_loader_->getFactory();
+    if (!algorithm || !factory || !factory->draw) {
         return;
     }
     
@@ -264,7 +265,7 @@ void Emulator::updateDisplayInternal() {
     
     // Let plugin draw to the display
     try {
-        algorithm->draw(algorithm);
+        factory->draw(algorithm);
         
         // Update our display from API state
         display_->updateFromApiState();
@@ -279,16 +280,14 @@ void Emulator::onParameterChange(int parameter, float value) {
     }
     
     auto* algorithm = plugin_loader_->getAlgorithm();
-    if (!algorithm || !algorithm->setParameterValue) {
+    if (!algorithm) {
         return;
     }
     
-    // Set parameter value in plugin
-    _NT_parameterValue param_value;
-    param_value.asFloat = value;
-    
+    // Set parameter value using API function
     try {
-        algorithm->setParameterValue(algorithm, parameter, param_value);
+        int16_t int_value = (int16_t)value;
+        NT_setParameterFromUi(NT_algorithmIndex(algorithm), parameter + NT_parameterOffset(), int_value);
         std::cout << "Parameter " << parameter << " set to " << value << std::endl;
     } catch (...) {
         std::cerr << "Error setting parameter " << parameter << std::endl;

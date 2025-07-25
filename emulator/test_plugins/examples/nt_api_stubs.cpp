@@ -1,4 +1,5 @@
 #include <distingnt/api.h>
+#include <distingnt/serialisation.h>
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
@@ -77,3 +78,30 @@ extern "C" {
         (void)algorithmIndex; (void)parameter; (void)value; 
     }
 }
+
+// JSON stub implementations for testing
+_NT_jsonStream::_NT_jsonStream(void* refcon) : refCon(refcon) {}
+_NT_jsonStream::~_NT_jsonStream() {}
+void _NT_jsonStream::openArray() {}
+void _NT_jsonStream::closeArray() {}
+void _NT_jsonStream::openObject() {}
+void _NT_jsonStream::closeObject() {}
+void _NT_jsonStream::addMemberName(const char* name) { (void)name; }
+void _NT_jsonStream::addNumber(int value) { (void)value; }
+void _NT_jsonStream::addNumber(float value) { (void)value; }
+void _NT_jsonStream::addString(const char* str) { (void)str; }
+void _NT_jsonStream::addFourCC(uint32_t fourcc) { (void)fourcc; }
+void _NT_jsonStream::addBoolean(bool value) { (void)value; }
+void _NT_jsonStream::addNull() {}
+
+_NT_jsonParse::_NT_jsonParse(void* refcon, int idx) : refCon(refcon), i(idx) {}
+_NT_jsonParse::~_NT_jsonParse() {}
+bool _NT_jsonParse::numberOfObjectMembers(int& count) { count = 0; return true; }
+bool _NT_jsonParse::numberOfArrayElements(int& count) { count = 0; return true; }
+bool _NT_jsonParse::matchName(const char* name) { (void)name; return false; }
+bool _NT_jsonParse::number(int& value) { value = 0; return true; }
+bool _NT_jsonParse::number(float& value) { value = 0.0f; return true; }
+bool _NT_jsonParse::string(const char*& str) { str = ""; return true; }
+bool _NT_jsonParse::boolean(bool& value) { value = false; return true; }
+bool _NT_jsonParse::null() { return true; }
+bool _NT_jsonParse::skipMember() { return true; }

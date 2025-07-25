@@ -11,10 +11,20 @@ PLUGINS = gain.dylib gainCustomUI.dylib gainMultichannel.dylib flexSeqSwitch.dyl
 # Default target builds all plugins
 all: $(PLUGINS)
 
-# Pattern rule for building plugins
-%.dylib: %.cpp nt_api_stubs.cpp
+# Pattern rule for building plugins (runtime symbol resolution)
+%.dylib: %.cpp
 	@echo "Building $@..."
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $< -undefined dynamic_lookup
+
+# Target for standalone testing with stubs (when emulator not available)
+%-standalone.dylib: %.cpp nt_api_stubs.cpp
+	@echo "Building $@ (standalone with stubs)..."
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $< nt_api_stubs.cpp
+
+# Legacy rule kept for compatibility  
+gainCustomUI-nostubs.dylib: gainCustomUI.cpp
+	@echo "Building $@ (without API stubs for VCV plugin)..."
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $< -undefined dynamic_lookup
 
 # Clean target
 clean:

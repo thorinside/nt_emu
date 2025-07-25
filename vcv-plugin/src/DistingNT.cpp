@@ -4,10 +4,296 @@
 #include "EmulatorCore.hpp"
 #include "EncoderParamQuantity.hpp"
 #include "InfiniteEncoder.hpp"
+#include "nt_api_interface.h"
+// #include "../../emulator/src/core/api_shim.h" // Removed due to memory corruption
 #include <componentlibrary.hpp>
 #include <osdialog.h>
 #include <map>
 #include <cstring>
+
+// NT_screen buffer definition for the VCV plugin
+__attribute__((visibility("default"))) uint8_t NT_screen[128 * 64];
+
+// NT_globals structure for the VCV plugin
+static _NT_globals vcv_nt_globals = {
+    .sampleRate = 48000,
+    .maxFramesPerStep = 256,
+    .workBuffer = nullptr,
+    .workBufferSizeBytes = 0
+};
+
+__attribute__((visibility("default"))) const _NT_globals NT_globals = vcv_nt_globals;
+
+// Simple C API wrapper functions for plugins to use (minimal implementation)
+// External API provider function
+extern "C" const NT_API_Interface* getNT_API(void);
+
+extern "C" {
+    // Simple 5x7 font bitmap data for basic characters
+    static const uint8_t font5x7[128][7] = {
+        // Space (32)
+        [' '] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+        // Letters
+        ['T'] = {0x7C, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10},
+        ['u'] = {0x00, 0x00, 0x44, 0x44, 0x44, 0x4C, 0x34},
+        ['r'] = {0x00, 0x00, 0x58, 0x64, 0x40, 0x40, 0x40},
+        ['n'] = {0x00, 0x00, 0x58, 0x64, 0x44, 0x44, 0x44},
+        ['c'] = {0x00, 0x00, 0x38, 0x44, 0x40, 0x44, 0x38},
+        ['e'] = {0x00, 0x00, 0x38, 0x44, 0x78, 0x40, 0x38},
+        ['t'] = {0x00, 0x10, 0x7C, 0x10, 0x10, 0x14, 0x08},
+        ['o'] = {0x00, 0x00, 0x38, 0x44, 0x44, 0x44, 0x38},
+        ['p'] = {0x00, 0x00, 0x78, 0x44, 0x78, 0x40, 0x40},
+        ['f'] = {0x00, 0x0C, 0x10, 0x7C, 0x10, 0x10, 0x10},
+        ['g'] = {0x00, 0x00, 0x3C, 0x44, 0x3C, 0x04, 0x38},
+        ['a'] = {0x00, 0x00, 0x38, 0x04, 0x3C, 0x44, 0x3C},
+        ['i'] = {0x00, 0x10, 0x00, 0x30, 0x10, 0x10, 0x38},
+        // Default for unknown characters
+        [0] = {0x7E, 0x42, 0x42, 0x42, 0x42, 0x42, 0x7E}
+    };
+
+    __attribute__((visibility("default"))) void NT_drawText(int x, int y, const char* str, int colour, _NT_textAlignment align, _NT_textSize size) {
+        static int callCount = 0;
+        if (callCount++ < 5) {
+            INFO("VCV NT_drawText called: '%s' at (%d,%d), call %d", str ? str : "NULL", x, y, callCount);
+        }
+        
+        if (!str || x < 0 || x >= 256 || y < 0 || y >= 64) return;
+        
+        int char_width = 6;  // 5 pixels + 1 space
+        int char_height = 7;
+        
+        // Apply alignment
+        int text_width = strlen(str) * char_width;
+        int start_x = x;
+        if (align == kNT_textCentre) {
+            start_x = x - text_width / 2;
+        } else if (align == kNT_textRight) {
+            start_x = x - text_width;
+        }
+        
+        // Draw each character using bitmap font
+        for (int i = 0; str[i] && start_x + i * char_width < 256; i++) {
+            char c = str[i];
+            int char_x = start_x + i * char_width;
+            
+            // Get font data for this character
+            const uint8_t* font_data;
+            if (c >= 0 && c < 128 && font5x7[c][0] != 0) {
+                font_data = font5x7[c];
+            } else {
+                font_data = font5x7[0]; // Default character
+            }
+            
+            // Draw the character bitmap
+            for (int row = 0; row < char_height && y + row < 64; row++) {
+                uint8_t line_data = font_data[row];
+                for (int col = 0; col < 5 && char_x + col < 256; col++) {
+                    if (line_data & (0x40 >> col)) {  // Check bit (starting from bit 6)
+                        int pixel_x = char_x + col;
+                        int pixel_y = y + row;
+                        
+                        // Convert to NT_screen format (2 pixels per byte)
+                        int byte_x = pixel_x / 2;
+                        int row_offset = pixel_y * 128;
+                        
+                        if (byte_x < 128 && row_offset + byte_x < 128 * 64) {
+                            if (pixel_x % 2 == 0) {
+                                // Left pixel (lower 4 bits)
+                                NT_screen[row_offset + byte_x] = (NT_screen[row_offset + byte_x] & 0xF0) | (colour & 0x0F);
+                            } else {
+                                // Right pixel (upper 4 bits)  
+                                NT_screen[row_offset + byte_x] = (NT_screen[row_offset + byte_x] & 0x0F) | ((colour & 0x0F) << 4);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    __attribute__((visibility("default"))) void NT_drawShapeI(_NT_shape shape, int x0, int y0, int x1, int y1, int colour) {
+        // Simple shape drawing - just draw start and end points
+        if (x0 >= 0 && x0 < 256 && y0 >= 0 && y0 < 64) {
+            int byte_x = x0 / 2;
+            int row_offset = y0 * 128;
+            if (byte_x < 128 && row_offset + byte_x < 128 * 64) {
+                NT_screen[row_offset + byte_x] = colour & 0xff;
+            }
+        }
+    }
+    
+    __attribute__((visibility("default"))) void NT_drawShapeF(_NT_shape shape, float x0, float y0, float x1, float y1, float colour) {
+        NT_drawShapeI(shape, (int)x0, (int)y0, (int)x1, (int)y1, (int)colour);
+    }
+    
+    // Additional NT_* functions needed by plugins
+    __attribute__((visibility("default"))) int32_t NT_algorithmIndex(const _NT_algorithm* algorithm) {
+        // TODO: Implement proper algorithm index lookup
+        // For now, return 0 as we only support one algorithm at a time in VCV
+        return 0;
+    }
+    
+    __attribute__((visibility("default"))) uint32_t NT_parameterOffset(void) {
+        // TODO: Implement parameter offset for VCV parameter mapping
+        // For now, return 0 as VCV handles parameter indexing differently
+        return 0;
+    }
+    
+    __attribute__((visibility("default"))) void NT_setParameterFromUi(uint32_t algorithmIndex, uint32_t parameter, int16_t value) {
+        // TODO: Connect to VCV parameter system
+        // This should update VCV module parameters when plugins call this function
+        INFO("NT_setParameterFromUi called: alg=%d, param=%d, value=%d", algorithmIndex, parameter, value);
+    }
+    
+    __attribute__((visibility("default"))) void NT_setParameterFromAudio(uint32_t algorithmIndex, uint32_t parameter, int16_t value) {
+        // TODO: Connect to VCV parameter system  
+        // This should update VCV module parameters from audio thread
+        INFO("NT_setParameterFromAudio called: alg=%d, param=%d, value=%d", algorithmIndex, parameter, value);
+    }
+    
+    __attribute__((visibility("default"))) uint32_t NT_getCpuCycleCount(void) {
+        // Simple implementation for profiling - could use mach_absolute_time() on macOS
+        return 0;
+    }
+    
+    __attribute__((visibility("default"))) void NT_setParameterRange(_NT_parameter* ptr, float init, float min, float max, float step) {
+        if (!ptr) return;
+        
+        // Convert float ranges to int16_t
+        ptr->min = (int16_t)min;
+        ptr->max = (int16_t)max;
+        ptr->def = (int16_t)init;
+        
+        // Determine scaling based on step size
+        if (step >= 1.0f) {
+            ptr->scaling = kNT_scalingNone;
+        } else if (step >= 0.1f) {
+            ptr->scaling = kNT_scaling10;
+        } else if (step >= 0.01f) {
+            ptr->scaling = kNT_scaling100;
+        } else {
+            ptr->scaling = kNT_scaling1000;
+        }
+    }
+    
+    __attribute__((visibility("default"))) int NT_intToString(char* buffer, int32_t value) {
+        if (!buffer) return 0;
+        return sprintf(buffer, "%d", value);
+    }
+    
+    __attribute__((visibility("default"))) int NT_floatToString(char* buffer, float value, int decimalPlaces) {
+        if (!buffer) return 0;
+        char format[16];
+        sprintf(format, "%%.%df", decimalPlaces);
+        return sprintf(buffer, format, value);
+    }
+    
+    // MIDI functions (stubs for now)
+    __attribute__((visibility("default"))) void NT_sendMidiByte(uint32_t destination, uint8_t b0) {
+        // TODO: Connect to VCV MIDI system
+    }
+    
+    __attribute__((visibility("default"))) void NT_sendMidi2ByteMessage(uint32_t destination, uint8_t b0, uint8_t b1) {
+        // TODO: Connect to VCV MIDI system
+    }
+    
+    __attribute__((visibility("default"))) void NT_sendMidi3ByteMessage(uint32_t destination, uint8_t b0, uint8_t b1, uint8_t b2) {
+        // TODO: Connect to VCV MIDI system
+    }
+    
+    __attribute__((visibility("default"))) void NT_sendMidiSysEx(uint32_t destination, const uint8_t* data, uint32_t count, bool end) {
+        // TODO: Connect to VCV MIDI system
+    }
+}
+
+// Include the serialisation header to get class definitions
+#include "../../emulator/include/distingnt/serialisation.h"
+
+// Minimal stub implementations for JSON classes
+// These are needed by plugins that use serialisation but won't be called in VCV context
+extern "C" {
+    // _NT_jsonParse stub methods
+    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse10skipMemberEv() {
+        // _NT_jsonParse::skipMember() stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse21numberOfArrayElementsERi() {
+        // _NT_jsonParse::numberOfArrayElements(int&) stub  
+    }
+    
+    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse21numberOfObjectMembersERi() {
+        // _NT_jsonParse::numberOfObjectMembers(int&) stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse4nullEv() {
+        // _NT_jsonParse::null() stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse6numberERf() {
+        // _NT_jsonParse::number(float&) stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse6numberERi() {
+        // _NT_jsonParse::number(int&) stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse6stringERPKc() {
+        // _NT_jsonParse::string(const char*&) stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse7booleanERb() {
+        // _NT_jsonParse::boolean(bool&) stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse9matchNameEPKc() {
+        // _NT_jsonParse::matchName(const char*) stub
+    }
+    
+    // _NT_jsonStream stub methods
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10addBooleanEb() {
+        // _NT_jsonStream::addBoolean(bool) stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10closeArrayEv() {
+        // _NT_jsonStream::closeArray() stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10openObjectEv() {
+        // _NT_jsonStream::openObject() stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream11closeObjectEv() {
+        // _NT_jsonStream::closeObject() stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream13addMemberNameEPKc() {
+        // _NT_jsonStream::addMemberName(const char*) stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream7addNullEv() {
+        // _NT_jsonStream::addNull() stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addFourCCEj() {
+        // _NT_jsonStream::addFourCC(uint32_t) stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addNumberEf() {
+        // _NT_jsonStream::addNumber(float) stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addNumberEi() {
+        // _NT_jsonStream::addNumber(int) stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addStringEPKc() {
+        // _NT_jsonStream::addString(const char*) stub
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9openArrayEv() {
+        // _NT_jsonStream::openArray() stub
+    }
+}
 
 // For plugin loading
 #ifdef ARCH_WIN
@@ -345,7 +631,23 @@ struct DistingNT : Module {
             #ifdef ARCH_WIN
                 pluginHandle = LoadLibraryA(path.c_str());
             #else
-                pluginHandle = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
+                // First, ensure our own symbols are globally available
+                // Get path to our own plugin
+                Dl_info info;
+                if (dladdr((void*)&NT_screen, &info) && info.dli_fname) {
+                    INFO("Our plugin path: %s", info.dli_fname);
+                    // Reopen our own plugin with RTLD_GLOBAL to export symbols
+                    void* ourHandle = dlopen(info.dli_fname, RTLD_NOW | RTLD_GLOBAL);
+                    INFO("Reopened our plugin with RTLD_GLOBAL: %p", ourHandle);
+                } else {
+                    INFO("Could not determine our plugin path");
+                }
+                
+                // Check if we can find our own symbol now
+                void* testSymbol = dlsym(RTLD_DEFAULT, "_NT_screen");
+                INFO("Found _NT_screen symbol: %p", testSymbol);
+                
+                pluginHandle = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
             #endif
             
             if (!pluginHandle) {
@@ -353,10 +655,11 @@ struct DistingNT : Module {
                 #ifdef ARCH_WIN
                     error = "Windows error"; // GetLastError() formatting
                 #else
-                    error = dlerror() ? dlerror() : "Unknown error";
+                    const char* dlerr = dlerror();
+                    error = dlerr ? std::string(dlerr) : "Unknown error";
                 #endif
-                WARN("Failed to load plugin: %s", error.c_str());
-                loadingMessage = "Error: Failed to load plugin";
+                WARN("Failed to load plugin from path '%s': %s", path.c_str(), error.c_str());
+                loadingMessage = "Error: Failed to load plugin - " + error;
                 loadingMessageTimer = 4.0f;
                 return false;
             }
@@ -588,12 +891,34 @@ struct DistingNT : Module {
                 }
             }
             
+            // Try to set API interface for the loaded plugin (optional, for backward compatibility)
+            NT_setAPI_func setAPIFunc = nullptr;
+            #ifdef ARCH_WIN
+                setAPIFunc = (NT_setAPI_func)GetProcAddress((HMODULE)pluginHandle, "NT_setAPI");
+            #else
+                setAPIFunc = (NT_setAPI_func)dlsym(pluginHandle, "NT_setAPI");
+            #endif
+            
+            if (setAPIFunc) {
+                // Plugin supports new API interface
+                const NT_API_Interface* api = getNT_API();
+                setAPIFunc(api);
+                INFO("Plugin %s: API interface provided successfully", rack::system::getFilename(path).c_str());
+            } else {
+                // Plugin uses old direct symbol linking - this is still supported
+                INFO("Plugin %s: Using legacy direct symbol linking", rack::system::getFilename(path).c_str());
+            }
+            
             // Success
             pluginPath = path;
             std::string filename = rack::system::getFilename(path);
             loadingMessage = string::f("Loaded: %s", filename.c_str());
             loadingMessageTimer = 2.0f;
             displayDirty = true;
+            
+            // Debug: Verify draw function pointer after reload
+            INFO("Plugin loaded successfully: pluginFactory=%p, draw=%p", 
+                 pluginFactory, pluginFactory ? pluginFactory->draw : nullptr);
             
             // Extract parameter information - but only if algorithm is properly constructed
             if (pluginAlgorithm && pluginInstanceMemory) {
@@ -1771,9 +2096,41 @@ struct DistingNTOLEDWidget : FramebufferWidget {
                 // Try plugin drawing
                 bool pluginDrew = false;
                 if (distingModule->pluginFactory && distingModule->pluginFactory->draw) {
+                    static int drawCallCount = 0;
+                    if (drawCallCount++ < 5) {
+                        INFO("Calling plugin draw() function, attempt %d", drawCallCount);
+                    }
+                } else {
+                    static int failureCount = 0;
+                    if (failureCount++ < 5) {
+                        INFO("Cannot call plugin draw(): pluginFactory=%p, draw=%p", 
+                             distingModule->pluginFactory, 
+                             distingModule->pluginFactory ? distingModule->pluginFactory->draw : nullptr);
+                    }
+                }
+                
+                if (distingModule->pluginFactory && distingModule->pluginFactory->draw) {
+                    
                     distingModule->safeExecutePlugin([&]() {
                         pluginDrew = distingModule->pluginFactory->draw(distingModule->pluginAlgorithm);
+                        
+                        static int drawResultCount = 0;
+                        if (drawResultCount++ < 5) {
+                            INFO("Plugin draw() returned %s, attempt %d", pluginDrew ? "true" : "false", drawResultCount);
+                        }
                     }, "draw");
+                    
+                    // Always sync NT_screen buffer to VCV display after plugin draw call
+                    // This handles both direct NT_screen writes and NT_drawText/NT_drawShape calls
+                    VCVDisplayBuffer pluginBuffer;
+                    syncNTScreenToVCVBuffer(pluginBuffer);
+                    drawDisplayBuffer(args.vg, pluginBuffer);
+                    pluginDrew = true; // Plugin attempted to draw, show the results
+                    
+                    static int syncCount = 0;
+                    if (syncCount++ < 5) {
+                        INFO("Synced NT_screen to VCV display buffer, attempt %d", syncCount);
+                    }
                 }
                 
                 if (!pluginDrew) {
@@ -1823,6 +2180,34 @@ struct DistingNTOLEDWidget : FramebufferWidget {
         nvgText(args.vg, box.size.x / 2, box.size.y / 2, "OLED DISPLAY", nullptr);
     }
     
+    void syncNTScreenToVCVBuffer(VCVDisplayBuffer& buffer) {
+        // Convert NT_screen buffer (4-bit grayscale, 2 pixels per byte) to VCV display buffer (1-bit monochrome)
+        // NT_screen format: 128*64 bytes, each byte contains 2 pixels (high nibble = even x, low nibble = odd x)
+        // VCV format: 256*64 pixels, 1 bit per pixel
+        
+        buffer.clear();
+        
+        for (int y = 0; y < 64; y++) {
+            for (int x = 0; x < 256; x += 2) {
+                int byte_idx = y * 128 + x / 2;
+                uint8_t byte_val = NT_screen[byte_idx];
+                
+                // Extract high nibble (even x coordinate)
+                uint8_t pixel_even = (byte_val >> 4) & 0x0F;
+                // Extract low nibble (odd x coordinate)  
+                uint8_t pixel_odd = byte_val & 0x0F;
+                
+                // Convert 4-bit grayscale to 1-bit monochrome (threshold at 8)
+                if (pixel_even > 7) {
+                    buffer.setPixel(x, y, true);
+                }
+                if (x + 1 < 256 && pixel_odd > 7) {
+                    buffer.setPixel(x + 1, y, true);
+                }
+            }
+        }
+    }
+
     void drawDisplayBuffer(NVGcontext* vg, const VCVDisplayBuffer& buffer) {
         // Draw the display buffer pixel by pixel
         nvgFillColor(vg, nvgRGB(255, 255, 255));

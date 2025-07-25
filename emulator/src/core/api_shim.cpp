@@ -7,6 +7,9 @@
 
 ApiState ApiShim::state_;
 
+// NT_screen buffer as per API specification - definition (not declaration)
+uint8_t NT_screen[128 * 64];
+
 extern "C" {
     void NT_parameterChanged(unsigned int parameterIndex) {
         ApiShim::parameterChanged(parameterIndex);
@@ -40,16 +43,16 @@ extern "C" {
         return ApiShim::parameterIsLocked(parameterIndex);
     }
     
-    void NT_drawText(int x, int y, const char* text, enum _NT_textSize size, enum _NT_textAlign align) {
-        ApiShim::drawText(x, y, text, size, align);
+    void NT_drawText(int x, int y, const char* str, int colour, _NT_textAlignment align, _NT_textSize size) {
+        ApiShim::drawText(x, y, str, colour, align, size);
     }
     
-    void NT_drawShapeI(enum _NT_shape shape, int x, int y, int w, int h) {
-        ApiShim::drawShapeI(shape, x, y, w, h);
+    void NT_drawShapeI(_NT_shape shape, int x0, int y0, int x1, int y1, int colour) {
+        ApiShim::drawShapeI(shape, x0, y0, x1, y1, colour);
     }
     
-    void NT_drawShapeF(enum _NT_shape shape, float x, float y, float w, float h) {
-        ApiShim::drawShapeF(shape, x, y, w, h);
+    void NT_drawShapeF(_NT_shape shape, float x0, float y0, float x1, float y1, float colour) {
+        ApiShim::drawShapeF(shape, x0, y0, x1, y1, colour);
     }
     
     void NT_getDisplayDimensions(unsigned int* width, unsigned int* height) {
@@ -112,23 +115,23 @@ void ApiShim::initialize() {
     state_.parameter_values.clear();
     state_.parameter_locked.clear();
     state_.current_algorithm = nullptr;
+    
+    // Initialize NT_screen buffer and sync with display buffer
+    memset(NT_screen, 0, sizeof(NT_screen));
+    memcpy(NT_screen, state_.display.pixels.data(), sizeof(NT_screen));
 }
 
 void ApiShim::setAlgorithm(_NT_algorithm* algorithm) {
     state_.current_algorithm = algorithm;
     
     if (algorithm) {
-        // Get number of parameters and resize vectors
-        int numParams = 0;
-        algorithm->getValue(algorithm, kNT_selector_numParameters, &numParams, sizeof(numParams));
+        // The algorithm's parameter arrays are managed by the plugin system
+        // We don't need to track them separately in the shim
+        // The algorithm->v pointer provides direct access to parameter values
         
-        state_.parameter_values.resize(numParams);
-        state_.parameter_locked.resize(numParams, false);
-        
-        // Initialize parameters to default values
-        for (int i = 0; i < numParams; i++) {
-            state_.parameter_values[i].asFloat = 0.0f;
-        }
+        // Clear our local parameter tracking (if we need it for specific shim functions)
+        state_.parameter_values.clear();
+        state_.parameter_locked.clear();
     }
 }
 
@@ -140,54 +143,140 @@ void ApiShim::parameterChanged(unsigned int parameterIndex) {
 }
 
 float ApiShim::getParameterValueMapped(unsigned int parameterIndex) {
-    if (parameterIndex >= state_.parameter_values.size()) return 0.0f;
-    return state_.parameter_values[parameterIndex].asFloat;
+    // These parameter functions are stubs - the real parameter management
+    // happens in the plugin system, not in the drawing API shim
+    (void)parameterIndex;
+    return 0.0f;
 }
 
 float ApiShim::getParameterValueMappedNormalised(unsigned int parameterIndex) {
-    // For now, assume parameters are already normalized [0,1]
-    return getParameterValueMapped(parameterIndex);
+    (void)parameterIndex;
+    return 0.0f;
 }
 
 void ApiShim::setParameterValueMapped(unsigned int parameterIndex, float value) {
-    if (parameterIndex >= state_.parameter_values.size()) return;
-    state_.parameter_values[parameterIndex].asFloat = value;
+    (void)parameterIndex;
+    (void)value;
 }
 
 void ApiShim::setParameterValueMappedNormalised(unsigned int parameterIndex, float value) {
-    setParameterValueMapped(parameterIndex, value);
+    (void)parameterIndex;
+    (void)value;
 }
 
 void ApiShim::lockParameter(unsigned int parameterIndex) {
-    if (parameterIndex >= state_.parameter_locked.size()) return;
-    state_.parameter_locked[parameterIndex] = true;
+    (void)parameterIndex;
 }
 
 void ApiShim::unlockParameter(unsigned int parameterIndex) {
-    if (parameterIndex >= state_.parameter_locked.size()) return;
-    state_.parameter_locked[parameterIndex] = false;
+    (void)parameterIndex;
 }
 
 int ApiShim::parameterIsLocked(unsigned int parameterIndex) {
-    if (parameterIndex >= state_.parameter_locked.size()) return 0;
-    return state_.parameter_locked[parameterIndex] ? 1 : 0;
+    (void)parameterIndex;
+    return 0;
 }
 
-void ApiShim::drawText(int x, int y, const char* text, enum _NT_textSize size, enum _NT_textAlign align) {
-    if (!text) return;
+void ApiShim::setPixel(int x, int y, uint8_t color) {
+    static int pixelCallCount = 0;
+    if (pixelCallCount++ < 5) {
+        std::cout << "[ApiShim] setPixel called: (" << x << "," << y << ") = " << (int)color << ", call " << pixelCallCount << std::endl;
+    }
     
-    int text_width = strlen(text) * getCharWidth('W', size);
+    state_.display.setPixel(x, y, color);
+    
+    // Sync with NT_screen buffer
+    if (x >= 0 && x < 256 && y >= 0 && y < 64) {
+        int byte_idx = y * 128 + x / 2;
+        color = color & 0x0F;
+        
+        if (x & 1) {
+            // Odd x: low nibble
+            NT_screen[byte_idx] = (NT_screen[byte_idx] & 0xF0) | color;
+        } else {
+            // Even x: high nibble  
+            NT_screen[byte_idx] = (NT_screen[byte_idx] & 0x0F) | (color << 4);
+        }
+    }
+}
+
+void ApiShim::drawLine(int x0, int y0, int x1, int y1, int colour) {
+    // Bresenham's line algorithm
+    int dx = abs(x1 - x0);
+    int dy = abs(y1 - y0);
+    int sx = x0 < x1 ? 1 : -1;
+    int sy = y0 < y1 ? 1 : -1;
+    int err = dx - dy;
+    
+    while (true) {
+        setPixel(x0, y0, colour);
+        if (x0 == x1 && y0 == y1) break;
+        int e2 = 2 * err;
+        if (e2 > -dy) { err -= dy; x0 += sx; }
+        if (e2 < dx) { err += dx; y0 += sy; }
+    }
+}
+
+void ApiShim::drawCircle(int cx, int cy, int radius, int colour, bool filled) {
+    // Midpoint circle algorithm
+    int x = radius;
+    int y = 0;
+    int err = 0;
+    
+    while (x >= y) {
+        if (filled) {
+            // Draw horizontal lines for filled circle
+            for (int i = -x; i <= x; i++) {
+                setPixel(cx + i, cy + y, colour);
+                setPixel(cx + i, cy - y, colour);
+            }
+            for (int i = -y; i <= y; i++) {
+                setPixel(cx + i, cy + x, colour);
+                setPixel(cx + i, cy - x, colour);
+            }
+        } else {
+            // Draw circle outline using 8-way symmetry
+            setPixel(cx + x, cy + y, colour);
+            setPixel(cx + y, cy + x, colour);
+            setPixel(cx - y, cy + x, colour);
+            setPixel(cx - x, cy + y, colour);
+            setPixel(cx - x, cy - y, colour);
+            setPixel(cx - y, cy - x, colour);
+            setPixel(cx + y, cy - x, colour);
+            setPixel(cx + x, cy - y, colour);
+        }
+        
+        if (err <= 0) {
+            y += 1;
+            err += 2*y + 1;
+        }
+        if (err > 0) {
+            x -= 1;
+            err -= 2*x + 1;
+        }
+    }
+}
+
+void ApiShim::drawText(int x, int y, const char* str, int colour, _NT_textAlignment align, _NT_textSize size) {
+    static int textCallCount = 0;
+    if (textCallCount++ < 3) {
+        std::cout << "[ApiShim] NT_drawText called: '" << (str ? str : "NULL") << "' at (" << x << "," << y << "), call " << textCallCount << std::endl;
+    }
+    
+    if (!str) return;
+    
+    int text_width = strlen(str) * getCharWidth('W', size);
     int start_x = x;
     
     // Apply alignment
     switch (align) {
-        case kNT_textAlign_centre:
+        case kNT_textCentre:
             start_x = x - text_width / 2;
             break;
-        case kNT_textAlign_right:
+        case kNT_textRight:
             start_x = x - text_width;
             break;
-        case kNT_textAlign_left:
+        case kNT_textLeft:
         default:
             start_x = x;
             break;
@@ -195,69 +284,68 @@ void ApiShim::drawText(int x, int y, const char* text, enum _NT_textSize size, e
     
     // Draw each character
     int char_x = start_x;
-    for (const char* c = text; *c; c++) {
-        drawChar(char_x, y, *c, size);
+    for (const char* c = str; *c; c++) {
+        drawChar(char_x, y, *c, size, colour);
         char_x += getCharWidth(*c, size);
     }
 }
 
-void ApiShim::drawShapeI(enum _NT_shape shape, int x, int y, int w, int h) {
+void ApiShim::drawShapeI(_NT_shape shape, int x0, int y0, int x1, int y1, int colour) {
     switch (shape) {
-        case kNT_shape_filled_rectangle:
-            for (int dy = 0; dy < h; dy++) {
-                for (int dx = 0; dx < w; dx++) {
-                    state_.display.setPixel(x + dx, y + dy, true);
-                }
-            }
+        case kNT_point:
+            setPixel(x0, y0, colour);
             break;
             
-        case kNT_shape_outline_rectangle:
-            // Top and bottom lines
-            for (int dx = 0; dx < w; dx++) {
-                state_.display.setPixel(x + dx, y, true);
-                state_.display.setPixel(x + dx, y + h - 1, true);
-            }
-            // Left and right lines
-            for (int dy = 0; dy < h; dy++) {
-                state_.display.setPixel(x, y + dy, true);
-                state_.display.setPixel(x + w - 1, y + dy, true);
-            }
+        case kNT_line:
+            drawLine(x0, y0, x1, y1, colour);
             break;
             
-        case kNT_shape_horizontal_line:
-            for (int dx = 0; dx < w; dx++) {
-                state_.display.setPixel(x + dx, y, true);
-            }
+        case kNT_box: {
+            // Unfilled rectangle (box)
+            drawLine(x0, y0, x1, y0, colour); // Top
+            drawLine(x1, y0, x1, y1, colour); // Right
+            drawLine(x1, y1, x0, y1, colour); // Bottom
+            drawLine(x0, y1, x0, y0, colour); // Left
             break;
+        }
+        
+        case kNT_rectangle: {
+            // Filled rectangle
+            int minX = std::min(x0, x1);
+            int maxX = std::max(x0, x1);
+            int minY = std::min(y0, y1);
+            int maxY = std::max(y0, y1);
             
-        case kNT_shape_vertical_line:
-            for (int dy = 0; dy < h; dy++) {
-                state_.display.setPixel(x, y + dy, true);
-            }
-            break;
-            
-        case kNT_shape_filled_circle: {
-            int cx = x + w/2, cy = y + h/2;
-            int radius = std::min(w, h) / 2;
-            for (int dy = -radius; dy <= radius; dy++) {
-                for (int dx = -radius; dx <= radius; dx++) {
-                    if (dx*dx + dy*dy <= radius*radius) {
-                        state_.display.setPixel(cx + dx, cy + dy, true);
-                    }
+            for (int y = minY; y <= maxY; y++) {
+                for (int x = minX; x <= maxX; x++) {
+                    setPixel(x, y, colour);
                 }
             }
             break;
         }
         
+        case kNT_circle: {
+            // Unfilled circle - use center and radius from coordinates
+            int cx = (x0 + x1) / 2;
+            int cy = (y0 + y1) / 2;
+            int radius = std::min(abs(x1 - x0), abs(y1 - y0)) / 2;
+            drawCircle(cx, cy, radius, colour, false);
+            break;
+        }
+        
         default:
-            // For other shapes, just draw a rectangle for now
-            drawShapeI(kNT_shape_outline_rectangle, x, y, w, h);
+            // Unknown shape - draw a point
+            setPixel(x0, y0, colour);
             break;
     }
 }
 
-void ApiShim::drawShapeF(enum _NT_shape shape, float x, float y, float w, float h) {
-    drawShapeI(shape, (int)x, (int)y, (int)w, (int)h);
+void ApiShim::drawShapeF(_NT_shape shape, float x0, float y0, float x1, float y1, float colour) {
+    // For now, convert to integer coordinates (basic antialiasing would be added later)
+    int int_colour = (int)(colour * 15.0f / 15.0f); // Scale float color to 4-bit
+    int_colour = std::max(0, std::min(15, int_colour));
+    
+    drawShapeI(shape, (int)round(x0), (int)round(y0), (int)round(x1), (int)round(y1), int_colour);
 }
 
 void ApiShim::getDisplayDimensions(unsigned int* width, unsigned int* height) {
@@ -315,42 +403,138 @@ float ApiShim::randomF() {
     return dis(gen);
 }
 
-void ApiShim::drawChar(int x, int y, char c, enum _NT_textSize size) {
-    // Simple 8x8 bitmap font for now
+void ApiShim::drawChar(int x, int y, char c, _NT_textSize size, int colour) {
+    // Basic 5x7 bitmap font (simplified Tom Thumb style)
+    static const uint8_t font5x7[95][7] = {
+        {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, // Space
+        {0x04, 0x04, 0x04, 0x04, 0x00, 0x04, 0x00}, // !
+        {0x0A, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00}, // "
+        {0x0A, 0x1F, 0x0A, 0x1F, 0x0A, 0x00, 0x00}, // #
+        {0x04, 0x0F, 0x14, 0x0E, 0x05, 0x1E, 0x04}, // $
+        {0x18, 0x19, 0x02, 0x04, 0x08, 0x13, 0x03}, // %
+        {0x0C, 0x12, 0x14, 0x08, 0x15, 0x12, 0x0D}, // &
+        {0x04, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00}, // '
+        {0x02, 0x04, 0x08, 0x08, 0x08, 0x04, 0x02}, // (
+        {0x08, 0x04, 0x02, 0x02, 0x02, 0x04, 0x08}, // )
+        {0x00, 0x0A, 0x04, 0x1F, 0x04, 0x0A, 0x00}, // *
+        {0x00, 0x04, 0x04, 0x1F, 0x04, 0x04, 0x00}, // +
+        {0x00, 0x00, 0x00, 0x00, 0x04, 0x04, 0x08}, // ,
+        {0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00}, // -
+        {0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00}, // .
+        {0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x00}, // /
+        {0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E}, // 0
+        {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E}, // 1
+        {0x0E, 0x11, 0x01, 0x02, 0x04, 0x08, 0x1F}, // 2
+        {0x1F, 0x02, 0x04, 0x02, 0x01, 0x11, 0x0E}, // 3
+        {0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02}, // 4
+        {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E}, // 5
+        {0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E}, // 6
+        {0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08}, // 7
+        {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E}, // 8
+        {0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C}, // 9
+        {0x00, 0x00, 0x04, 0x00, 0x04, 0x04, 0x08}, // :
+        {0x00, 0x00, 0x04, 0x00, 0x04, 0x04, 0x08}, // ;
+        {0x02, 0x04, 0x08, 0x10, 0x08, 0x04, 0x02}, // <
+        {0x00, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x00}, // =
+        {0x08, 0x04, 0x02, 0x01, 0x02, 0x04, 0x08}, // >
+        {0x0E, 0x11, 0x01, 0x02, 0x04, 0x00, 0x04}, // ?
+        {0x0E, 0x11, 0x01, 0x0D, 0x15, 0x15, 0x0E}, // @
+        {0x0E, 0x11, 0x11, 0x11, 0x1F, 0x11, 0x11}, // A
+        {0x1E, 0x11, 0x11, 0x1E, 0x11, 0x11, 0x1E}, // B
+        {0x0E, 0x11, 0x10, 0x10, 0x10, 0x11, 0x0E}, // C
+        {0x1C, 0x12, 0x11, 0x11, 0x11, 0x12, 0x1C}, // D
+        {0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x1F}, // E
+        {0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x10}, // F
+        {0x0E, 0x11, 0x10, 0x17, 0x11, 0x11, 0x0F}, // G
+        {0x11, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11}, // H
+        {0x0E, 0x04, 0x04, 0x04, 0x04, 0x04, 0x0E}, // I
+        {0x07, 0x02, 0x02, 0x02, 0x02, 0x12, 0x0C}, // J
+        {0x11, 0x12, 0x14, 0x18, 0x14, 0x12, 0x11}, // K
+        {0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x1F}, // L
+        {0x11, 0x1B, 0x15, 0x15, 0x11, 0x11, 0x11}, // M
+        {0x11, 0x11, 0x19, 0x15, 0x13, 0x11, 0x11}, // N
+        {0x0E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E}, // O
+        {0x1E, 0x11, 0x11, 0x1E, 0x10, 0x10, 0x10}, // P
+        {0x0E, 0x11, 0x11, 0x15, 0x12, 0x0E, 0x01}, // Q
+        {0x1E, 0x11, 0x11, 0x1E, 0x14, 0x12, 0x11}, // R
+        {0x0F, 0x10, 0x10, 0x0E, 0x01, 0x01, 0x1E}, // S
+        {0x1F, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04}, // T
+        {0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E}, // U
+        {0x11, 0x11, 0x11, 0x11, 0x11, 0x0A, 0x04}, // V
+        {0x11, 0x11, 0x11, 0x15, 0x15, 0x1B, 0x11}, // W
+        {0x11, 0x11, 0x0A, 0x04, 0x0A, 0x11, 0x11}, // X
+        {0x11, 0x11, 0x11, 0x0A, 0x04, 0x04, 0x04}, // Y
+        {0x1F, 0x01, 0x02, 0x04, 0x08, 0x10, 0x1F}, // Z
+        {0x0E, 0x08, 0x08, 0x08, 0x08, 0x08, 0x0E}, // [
+        {0x00, 0x10, 0x08, 0x04, 0x02, 0x01, 0x00}, // backslash
+        {0x0E, 0x02, 0x02, 0x02, 0x02, 0x02, 0x0E}, // ]
+        {0x04, 0x0A, 0x11, 0x00, 0x00, 0x00, 0x00}, // ^
+        {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1F}, // _
+        {0x08, 0x04, 0x02, 0x00, 0x00, 0x00, 0x00}, // `
+        {0x00, 0x00, 0x0E, 0x01, 0x0F, 0x11, 0x0F}, // a
+        {0x10, 0x10, 0x16, 0x19, 0x11, 0x11, 0x1E}, // b
+        {0x00, 0x00, 0x0E, 0x10, 0x10, 0x11, 0x0E}, // c
+        {0x01, 0x01, 0x0D, 0x13, 0x11, 0x11, 0x0F}, // d
+        {0x00, 0x00, 0x0E, 0x11, 0x1F, 0x10, 0x0E}, // e
+        {0x06, 0x09, 0x08, 0x1C, 0x08, 0x08, 0x08}, // f
+        {0x00, 0x0F, 0x11, 0x11, 0x0F, 0x01, 0x0E}, // g
+        {0x10, 0x10, 0x16, 0x19, 0x11, 0x11, 0x11}, // h
+        {0x04, 0x00, 0x0C, 0x04, 0x04, 0x04, 0x0E}, // i
+        {0x02, 0x00, 0x06, 0x02, 0x02, 0x12, 0x0C}, // j
+        {0x10, 0x10, 0x12, 0x14, 0x18, 0x14, 0x12}, // k
+        {0x0C, 0x04, 0x04, 0x04, 0x04, 0x04, 0x0E}, // l
+        {0x00, 0x00, 0x1A, 0x15, 0x15, 0x11, 0x11}, // m
+        {0x00, 0x00, 0x16, 0x19, 0x11, 0x11, 0x11}, // n
+        {0x00, 0x00, 0x0E, 0x11, 0x11, 0x11, 0x0E}, // o
+        {0x00, 0x00, 0x1E, 0x11, 0x1E, 0x10, 0x10}, // p
+        {0x00, 0x00, 0x0D, 0x13, 0x0F, 0x01, 0x01}, // q
+        {0x00, 0x00, 0x16, 0x19, 0x10, 0x10, 0x10}, // r
+        {0x00, 0x00, 0x0F, 0x10, 0x0E, 0x01, 0x1E}, // s
+        {0x08, 0x08, 0x1C, 0x08, 0x08, 0x09, 0x06}, // t
+        {0x00, 0x00, 0x11, 0x11, 0x11, 0x13, 0x0D}, // u
+        {0x00, 0x00, 0x11, 0x11, 0x11, 0x0A, 0x04}, // v
+        {0x00, 0x00, 0x11, 0x11, 0x15, 0x15, 0x0A}, // w
+        {0x00, 0x00, 0x11, 0x0A, 0x04, 0x0A, 0x11}, // x
+        {0x00, 0x00, 0x11, 0x11, 0x0F, 0x01, 0x0E}, // y
+        {0x00, 0x00, 0x1F, 0x02, 0x04, 0x08, 0x1F}, // z
+        {0x02, 0x04, 0x04, 0x08, 0x04, 0x04, 0x02}, // {
+        {0x04, 0x04, 0x04, 0x00, 0x04, 0x04, 0x04}, // |
+        {0x08, 0x04, 0x04, 0x02, 0x04, 0x04, 0x08}, // }
+        {0x00, 0x00, 0x00, 0x0C, 0x12, 0x06, 0x00}  // ~
+    };
+    
     int char_width = getCharWidth(c, size);
     int char_height = getTextHeight(size);
     
-    // Very basic character drawing - just draw a rectangle for now
-    // In a real implementation, you'd have bitmap font data
-    if (c != ' ') {
-        for (int dy = 0; dy < char_height; dy++) {
-            for (int dx = 0; dx < char_width; dx++) {
-                // Simple pattern based on character
-                if ((dx + dy + c) % 3 == 0) {
-                    state_.display.setPixel(x + dx, y + dy, true);
+    if (c >= ' ' && c < ' ' + 95) {
+        const uint8_t* bitmap = font5x7[c - ' '];
+        
+        for (int row = 0; row < 7 && row < char_height; row++) {
+            uint8_t line = bitmap[row];
+            for (int col = 0; col < 5 && col < char_width; col++) {
+                if (line & (1 << (4 - col))) {
+                    setPixel(x + col, y + row, colour);
                 }
             }
         }
     }
 }
 
-int ApiShim::getCharWidth(char c, enum _NT_textSize size) {
+int ApiShim::getCharWidth(char c, _NT_textSize size) {
     (void)c;  // For now, all characters have same width
     switch (size) {
-        case kNT_textSize_8: return 6;
-        case kNT_textSize_12: return 8;
-        case kNT_textSize_16: return 10;
-        case kNT_textSize_24: return 14;
-        default: return 8;
+        case kNT_textTiny: return 4;    // 3x5 tiny font  
+        case kNT_textNormal: return 6;  // 5x7 normal font
+        case kNT_textLarge: return 12;  // Large font
+        default: return 6;
     }
 }
 
-int ApiShim::getTextHeight(enum _NT_textSize size) {
+int ApiShim::getTextHeight(_NT_textSize size) {
     switch (size) {
-        case kNT_textSize_8: return 8;
-        case kNT_textSize_12: return 12;
-        case kNT_textSize_16: return 16;
-        case kNT_textSize_24: return 24;
-        default: return 12;
+        case kNT_textTiny: return 5;    // 3x5 tiny font
+        case kNT_textNormal: return 7;  // 5x7 normal font  
+        case kNT_textLarge: return 21;  // Large font
+        default: return 7;
     }
 }

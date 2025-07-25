@@ -25,6 +25,7 @@ SOFTWARE.
 #include <math.h>
 #include <new>
 #include <cstring>
+#include <cstdio>
 #include <distingnt/api.h>
 #include <distingnt/serialisation.h>
 
@@ -111,10 +112,20 @@ bool	draw( _NT_algorithm* self )
 {
 	_gainAlgorithm* pThis = (_gainAlgorithm*)self;
 	
+	// Always draw something visible for debugging
+	// Draw a simple test pattern in the first row
+	for ( int i=0; i<20; ++i )
+		NT_screen[ 128 * 10 + i ] = 0xf0;  // Bright pixels
+		
+	// Draw gain meter based on parameter value
 	for ( int i=0; i<pThis->v[kParamGain]; ++i )
 		NT_screen[ 128 * 20 + i ] = 0xa5;
 		
+	// Always call drawText to test it
 	NT_drawText( 10, 40, "Turn centre pot for gain" );
+	
+	// Also try direct pixel manipulation
+	NT_screen[ 128 * 5 + 10 ] = 0xff;  // Single bright pixel
 		
 	return false;
 }

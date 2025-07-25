@@ -14,6 +14,9 @@ FLAGS += -I../emulator/include
 SOURCES += $(wildcard src/*.cpp)
 SOURCES += $(wildcard src/*/*.cpp)
 
+# Add ApiShim for drawing API support (commented out due to memory corruption)
+# SOURCES += ../emulator/src/core/api_shim.cpp
+
 # Add MidiHandler source (commented out due to compilation issues)
 # SOURCES += ../emulator/src/core/midi_handler.cpp
 

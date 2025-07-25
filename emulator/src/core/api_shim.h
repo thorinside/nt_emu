@@ -7,7 +7,7 @@
 #include <atomic>
 
 struct DisplayBuffer {
-    std::array<uint8_t, (256 * 64) / 8> pixels{};
+    std::array<uint8_t, 128 * 64> pixels{};  // 4-bit grayscale: 2 pixels per byte
     bool dirty = false;
     
     void clear() {
@@ -15,27 +15,34 @@ struct DisplayBuffer {
         dirty = true;
     }
     
-    void setPixel(int x, int y, bool on) {
+    void setPixel(int x, int y, uint8_t color) {
         if (x < 0 || x >= 256 || y < 0 || y >= 64) return;
         
-        int byte_idx = (y * 256 + x) / 8;
-        int bit_idx = 7 - (x % 8);
+        color = color & 0x0F; // Clamp to 4-bit
+        int byte_idx = y * 128 + x / 2;
         
-        if (on) {
-            pixels[byte_idx] |= (1 << bit_idx);
+        if (x & 1) {
+            // Odd x: low nibble
+            pixels[byte_idx] = (pixels[byte_idx] & 0xF0) | color;
         } else {
-            pixels[byte_idx] &= ~(1 << bit_idx);
+            // Even x: high nibble
+            pixels[byte_idx] = (pixels[byte_idx] & 0x0F) | (color << 4);
         }
         dirty = true;
     }
     
-    bool getPixel(int x, int y) const {
-        if (x < 0 || x >= 256 || y < 0 || y >= 64) return false;
+    uint8_t getPixel(int x, int y) const {
+        if (x < 0 || x >= 256 || y < 0 || y >= 64) return 0;
         
-        int byte_idx = (y * 256 + x) / 8;
-        int bit_idx = 7 - (x % 8);
+        int byte_idx = y * 128 + x / 2;
         
-        return (pixels[byte_idx] & (1 << bit_idx)) != 0;
+        if (x & 1) {
+            // Odd x: low nibble
+            return pixels[byte_idx] & 0x0F;
+        } else {
+            // Even x: high nibble
+            return (pixels[byte_idx] >> 4) & 0x0F;
+        }
     }
 };
 
@@ -67,7 +74,7 @@ struct ApiState {
     DisplayBuffer display;
     HardwareState hardware;
     VoltageState voltage;                                // Real-time CV voltage monitoring
-    std::vector<_NT_parameterValue> parameter_values;
+    std::vector<int16_t> parameter_values;
     std::vector<bool> parameter_locked;
     
     // Callbacks for MIDI output
@@ -95,11 +102,14 @@ public:
     static void unlockParameter(unsigned int parameterIndex);
     static int parameterIsLocked(unsigned int parameterIndex);
     
-    // Drawing functions
-    static void drawText(int x, int y, const char* text, enum _NT_textSize size, enum _NT_textAlign align);
-    static void drawShapeI(enum _NT_shape shape, int x, int y, int w, int h);
-    static void drawShapeF(enum _NT_shape shape, float x, float y, float w, float h);
+    // Drawing functions  
+    static void drawText(int x, int y, const char* str, int colour, _NT_textAlignment align, _NT_textSize size);
+    static void drawShapeI(_NT_shape shape, int x0, int y0, int x1, int y1, int colour);
+    static void drawShapeF(_NT_shape shape, float x0, float y0, float x1, float y1, float colour);
     static void getDisplayDimensions(unsigned int* width, unsigned int* height);
+    
+    // NT_screen buffer access
+    static uint8_t* getScreenBuffer() { return state_.display.pixels.data(); }
     
     // MIDI functions
     static void sendMIDIControllerChange(struct _NT_controllerChange* controllerChange, enum _NT_midiDestination destination);
@@ -116,7 +126,10 @@ public:
 private:
     static ApiState state_;
     
-    static void drawChar(int x, int y, char c, enum _NT_textSize size);
-    static int getCharWidth(char c, enum _NT_textSize size);
-    static int getTextHeight(enum _NT_textSize size);
+    static void drawChar(int x, int y, char c, _NT_textSize size, int colour);
+    static int getCharWidth(char c, _NT_textSize size);
+    static int getTextHeight(_NT_textSize size);
+    static void setPixel(int x, int y, uint8_t color);
+    static void drawLine(int x0, int y0, int x1, int y1, int colour);
+    static void drawCircle(int cx, int cy, int radius, int colour, bool filled);
 };
