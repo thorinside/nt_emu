@@ -31,30 +31,111 @@ extern "C" const NT_API_Interface* getNT_API(void);
 extern "C" {
     // Simple 5x7 font bitmap data for basic characters
     static const uint8_t font5x7[128][7] = {
-        // Space (32)
+        // Initialize all to 0
+        [0 ... 127] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+        
+        // Space through DEL (standard ASCII printable characters)
         [' '] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-        // Letters
-        ['T'] = {0x7C, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10},
-        ['u'] = {0x00, 0x00, 0x44, 0x44, 0x44, 0x4C, 0x34},
-        ['r'] = {0x00, 0x00, 0x58, 0x64, 0x40, 0x40, 0x40},
-        ['n'] = {0x00, 0x00, 0x58, 0x64, 0x44, 0x44, 0x44},
-        ['c'] = {0x00, 0x00, 0x38, 0x44, 0x40, 0x44, 0x38},
-        ['e'] = {0x00, 0x00, 0x38, 0x44, 0x78, 0x40, 0x38},
-        ['t'] = {0x00, 0x10, 0x7C, 0x10, 0x10, 0x14, 0x08},
-        ['o'] = {0x00, 0x00, 0x38, 0x44, 0x44, 0x44, 0x38},
-        ['p'] = {0x00, 0x00, 0x78, 0x44, 0x78, 0x40, 0x40},
-        ['f'] = {0x00, 0x0C, 0x10, 0x7C, 0x10, 0x10, 0x10},
-        ['g'] = {0x00, 0x00, 0x3C, 0x44, 0x3C, 0x04, 0x38},
-        ['a'] = {0x00, 0x00, 0x38, 0x04, 0x3C, 0x44, 0x3C},
-        ['i'] = {0x00, 0x10, 0x00, 0x30, 0x10, 0x10, 0x38},
-        // Default for unknown characters
-        [0] = {0x7E, 0x42, 0x42, 0x42, 0x42, 0x42, 0x7E}
+        ['!'] = {0x20, 0x20, 0x20, 0x20, 0x00, 0x20, 0x00},
+        ['"'] = {0x50, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00},
+        ['#'] = {0x50, 0xF8, 0x50, 0xF8, 0x50, 0x00, 0x00},
+        ['$'] = {0x20, 0x78, 0xA0, 0x70, 0x28, 0xF0, 0x20},
+        ['%'] = {0xC8, 0xC8, 0x10, 0x20, 0x40, 0x98, 0x98},
+        ['&'] = {0x40, 0xA0, 0x40, 0xA8, 0x90, 0x98, 0x60},
+        ['\''] = {0x20, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00},
+        ['('] = {0x10, 0x20, 0x40, 0x40, 0x40, 0x20, 0x10},
+        [')'] = {0x40, 0x20, 0x10, 0x10, 0x10, 0x20, 0x40},
+        ['*'] = {0x00, 0x50, 0x20, 0xF8, 0x20, 0x50, 0x00},
+        ['+'] = {0x00, 0x20, 0x20, 0xF8, 0x20, 0x20, 0x00},
+        [','] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x40},
+        ['-'] = {0x00, 0x00, 0x00, 0xF8, 0x00, 0x00, 0x00},
+        ['.'] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00},
+        ['/'] = {0x08, 0x10, 0x10, 0x20, 0x40, 0x40, 0x80},
+        ['0'] = {0x70, 0x88, 0x98, 0xA8, 0xC8, 0x88, 0x70},
+        ['1'] = {0x20, 0x60, 0x20, 0x20, 0x20, 0x20, 0x70},
+        ['2'] = {0x70, 0x88, 0x08, 0x30, 0x40, 0x80, 0xF8},
+        ['3'] = {0x70, 0x88, 0x08, 0x30, 0x08, 0x88, 0x70},
+        ['4'] = {0x10, 0x30, 0x50, 0x90, 0xF8, 0x10, 0x10},
+        ['5'] = {0xF8, 0x80, 0xF0, 0x08, 0x08, 0x88, 0x70},
+        ['6'] = {0x30, 0x40, 0x80, 0xF0, 0x88, 0x88, 0x70},
+        ['7'] = {0xF8, 0x08, 0x10, 0x20, 0x40, 0x40, 0x40},
+        ['8'] = {0x70, 0x88, 0x88, 0x70, 0x88, 0x88, 0x70},
+        ['9'] = {0x70, 0x88, 0x88, 0x78, 0x08, 0x10, 0x60},
+        [':'] = {0x00, 0x00, 0x20, 0x00, 0x20, 0x00, 0x00},
+        [';'] = {0x00, 0x00, 0x20, 0x00, 0x20, 0x20, 0x40},
+        ['<'] = {0x10, 0x20, 0x40, 0x80, 0x40, 0x20, 0x10},
+        ['='] = {0x00, 0x00, 0xF8, 0x00, 0xF8, 0x00, 0x00},
+        ['>'] = {0x40, 0x20, 0x10, 0x08, 0x10, 0x20, 0x40},
+        ['?'] = {0x70, 0x88, 0x08, 0x10, 0x20, 0x00, 0x20},
+        ['@'] = {0x70, 0x88, 0xB8, 0xA8, 0xB8, 0x80, 0x70},
+        ['A'] = {0x70, 0x88, 0x88, 0xF8, 0x88, 0x88, 0x88},
+        ['B'] = {0xF0, 0x88, 0x88, 0xF0, 0x88, 0x88, 0xF0},
+        ['C'] = {0x70, 0x88, 0x80, 0x80, 0x80, 0x88, 0x70},
+        ['D'] = {0xF0, 0x88, 0x88, 0x88, 0x88, 0x88, 0xF0},
+        ['E'] = {0xF8, 0x80, 0x80, 0xF0, 0x80, 0x80, 0xF8},
+        ['F'] = {0xF8, 0x80, 0x80, 0xF0, 0x80, 0x80, 0x80},
+        ['G'] = {0x70, 0x88, 0x80, 0xB8, 0x88, 0x88, 0x70},
+        ['H'] = {0x88, 0x88, 0x88, 0xF8, 0x88, 0x88, 0x88},
+        ['I'] = {0x70, 0x20, 0x20, 0x20, 0x20, 0x20, 0x70},
+        ['J'] = {0x38, 0x10, 0x10, 0x10, 0x10, 0x90, 0x60},
+        ['K'] = {0x88, 0x90, 0xA0, 0xC0, 0xA0, 0x90, 0x88},
+        ['L'] = {0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0xF8},
+        ['M'] = {0x88, 0xD8, 0xA8, 0xA8, 0x88, 0x88, 0x88},
+        ['N'] = {0x88, 0xC8, 0xA8, 0x98, 0x88, 0x88, 0x88},
+        ['O'] = {0x70, 0x88, 0x88, 0x88, 0x88, 0x88, 0x70},
+        ['P'] = {0xF0, 0x88, 0x88, 0xF0, 0x80, 0x80, 0x80},
+        ['Q'] = {0x70, 0x88, 0x88, 0x88, 0xA8, 0x90, 0x68},
+        ['R'] = {0xF0, 0x88, 0x88, 0xF0, 0xA0, 0x90, 0x88},
+        ['S'] = {0x70, 0x88, 0x80, 0x70, 0x08, 0x88, 0x70},
+        ['T'] = {0xF8, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20},
+        ['U'] = {0x88, 0x88, 0x88, 0x88, 0x88, 0x88, 0x70},
+        ['V'] = {0x88, 0x88, 0x88, 0x88, 0x50, 0x50, 0x20},
+        ['W'] = {0x88, 0x88, 0x88, 0xA8, 0xA8, 0xD8, 0x88},
+        ['X'] = {0x88, 0x88, 0x50, 0x20, 0x50, 0x88, 0x88},
+        ['Y'] = {0x88, 0x88, 0x50, 0x20, 0x20, 0x20, 0x20},
+        ['Z'] = {0xF8, 0x08, 0x10, 0x20, 0x40, 0x80, 0xF8},
+        ['['] = {0x70, 0x40, 0x40, 0x40, 0x40, 0x40, 0x70},
+        ['\\'] = {0x80, 0x40, 0x40, 0x20, 0x10, 0x10, 0x08},
+        [']'] = {0x70, 0x10, 0x10, 0x10, 0x10, 0x10, 0x70},
+        ['^'] = {0x20, 0x50, 0x88, 0x00, 0x00, 0x00, 0x00},
+        ['_'] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF8},
+        ['`'] = {0x40, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00},
+        ['a'] = {0x00, 0x00, 0x70, 0x08, 0x78, 0x88, 0x78},
+        ['b'] = {0x80, 0x80, 0xF0, 0x88, 0x88, 0x88, 0xF0},
+        ['c'] = {0x00, 0x00, 0x70, 0x88, 0x80, 0x88, 0x70},
+        ['d'] = {0x08, 0x08, 0x78, 0x88, 0x88, 0x88, 0x78},
+        ['e'] = {0x00, 0x00, 0x70, 0x88, 0xF8, 0x80, 0x70},
+        ['f'] = {0x30, 0x48, 0x40, 0xF0, 0x40, 0x40, 0x40},
+        ['g'] = {0x00, 0x00, 0x78, 0x88, 0x78, 0x08, 0x70},
+        ['h'] = {0x80, 0x80, 0xF0, 0x88, 0x88, 0x88, 0x88},
+        ['i'] = {0x20, 0x00, 0x60, 0x20, 0x20, 0x20, 0x70},
+        ['j'] = {0x10, 0x00, 0x30, 0x10, 0x10, 0x90, 0x60},
+        ['k'] = {0x80, 0x80, 0x88, 0x90, 0xE0, 0x90, 0x88},
+        ['l'] = {0x60, 0x20, 0x20, 0x20, 0x20, 0x20, 0x70},
+        ['m'] = {0x00, 0x00, 0xD0, 0xA8, 0xA8, 0xA8, 0xA8},
+        ['n'] = {0x00, 0x00, 0xB0, 0xC8, 0x88, 0x88, 0x88},
+        ['o'] = {0x00, 0x00, 0x70, 0x88, 0x88, 0x88, 0x70},
+        ['p'] = {0x00, 0x00, 0xF0, 0x88, 0xF0, 0x80, 0x80},
+        ['q'] = {0x00, 0x00, 0x78, 0x88, 0x78, 0x08, 0x08},
+        ['r'] = {0x00, 0x00, 0xB0, 0xC8, 0x80, 0x80, 0x80},
+        ['s'] = {0x00, 0x00, 0x78, 0x80, 0x70, 0x08, 0xF0},
+        ['t'] = {0x40, 0x40, 0xF0, 0x40, 0x40, 0x48, 0x30},
+        ['u'] = {0x00, 0x00, 0x88, 0x88, 0x88, 0x98, 0x68},
+        ['v'] = {0x00, 0x00, 0x88, 0x88, 0x88, 0x50, 0x20},
+        ['w'] = {0x00, 0x00, 0x88, 0x88, 0xA8, 0xA8, 0x50},
+        ['x'] = {0x00, 0x00, 0x88, 0x50, 0x20, 0x50, 0x88},
+        ['y'] = {0x00, 0x00, 0x88, 0x88, 0x78, 0x08, 0x70},
+        ['z'] = {0x00, 0x00, 0xF8, 0x10, 0x20, 0x40, 0xF8},
+        ['{'] = {0x18, 0x20, 0x20, 0x40, 0x20, 0x20, 0x18},
+        ['|'] = {0x20, 0x20, 0x20, 0x00, 0x20, 0x20, 0x20},
+        ['}'] = {0x60, 0x10, 0x10, 0x08, 0x10, 0x10, 0x60},
+        ['~'] = {0x00, 0x00, 0x48, 0xA8, 0x90, 0x00, 0x00}
     };
 
     __attribute__((visibility("default"))) void NT_drawText(int x, int y, const char* str, int colour, _NT_textAlignment align, _NT_textSize size) {
         static int callCount = 0;
         if (callCount++ < 5) {
-            INFO("VCV NT_drawText called: '%s' at (%d,%d), call %d", str ? str : "NULL", x, y, callCount);
+            INFO("VCV NT_drawText called: '%s' at (%d,%d), colour=%d, call %d", str ? str : "NULL", x, y, colour, callCount);
         }
         
         if (!str || x < 0 || x >= 256 || y < 0 || y >= 64) return;
@@ -78,17 +159,17 @@ extern "C" {
             
             // Get font data for this character
             const uint8_t* font_data;
-            if (c >= 0 && c < 128 && font5x7[c][0] != 0) {
-                font_data = font5x7[c];
+            if (c >= 32 && c < 127) {
+                font_data = font5x7[(int)c];
             } else {
-                font_data = font5x7[0]; // Default character
+                font_data = font5x7[' ']; // Use space for undefined characters
             }
             
             // Draw the character bitmap
             for (int row = 0; row < char_height && y + row < 64; row++) {
                 uint8_t line_data = font_data[row];
                 for (int col = 0; col < 5 && char_x + col < 256; col++) {
-                    if (line_data & (0x40 >> col)) {  // Check bit (starting from bit 6)
+                    if (line_data & (0x80 >> col)) {  // Check bit (starting from bit 7)
                         int pixel_x = char_x + col;
                         int pixel_y = y + row;
                         
@@ -97,12 +178,17 @@ extern "C" {
                         int row_offset = pixel_y * 128;
                         
                         if (byte_x < 128 && row_offset + byte_x < 128 * 64) {
+                            static int pixelCount = 0;
+                            if (pixelCount++ < 10) {
+                                INFO("Drawing text pixel at (%d,%d) -> byte_idx=%d, colour=%d", pixel_x, pixel_y, row_offset + byte_x, colour);
+                            }
+                            
                             if (pixel_x % 2 == 0) {
-                                // Left pixel (lower 4 bits)
-                                NT_screen[row_offset + byte_x] = (NT_screen[row_offset + byte_x] & 0xF0) | (colour & 0x0F);
-                            } else {
-                                // Right pixel (upper 4 bits)  
+                                // Even x: high nibble (bits 4-7)
                                 NT_screen[row_offset + byte_x] = (NT_screen[row_offset + byte_x] & 0x0F) | ((colour & 0x0F) << 4);
+                            } else {
+                                // Odd x: low nibble (bits 0-3)  
+                                NT_screen[row_offset + byte_x] = (NT_screen[row_offset + byte_x] & 0xF0) | (colour & 0x0F);
                             }
                         }
                     }
@@ -111,14 +197,117 @@ extern "C" {
         }
     }
     
-    __attribute__((visibility("default"))) void NT_drawShapeI(_NT_shape shape, int x0, int y0, int x1, int y1, int colour) {
-        // Simple shape drawing - just draw start and end points
-        if (x0 >= 0 && x0 < 256 && y0 >= 0 && y0 < 64) {
-            int byte_x = x0 / 2;
-            int row_offset = y0 * 128;
-            if (byte_x < 128 && row_offset + byte_x < 128 * 64) {
-                NT_screen[row_offset + byte_x] = colour & 0xff;
+    // Helper function to set a single pixel in NT_screen buffer
+    void setNTPixel(int x, int y, int colour) {
+        if (x >= 0 && x < 256 && y >= 0 && y < 64) {
+            int byte_idx = y * 128 + x / 2;
+            colour = colour & 0x0F;  // Ensure 4-bit value
+            
+            if (x & 1) {
+                // Odd x: low nibble (bits 0-3)
+                NT_screen[byte_idx] = (NT_screen[byte_idx] & 0xF0) | colour;
+            } else {
+                // Even x: high nibble (bits 4-7)
+                NT_screen[byte_idx] = (NT_screen[byte_idx] & 0x0F) | (colour << 4);
             }
+        }
+    }
+    
+    // Bresenham's line algorithm
+    void drawNTLine(int x0, int y0, int x1, int y1, int colour) {
+        int dx = abs(x1 - x0);
+        int dy = abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+        
+        while (true) {
+            setNTPixel(x0, y0, colour);
+            if (x0 == x1 && y0 == y1) break;
+            int e2 = 2 * err;
+            if (e2 > -dy) { err -= dy; x0 += sx; }
+            if (e2 < dx) { err += dx; y0 += sy; }
+        }
+    }
+    
+    __attribute__((visibility("default"))) void NT_drawShapeI(_NT_shape shape, int x0, int y0, int x1, int y1, int colour) {
+        static int shapeCallCount = 0;
+        if (shapeCallCount++ < 10) {
+            INFO("VCV NT_drawShapeI called: shape=%d, (%d,%d) to (%d,%d), color=%d, call %d", 
+                 (int)shape, x0, y0, x1, y1, colour, shapeCallCount);
+        }
+        
+        switch (shape) {
+            case kNT_point:
+                setNTPixel(x0, y0, colour);
+                break;
+                
+            case kNT_line:
+                drawNTLine(x0, y0, x1, y1, colour);
+                break;
+                
+            case kNT_box: {
+                // Unfilled rectangle (box outline)
+                drawNTLine(x0, y0, x1, y0, colour); // Top
+                drawNTLine(x1, y0, x1, y1, colour); // Right
+                drawNTLine(x1, y1, x0, y1, colour); // Bottom
+                drawNTLine(x0, y1, x0, y0, colour); // Left
+                break;
+            }
+            
+            case kNT_rectangle: {
+                // Filled rectangle
+                int minX = std::min(x0, x1);
+                int maxX = std::max(x0, x1);
+                int minY = std::min(y0, y1);
+                int maxY = std::max(y0, y1);
+                
+                for (int y = minY; y <= maxY; y++) {
+                    for (int x = minX; x <= maxX; x++) {
+                        setNTPixel(x, y, colour);
+                    }
+                }
+                break;
+            }
+            
+            case kNT_circle: {
+                // Unfilled circle - use center and radius from coordinates
+                int cx = (x0 + x1) / 2;
+                int cy = (y0 + y1) / 2;
+                int radius = std::min(abs(x1 - x0), abs(y1 - y0)) / 2;
+                
+                // Midpoint circle algorithm
+                int x = radius;
+                int y = 0;
+                int err = 0;
+                
+                while (x >= y) {
+                    // Draw circle outline using 8-way symmetry
+                    setNTPixel(cx + x, cy + y, colour);
+                    setNTPixel(cx + y, cy + x, colour);
+                    setNTPixel(cx - y, cy + x, colour);
+                    setNTPixel(cx - x, cy + y, colour);
+                    setNTPixel(cx - x, cy - y, colour);
+                    setNTPixel(cx - y, cy - x, colour);
+                    setNTPixel(cx + y, cy - x, colour);
+                    setNTPixel(cx + x, cy - y, colour);
+                    
+                    if (err <= 0) {
+                        y += 1;
+                        err += 2*y + 1;
+                    }
+                    if (err > 0) {
+                        x -= 1;
+                        err -= 2*x + 1;
+                    }
+                }
+                break;
+            }
+            
+            default:
+                // Unknown shape - draw a point
+                setNTPixel(x0, y0, colour);
+                break;
         }
     }
     
@@ -2111,21 +2300,46 @@ struct DistingNTOLEDWidget : FramebufferWidget {
                 
                 if (distingModule->pluginFactory && distingModule->pluginFactory->draw) {
                     
+                    // Clear NT_screen buffer before plugin draws
+                    memset(NT_screen, 0, sizeof(NT_screen));
+                    
+                    static int pluginDrawCallCount = 0;
+                    if (pluginDrawCallCount++ < 5) {
+                        INFO("About to call plugin draw() for %s, attempt %d", 
+                             distingModule->pluginFactory->name ? distingModule->pluginFactory->name : "unknown", 
+                             pluginDrawCallCount);
+                    }
+                    
                     distingModule->safeExecutePlugin([&]() {
                         pluginDrew = distingModule->pluginFactory->draw(distingModule->pluginAlgorithm);
                         
                         static int drawResultCount = 0;
                         if (drawResultCount++ < 5) {
                             INFO("Plugin draw() returned %s, attempt %d", pluginDrew ? "true" : "false", drawResultCount);
+                            
+                            // Don't clear the buffer if plugin returned false - keep whatever it drew
+                            // The plugin may have drawn text but returned false for other reasons
+                            
+                            // Check buffer state after plugin draw but before any potential clearing
+                            INFO("NT_screen at row 40 (text area): %02x %02x %02x %02x %02x %02x %02x %02x",
+                                 NT_screen[40 * 128], NT_screen[40 * 128 + 1], NT_screen[40 * 128 + 2], NT_screen[40 * 128 + 3],
+                                 NT_screen[40 * 128 + 4], NT_screen[40 * 128 + 5], NT_screen[40 * 128 + 6], NT_screen[40 * 128 + 7]);
+                                 
+                            INFO("NT_screen first 16 bytes: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
+                                 NT_screen[0], NT_screen[1], NT_screen[2], NT_screen[3],
+                                 NT_screen[4], NT_screen[5], NT_screen[6], NT_screen[7],
+                                 NT_screen[8], NT_screen[9], NT_screen[10], NT_screen[11],
+                                 NT_screen[12], NT_screen[13], NT_screen[14], NT_screen[15]);
                         }
                     }, "draw");
                     
                     // Always sync NT_screen buffer to VCV display after plugin draw call
                     // This handles both direct NT_screen writes and NT_drawText/NT_drawShape calls
+                    // Even if plugin returned false, it may have drawn text/shapes we want to display
                     VCVDisplayBuffer pluginBuffer;
                     syncNTScreenToVCVBuffer(pluginBuffer);
                     drawDisplayBuffer(args.vg, pluginBuffer);
-                    pluginDrew = true; // Plugin attempted to draw, show the results
+                    pluginDrew = true; // Plugin attempted to draw, show the results even if it returned false
                     
                     static int syncCount = 0;
                     if (syncCount++ < 5) {
@@ -2181,9 +2395,9 @@ struct DistingNTOLEDWidget : FramebufferWidget {
     }
     
     void syncNTScreenToVCVBuffer(VCVDisplayBuffer& buffer) {
-        // Convert NT_screen buffer (4-bit grayscale, 2 pixels per byte) to VCV display buffer (1-bit monochrome)
+        // Convert NT_screen buffer (4-bit grayscale, 2 pixels per byte) to VCV display buffer with full grayscale support
         // NT_screen format: 128*64 bytes, each byte contains 2 pixels (high nibble = even x, low nibble = odd x)
-        // VCV format: 256*64 pixels, 1 bit per pixel
+        // VCV format: 256*64 pixels, grayscale values 0-15
         
         buffer.clear();
         
@@ -2197,24 +2411,27 @@ struct DistingNTOLEDWidget : FramebufferWidget {
                 // Extract low nibble (odd x coordinate)  
                 uint8_t pixel_odd = byte_val & 0x0F;
                 
-                // Convert 4-bit grayscale to 1-bit monochrome (threshold at 8)
-                if (pixel_even > 7) {
-                    buffer.setPixel(x, y, true);
-                }
-                if (x + 1 < 256 && pixel_odd > 7) {
-                    buffer.setPixel(x + 1, y, true);
+                // Store full 4-bit grayscale values (0-15)
+                buffer.setPixelGray(x, y, pixel_even);
+                if (x + 1 < 256) {
+                    buffer.setPixelGray(x + 1, y, pixel_odd);
                 }
             }
         }
     }
 
     void drawDisplayBuffer(NVGcontext* vg, const VCVDisplayBuffer& buffer) {
-        // Draw the display buffer pixel by pixel
-        nvgFillColor(vg, nvgRGB(255, 255, 255));
-        
+        // Draw the display buffer pixel by pixel with full 4-bit grayscale support
         for (int y = 0; y < DISPLAY_HEIGHT; y++) {
             for (int x = 0; x < DISPLAY_WIDTH; x++) {
-                if (buffer.getPixel(x, y)) {
+                uint8_t gray_value = buffer.getPixelGray(x, y);
+                if (gray_value > 0) {
+                    // Map 4-bit grayscale (0-15) to 0.0-1.0 range
+                    float intensity = (float)gray_value / 15.0f;
+                    
+                    // Set color based on intensity (white pixels with varying alpha/brightness)
+                    nvgFillColor(vg, nvgRGBA(255, 255, 255, (int)(intensity * 255)));
+                    
                     nvgBeginPath(vg);
                     nvgRect(vg, x, y, 1, 1);
                     nvgFill(vg);

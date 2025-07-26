@@ -52,7 +52,7 @@ struct VCVHardwareState {
 
 // Display buffer for 256x64 OLED
 struct VCVDisplayBuffer {
-    std::array<uint8_t, (256 * 64) / 8> pixels{};
+    std::array<uint8_t, (256 * 64) / 2> pixels{};  // 4-bit grayscale, 2 pixels per byte
     bool dirty = true;
     
     void clear() {
@@ -60,27 +60,46 @@ struct VCVDisplayBuffer {
         dirty = true;
     }
     
+    // Legacy method for backwards compatibility (threshold at 8)
     void setPixel(int x, int y, bool on) {
+        setPixelGray(x, y, on ? 15 : 0);
+    }
+    
+    // New method for 4-bit grayscale (0-15)
+    void setPixelGray(int x, int y, uint8_t gray_value) {
         if (x < 0 || x >= 256 || y < 0 || y >= 64) return;
         
-        int byte_idx = (y * 256 + x) / 8;
-        int bit_idx = 7 - (x % 8);
+        int byte_idx = y * 128 + x / 2;
+        gray_value = gray_value & 0x0F;  // Ensure 4-bit value
         
-        if (on) {
-            pixels[byte_idx] |= (1 << bit_idx);
+        if (x & 1) {
+            // Odd x: low nibble
+            pixels[byte_idx] = (pixels[byte_idx] & 0xF0) | gray_value;
         } else {
-            pixels[byte_idx] &= ~(1 << bit_idx);
+            // Even x: high nibble
+            pixels[byte_idx] = (pixels[byte_idx] & 0x0F) | (gray_value << 4);
         }
         dirty = true;
     }
     
+    // Legacy method for backwards compatibility
     bool getPixel(int x, int y) const {
-        if (x < 0 || x >= 256 || y < 0 || y >= 64) return false;
+        return getPixelGray(x, y) > 7;  // Threshold at 8
+    }
+    
+    // New method to get 4-bit grayscale value
+    uint8_t getPixelGray(int x, int y) const {
+        if (x < 0 || x >= 256 || y < 0 || y >= 64) return 0;
         
-        int byte_idx = (y * 256 + x) / 8;
-        int bit_idx = 7 - (x % 8);
+        int byte_idx = y * 128 + x / 2;
         
-        return (pixels[byte_idx] & (1 << bit_idx)) != 0;
+        if (x & 1) {
+            // Odd x: low nibble
+            return pixels[byte_idx] & 0x0F;
+        } else {
+            // Even x: high nibble
+            return (pixels[byte_idx] >> 4) & 0x0F;
+        }
     }
 };
 
