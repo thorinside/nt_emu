@@ -4,23 +4,75 @@
    height="128.5mm"
    viewBox="0 0 71.12 128.5"
    version="1.1"
-   xmlns="http://www.w3.org/2000/svg">
-  
+   id="svg178"
+   sodipodi:docname="DistingNT.svg"
+   inkscape:version="1.4.2 (ebf0e940, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs178" />
+  <sodipodi:namedview
+     id="namedview178"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="1.322486"
+     inkscape:cx="131.57039"
+     inkscape:cy="239.322"
+     inkscape:window-width="1512"
+     inkscape:window-height="916"
+     inkscape:window-x="0"
+     inkscape:window-y="38"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg178" />
   <!-- Panel Background - Dark Blue -->
   <rect
      style="fill:#1A365D;stroke-width:0.264583"
      width="71.12"
      height="128.5"
      x="0"
-     y="0" />
-  
+     y="0"
+     id="rect1" />
   <!-- Mounting Screws -->
-  <circle cx="7.62" cy="3.0" r="1.6" fill="#C0C0C0" stroke="#808080" stroke-width="0.1"/>
-  <circle cx="63.5" cy="3.0" r="1.6" fill="#C0C0C0" stroke="#808080" stroke-width="0.1"/>
-  <circle cx="7.62" cy="125.5" r="1.6" fill="#C0C0C0" stroke="#808080" stroke-width="0.1"/>
-  <circle cx="63.5" cy="125.5" r="1.6" fill="#C0C0C0" stroke="#808080" stroke-width="0.1"/>
-  
-  
+  <circle
+     cx="7.62"
+     cy="3.0"
+     r="1.6"
+     fill="#C0C0C0"
+     stroke="#808080"
+     stroke-width="0.1"
+     id="circle1" />
+  <circle
+     cx="63.5"
+     cy="3.0"
+     r="1.6"
+     fill="#C0C0C0"
+     stroke="#808080"
+     stroke-width="0.1"
+     id="circle2" />
+  <circle
+     cx="7.62"
+     cy="125.5"
+     r="1.6"
+     fill="#C0C0C0"
+     stroke="#808080"
+     stroke-width="0.1"
+     id="circle3" />
+  <circle
+     cx="63.5"
+     cy="125.5"
+     r="1.6"
+     fill="#C0C0C0"
+     stroke="#808080"
+     stroke-width="0.1"
+     id="circle4" />
   <!-- OLED Display Area (larger) -->
   <rect
      x="8.0"
@@ -28,301 +80,1202 @@
      width="55.12"
      height="15.0"
      fill="#000000"
-     stroke="#404040" 
-     stroke-width="0.2" />
-  
+     stroke="#404040"
+     stroke-width="0.246291"
+     id="rect4" />
   <!-- Module Name - nt_emu (as paths) -->
-  <g fill="#E2E8F0">
+  <g
+     fill="#e2e8f0"
+     id="g22"
+     transform="matrix(0.54691133,0,0,0.59986974,13.527933,-10.403387)">
     <!-- n -->
-    <rect x="25" y="22" width="1.5" height="6"/>
-    <rect x="25" y="22" width="4" height="1.5"/>
-    <rect x="27.5" y="22" width="1.5" height="6"/>
-    
+    <rect
+       x="25"
+       y="22"
+       width="1.5"
+       height="6"
+       id="rect5" />
+    <rect
+       x="25"
+       y="22"
+       width="4"
+       height="1.5"
+       id="rect6" />
+    <rect
+       x="27.5"
+       y="22"
+       width="1.5"
+       height="6"
+       id="rect7" />
     <!-- t -->
-    <rect x="31" y="20" width="1.5" height="8"/>
-    <rect x="29.5" y="24" width="4" height="1.5"/>
-    
+    <rect
+       x="31"
+       y="20"
+       width="1.5"
+       height="8"
+       id="rect8" />
+    <rect
+       x="29.5"
+       y="24"
+       width="4"
+       height="1.5"
+       id="rect9" />
     <!-- _ -->
-    <rect x="36" y="27" width="4" height="1"/>
-    
+    <rect
+       x="36"
+       y="27"
+       width="4"
+       height="1"
+       id="rect10" />
     <!-- e -->
-    <rect x="42" y="22" width="4" height="1.5"/>
-    <rect x="42" y="22" width="1.5" height="6"/>
-    <rect x="42" y="24.5" width="3" height="1"/>
-    <rect x="42" y="26.5" width="4" height="1.5"/>
-    
+    <rect
+       x="42"
+       y="22"
+       width="4"
+       height="1.5"
+       id="rect11" />
+    <rect
+       x="42"
+       y="22"
+       width="1.5"
+       height="6"
+       id="rect12" />
+    <rect
+       x="42"
+       y="24.5"
+       width="3"
+       height="1"
+       id="rect13" />
+    <rect
+       x="42"
+       y="26.5"
+       width="4"
+       height="1.5"
+       id="rect14" />
     <!-- m -->
-    <rect x="48" y="22" width="1.5" height="6"/>
-    <rect x="48" y="22" width="2" height="1.5"/>
-    <rect x="50" y="22" width="1.5" height="6"/>
-    <rect x="50" y="22" width="2" height="1.5"/>
-    <rect x="52" y="22" width="1.5" height="6"/>
-    
+    <rect
+       x="48"
+       y="22"
+       width="1.5"
+       height="6"
+       id="rect15" />
+    <rect
+       x="48"
+       y="22"
+       width="2"
+       height="1.5"
+       id="rect16" />
+    <rect
+       x="50"
+       y="22"
+       width="1.5"
+       height="6"
+       id="rect17" />
+    <rect
+       x="50"
+       y="22"
+       width="2"
+       height="1.5"
+       id="rect18" />
+    <rect
+       x="52"
+       y="22"
+       width="1.5"
+       height="6"
+       id="rect19" />
     <!-- u -->
-    <rect x="55" y="22" width="1.5" height="5"/>
-    <rect x="55" y="26" width="4" height="1.5"/>
-    <rect x="57.5" y="22" width="1.5" height="5"/>
+    <rect
+       x="55"
+       y="22"
+       width="1.5"
+       height="5"
+       id="rect20" />
+    <rect
+       x="55"
+       y="26"
+       width="4"
+       height="1.5"
+       id="rect21" />
+    <rect
+       x="57.5"
+       y="22"
+       width="1.5"
+       height="5"
+       id="rect22" />
   </g>
-  
-  <!-- Version text - simplified -->
-  <g fill="#CBD5E0" transform="translate(10.0, 18.0)">
-    <path d="M0,-1 L1,1 L2,-1 L3,-1 L2,1 L4,1 L4,0 L6,0 L6,1 L7,1 L7,0 L8,0 L8,1 L9,1"/>
-  </g>
-  
   <!-- USB-C Socket (left edge) - much smaller -->
-  <rect x="3.0" y="37.0" width="4.0" height="6.0" fill="#2A2A2A" stroke="#404040" stroke-width="0.1"/>
-  <rect x="3.2" y="38.0" width="3.6" height="4.0" fill="#1A1A1A"/>
+  <rect
+     x="3.0"
+     y="37.0"
+     width="4.0"
+     height="6.0"
+     fill="#2A2A2A"
+     stroke="#404040"
+     stroke-width="0.1"
+     id="rect23" />
+  <rect
+     x="3.2"
+     y="38.0"
+     width="3.6"
+     height="4.0"
+     fill="#1A1A1A"
+     id="rect24" />
   <!-- USB label as path -->
-  <g fill="#CBD5E0" transform="translate(5.0, 46.0)">
-    <path d="M-1.5,-0.5 L-1.5,0.5 L-1,0.5 L-1,0 L-0.5,0 L-0.5,0.5 L0,0.5 L0,-0.5 Z M0.5,-0.5 L0.5,0.5 L1,0.5 L1,0 L1.5,0 L1.5,-0.5 Z"/>
-  </g>
-  
   <!-- Pot Center Markers (Large knobs - 3/4 radius) -->
-  <circle cx="17.78" cy="35.0" r="0.6" fill="#808080" opacity="0.3"/>
-  <circle cx="35.56" cy="35.0" r="0.6" fill="#808080" opacity="0.3"/>
-  <circle cx="53.34" cy="35.0" r="0.6" fill="#808080" opacity="0.3"/>
-  
+  <circle
+     cx="17.78"
+     cy="35.0"
+     r="0.6"
+     fill="#808080"
+     opacity="0.3"
+     id="circle24" />
+  <circle
+     cx="35.56"
+     cy="35.0"
+     r="0.6"
+     fill="#808080"
+     opacity="0.3"
+     id="circle25" />
+  <circle
+     cx="53.34"
+     cy="35.0"
+     r="0.6"
+     fill="#808080"
+     opacity="0.3"
+     id="circle26" />
   <!-- Encoder Center Markers (Infinite encoders - no position lines) -->
-  <circle cx="26.67" cy="52.0" r="0.5" fill="#404040" opacity="0.4"/>
-  <circle cx="44.45" cy="52.0" r="0.5" fill="#404040" opacity="0.4"/>
-  
+  <circle
+     cx="26.67"
+     cy="52.0"
+     r="0.5"
+     fill="#404040"
+     opacity="0.4"
+     id="circle27" />
+  <circle
+     cx="44.45"
+     cy="52.0"
+     r="0.5"
+     fill="#404040"
+     opacity="0.4"
+     id="circle28" />
   <!-- Button Center Markers (vertical pairs - much smaller like hardware) -->
-  <circle cx="14.5" cy="48.0" r="0.1" fill="#606060" opacity="0.4"/>
-  <circle cx="14.5" cy="56.0" r="0.1" fill="#606060" opacity="0.4"/>
-  <circle cx="56.5" cy="48.0" r="0.1" fill="#606060" opacity="0.4"/>
-  <circle cx="56.5" cy="56.0" r="0.1" fill="#606060" opacity="0.4"/>
-  
+  <circle
+     cx="14.5"
+     cy="48.0"
+     r="0.1"
+     fill="#606060"
+     opacity="0.4"
+     id="circle29" />
+  <circle
+     cx="14.5"
+     cy="56.0"
+     r="0.1"
+     fill="#606060"
+     opacity="0.4"
+     id="circle30" />
+  <circle
+     cx="56.5"
+     cy="48.0"
+     r="0.1"
+     fill="#606060"
+     opacity="0.4"
+     id="circle31" />
+  <circle
+     cx="56.5"
+     cy="56.0"
+     r="0.1"
+     fill="#606060"
+     opacity="0.4"
+     id="circle32" />
   <!-- Input Row Background Strips (white with opacity) -->
-  <rect x="5" y="68" width="40" height="5" fill="#FFFFFF" opacity="0.1" rx="0.5"/>
-  <rect x="5" y="78" width="40" height="5" fill="#FFFFFF" opacity="0.1" rx="0.5"/>
-  <rect x="5" y="88" width="40" height="5" fill="#FFFFFF" opacity="0.1" rx="0.5"/>
-  
+  <rect
+     x="5"
+     y="68"
+     width="40"
+     height="5"
+     fill="#FFFFFF"
+     opacity="0.1"
+     rx="0.5"
+     id="rect32" />
+  <rect
+     x="5"
+     y="78"
+     width="40"
+     height="5"
+     fill="#FFFFFF"
+     opacity="0.1"
+     rx="0.5"
+     id="rect33" />
+  <rect
+     x="5"
+     y="88"
+     width="40"
+     height="5"
+     fill="#FFFFFF"
+     opacity="0.1"
+     rx="0.5"
+     id="rect34" />
   <!-- Input Jack Centers (3 rows x 4 columns) - balanced margins -->
   <!-- Row 1 (Inputs 1-4) -->
-  <circle cx="10.0" cy="70.0" r="0.4" fill="#606060" opacity="0.5"/>
-  <circle cx="19.0" cy="70.0" r="0.4" fill="#606060" opacity="0.5"/>
-  <circle cx="28.0" cy="70.0" r="0.4" fill="#606060" opacity="0.5"/>
-  <circle cx="37.0" cy="70.0" r="0.4" fill="#606060" opacity="0.5"/>
-  
+  <circle
+     cx="10.0"
+     cy="70.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle34" />
+  <circle
+     cx="19.0"
+     cy="70.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle35" />
+  <circle
+     cx="28.0"
+     cy="70.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle36" />
+  <circle
+     cx="37.0"
+     cy="70.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle37" />
   <!-- Row 2 (Inputs 5-8) -->
-  <circle cx="10.0" cy="80.0" r="0.4" fill="#606060" opacity="0.5"/>
-  <circle cx="19.0" cy="80.0" r="0.4" fill="#606060" opacity="0.5"/>
-  <circle cx="28.0" cy="80.0" r="0.4" fill="#606060" opacity="0.5"/>
-  <circle cx="37.0" cy="80.0" r="0.4" fill="#606060" opacity="0.5"/>
-  
+  <circle
+     cx="10.0"
+     cy="80.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle38" />
+  <circle
+     cx="19.0"
+     cy="80.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle39" />
+  <circle
+     cx="28.0"
+     cy="80.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle40" />
+  <circle
+     cx="37.0"
+     cy="80.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle41" />
   <!-- Row 3 (Inputs 9-12) -->
-  <circle cx="10.0" cy="90.0" r="0.4" fill="#606060" opacity="0.5"/>
-  <circle cx="19.0" cy="90.0" r="0.4" fill="#606060" opacity="0.5"/>
-  <circle cx="28.0" cy="90.0" r="0.4" fill="#606060" opacity="0.5"/>
-  <circle cx="37.0" cy="90.0" r="0.4" fill="#606060" opacity="0.5"/>
-  
+  <circle
+     cx="10.0"
+     cy="90.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle42" />
+  <circle
+     cx="19.0"
+     cy="90.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle43" />
+  <circle
+     cx="28.0"
+     cy="90.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle44" />
+  <circle
+     cx="37.0"
+     cy="90.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle45" />
   <!-- Output Jack Centers (4 rows x 2 columns) - balanced margins -->
   <!-- Row 1 (Outputs 1-2) -->
-  <circle cx="55.0" cy="70.0" r="0.4" fill="#606060" opacity="0.5"/>
-  <circle cx="64.0" cy="70.0" r="0.4" fill="#606060" opacity="0.5"/>
-  
+  <circle
+     cx="55.0"
+     cy="70.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle46" />
+  <circle
+     cx="64.0"
+     cy="70.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle47" />
   <!-- Row 2 (Outputs 3-4) -->
-  <circle cx="55.0" cy="80.0" r="0.4" fill="#606060" opacity="0.5"/>
-  <circle cx="64.0" cy="80.0" r="0.4" fill="#606060" opacity="0.5"/>
-  
+  <circle
+     cx="55.0"
+     cy="80.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle48" />
+  <circle
+     cx="64.0"
+     cy="80.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle49" />
   <!-- Row 3 (Outputs 5-6) -->
-  <circle cx="55.0" cy="90.0" r="0.4" fill="#606060" opacity="0.5"/>
-  <circle cx="64.0" cy="90.0" r="0.4" fill="#606060" opacity="0.5"/>
-  
+  <circle
+     cx="55.0"
+     cy="90.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle50" />
+  <circle
+     cx="64.0"
+     cy="90.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle51" />
   <!-- Row 4 (Outputs 7-8) - NEW -->
-  <circle cx="55.0" cy="100.0" r="0.4" fill="#606060" opacity="0.5"/>
-  <circle cx="64.0" cy="100.0" r="0.4" fill="#606060" opacity="0.5"/>
-  
+  <circle
+     cx="55.0"
+     cy="100.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle52" />
+  <circle
+     cx="64.0"
+     cy="100.0"
+     r="0.4"
+     fill="#606060"
+     opacity="0.5"
+     id="circle53" />
   <!-- Input Labels (1-12) as simple rectangles -->
-  <g fill="#E2E8F0">
+  <g
+     fill="#e2e8f0"
+     id="g102"
+     transform="translate(0,-2.4007815)">
     <!-- Row 1 -->
-    <!-- 1 --> <rect x="9.5" y="65.5" width="1" height="3"/>
-    <!-- 2 --> 
-    <rect x="18.5" y="65.5" width="1.5" height="0.5"/>
-    <rect x="19.5" y="66" width="0.5" height="1"/>
-    <rect x="18.5" y="67" width="1.5" height="0.5"/>
-    <rect x="18.5" y="67.5" width="0.5" height="1"/>
-    <rect x="18.5" y="68" width="1.5" height="0.5"/>
+    <!-- 1 -->
+    <rect
+       x="9.5"
+       y="65.5"
+       width="1"
+       height="3"
+       id="rect53" />
+    <!-- 2 -->
+    <rect
+       x="18.5"
+       y="65.5"
+       width="1.5"
+       height="0.5"
+       id="rect54" />
+    <rect
+       x="19.5"
+       y="66"
+       width="0.5"
+       height="1"
+       id="rect55" />
+    <rect
+       x="18.5"
+       y="67"
+       width="1.5"
+       height="0.5"
+       id="rect56" />
+    <rect
+       x="18.5"
+       y="67.5"
+       width="0.5"
+       height="1"
+       id="rect57" />
+    <rect
+       x="18.5"
+       y="68"
+       width="1.5"
+       height="0.5"
+       id="rect58" />
     <!-- 3 -->
-    <rect x="27.5" y="65.5" width="1.5" height="0.5"/>
-    <rect x="27.5" y="66.5" width="1.5" height="0.5"/>
-    <rect x="29" y="65.5" width="0.5" height="1.5"/>
-    <rect x="27.5" y="68" width="1.5" height="0.5"/>
+    <rect
+       x="27.5"
+       y="65.5"
+       width="1.5"
+       height="0.5"
+       id="rect59" />
+    <rect
+       x="27.5"
+       y="66.5"
+       width="1.5"
+       height="0.5"
+       id="rect60" />
+    <rect
+       x="29"
+       y="65.5"
+       width="0.5"
+       height="1.5"
+       id="rect61" />
+    <rect
+       x="27.5"
+       y="68"
+       width="1.5"
+       height="0.5"
+       id="rect62" />
     <!-- 4 -->
-    <rect x="36" y="65.5" width="0.5" height="1.5"/>
-    <rect x="37" y="65.5" width="0.5" height="3"/>
-    <rect x="36" y="67" width="1.5" height="0.5"/>
-    
+    <rect
+       x="36"
+       y="65.5"
+       width="0.5"
+       height="1.5"
+       id="rect63" />
+    <rect
+       x="37"
+       y="65.5"
+       width="0.5"
+       height="3"
+       id="rect64" />
+    <rect
+       x="36"
+       y="67"
+       width="1.5"
+       height="0.5"
+       id="rect65" />
     <!-- Row 2 -->
     <!-- 5 -->
-    <rect x="9.5" y="75.5" width="1.5" height="0.5"/>
-    <rect x="9.5" y="75.5" width="0.5" height="1.5"/>
-    <rect x="9.5" y="77" width="1.5" height="0.5"/>
-    <rect x="10.5" y="77" width="0.5" height="1.5"/>
-    <rect x="9.5" y="78" width="1.5" height="0.5"/>
+    <rect
+       x="9.5"
+       y="75.5"
+       width="1.5"
+       height="0.5"
+       id="rect66" />
+    <rect
+       x="9.5"
+       y="75.5"
+       width="0.5"
+       height="1.5"
+       id="rect67" />
+    <rect
+       x="9.5"
+       y="77"
+       width="1.5"
+       height="0.5"
+       id="rect68" />
+    <rect
+       x="10.5"
+       y="77"
+       width="0.5"
+       height="1.5"
+       id="rect69" />
+    <rect
+       x="9.5"
+       y="78"
+       width="1.5"
+       height="0.5"
+       id="rect70" />
     <!-- 6 -->
-    <rect x="18.5" y="75.5" width="1.5" height="0.5"/>
-    <rect x="18.5" y="75.5" width="0.5" height="3"/>
-    <rect x="18.5" y="77" width="1.5" height="0.5"/>
-    <rect x="19.5" y="77" width="0.5" height="1.5"/>
-    <rect x="18.5" y="78" width="1.5" height="0.5"/>
+    <rect
+       x="18.5"
+       y="75.5"
+       width="1.5"
+       height="0.5"
+       id="rect71" />
+    <rect
+       x="18.5"
+       y="75.5"
+       width="0.5"
+       height="3"
+       id="rect72" />
+    <rect
+       x="18.5"
+       y="77"
+       width="1.5"
+       height="0.5"
+       id="rect73" />
+    <rect
+       x="19.5"
+       y="77"
+       width="0.5"
+       height="1.5"
+       id="rect74" />
+    <rect
+       x="18.5"
+       y="78"
+       width="1.5"
+       height="0.5"
+       id="rect75" />
     <!-- 7 -->
-    <rect x="27.5" y="75.5" width="1.5" height="0.5"/>
-    <rect x="29" y="76" width="0.5" height="2.5"/>
+    <rect
+       x="27.5"
+       y="75.5"
+       width="1.5"
+       height="0.5"
+       id="rect76" />
+    <rect
+       x="29"
+       y="76"
+       width="0.5"
+       height="2.5"
+       id="rect77" />
     <!-- 8 -->
-    <rect x="36.5" y="75.5" width="1" height="0.5"/>
-    <rect x="36.5" y="77" width="1" height="0.5"/>
-    <rect x="36.5" y="78" width="1" height="0.5"/>
-    <rect x="36.5" y="75.5" width="0.5" height="1.5"/>
-    <rect x="37" y="75.5" width="0.5" height="1.5"/>
-    <rect x="36.5" y="77.5" width="0.5" height="1"/>
-    <rect x="37" y="77.5" width="0.5" height="1"/>
-    
+    <rect
+       x="36.5"
+       y="75.5"
+       width="1"
+       height="0.5"
+       id="rect78" />
+    <rect
+       x="36.5"
+       y="77"
+       width="1"
+       height="0.5"
+       id="rect79" />
+    <rect
+       x="36.5"
+       y="78"
+       width="1"
+       height="0.5"
+       id="rect80" />
+    <rect
+       x="36.5"
+       y="75.5"
+       width="0.5"
+       height="1.5"
+       id="rect81" />
+    <rect
+       x="37"
+       y="75.5"
+       width="0.5"
+       height="1.5"
+       id="rect82" />
+    <rect
+       x="36.5"
+       y="77.5"
+       width="0.5"
+       height="1"
+       id="rect83" />
+    <rect
+       x="37"
+       y="77.5"
+       width="0.5"
+       height="1"
+       id="rect84" />
     <!-- Row 3 -->
     <!-- 9 -->
-    <rect x="9.5" y="85.5" width="1.5" height="0.5"/>
-    <rect x="9.5" y="85.5" width="0.5" height="1.5"/>
-    <rect x="9.5" y="87" width="1.5" height="0.5"/>
-    <rect x="10.5" y="85.5" width="0.5" height="3"/>
-    <rect x="9.5" y="88" width="1.5" height="0.5"/>
+    <rect
+       x="9.5"
+       y="85.5"
+       width="1.5"
+       height="0.5"
+       id="rect85" />
+    <rect
+       x="9.5"
+       y="85.5"
+       width="0.5"
+       height="1.5"
+       id="rect86" />
+    <rect
+       x="9.5"
+       y="87"
+       width="1.5"
+       height="0.5"
+       id="rect87" />
+    <rect
+       x="10.5"
+       y="85.5"
+       width="0.5"
+       height="3"
+       id="rect88" />
+    <rect
+       x="9.5"
+       y="88"
+       width="1.5"
+       height="0.5"
+       id="rect89" />
     <!-- 10 -->
-    <rect x="18.5" y="85.5" width="0.5" height="3"/>
-    <rect x="20" y="85.5" width="1" height="0.5"/>
-    <rect x="20" y="85.5" width="0.5" height="3"/>
-    <rect x="20.5" y="85.5" width="0.5" height="3"/>
-    <rect x="20" y="88" width="1" height="0.5"/>
+    <rect
+       x="18.5"
+       y="85.5"
+       width="0.5"
+       height="3"
+       id="rect90" />
+    <rect
+       x="20"
+       y="85.5"
+       width="1"
+       height="0.5"
+       id="rect91" />
+    <rect
+       x="20"
+       y="85.5"
+       width="0.5"
+       height="3"
+       id="rect92" />
+    <rect
+       x="20.5"
+       y="85.5"
+       width="0.5"
+       height="3"
+       id="rect93" />
+    <rect
+       x="20"
+       y="88"
+       width="1"
+       height="0.5"
+       id="rect94" />
     <!-- 11 -->
-    <rect x="27.5" y="85.5" width="0.5" height="3"/>
-    <rect x="29" y="85.5" width="0.5" height="3"/>
+    <rect
+       x="27.5"
+       y="85.5"
+       width="0.5"
+       height="3"
+       id="rect95" />
+    <rect
+       x="29"
+       y="85.5"
+       width="0.5"
+       height="3"
+       id="rect96" />
     <!-- 12 -->
-    <rect x="36.5" y="85.5" width="0.5" height="3"/>
-    <rect x="38.5" y="85.5" width="1" height="0.5"/>
-    <rect x="39" y="86" width="0.5" height="1"/>
-    <rect x="38.5" y="87" width="1" height="0.5"/>
-    <rect x="38.5" y="87.5" width="0.5" height="1"/>
-    <rect x="38.5" y="88" width="1" height="0.5"/>
+    <rect
+       x="36.5"
+       y="85.5"
+       width="0.5"
+       height="3"
+       id="rect97" />
+    <rect
+       x="38.5"
+       y="85.5"
+       width="1"
+       height="0.5"
+       id="rect98" />
+    <rect
+       x="39"
+       y="86"
+       width="0.5"
+       height="1"
+       id="rect99" />
+    <rect
+       x="38.5"
+       y="87"
+       width="1"
+       height="0.5"
+       id="rect100" />
+    <rect
+       x="38.5"
+       y="87.5"
+       width="0.5"
+       height="1"
+       id="rect101" />
+    <rect
+       x="38.5"
+       y="88"
+       width="1"
+       height="0.5"
+       id="rect102" />
   </g>
-  
   <!-- Output Labels (1-8) as simple rectangles -->
-  <g fill="#E2E8F0">
+  <g
+     fill="#e2e8f0"
+     id="g134"
+     transform="translate(0,-2.8009118)">
     <!-- Row 1 -->
-    <!-- 1 --> <rect x="54.5" y="65.5" width="1" height="3"/>
-    <!-- 2 --> 
-    <rect x="63.5" y="65.5" width="1.5" height="0.5"/>
-    <rect x="64.5" y="66" width="0.5" height="1"/>
-    <rect x="63.5" y="67" width="1.5" height="0.5"/>
-    <rect x="63.5" y="67.5" width="0.5" height="1"/>
-    <rect x="63.5" y="68" width="1.5" height="0.5"/>
-    
+    <!-- 1 -->
+    <rect
+       x="54.5"
+       y="65.5"
+       width="1"
+       height="3"
+       id="rect103" />
+    <!-- 2 -->
+    <rect
+       x="63.5"
+       y="65.5"
+       width="1.5"
+       height="0.5"
+       id="rect104" />
+    <rect
+       x="64.5"
+       y="66"
+       width="0.5"
+       height="1"
+       id="rect105" />
+    <rect
+       x="63.5"
+       y="67"
+       width="1.5"
+       height="0.5"
+       id="rect106" />
+    <rect
+       x="63.5"
+       y="67.5"
+       width="0.5"
+       height="1"
+       id="rect107" />
+    <rect
+       x="63.5"
+       y="68"
+       width="1.5"
+       height="0.5"
+       id="rect108" />
     <!-- Row 2 -->
     <!-- 3 -->
-    <rect x="54.5" y="75.5" width="1.5" height="0.5"/>
-    <rect x="54.5" y="76.5" width="1.5" height="0.5"/>
-    <rect x="55.5" y="75.5" width="0.5" height="1.5"/>
-    <rect x="54.5" y="78" width="1.5" height="0.5"/>
+    <rect
+       x="54.5"
+       y="75.5"
+       width="1.5"
+       height="0.5"
+       id="rect109" />
+    <rect
+       x="54.5"
+       y="76.5"
+       width="1.5"
+       height="0.5"
+       id="rect110" />
+    <rect
+       x="55.5"
+       y="75.5"
+       width="0.5"
+       height="1.5"
+       id="rect111" />
+    <rect
+       x="54.5"
+       y="78"
+       width="1.5"
+       height="0.5"
+       id="rect112" />
     <!-- 4 -->
-    <rect x="63.5" y="75.5" width="0.5" height="1.5"/>
-    <rect x="64.5" y="75.5" width="0.5" height="3"/>
-    <rect x="63.5" y="77" width="1.5" height="0.5"/>
-    
+    <rect
+       x="63.5"
+       y="75.5"
+       width="0.5"
+       height="1.5"
+       id="rect113" />
+    <rect
+       x="64.5"
+       y="75.5"
+       width="0.5"
+       height="3"
+       id="rect114" />
+    <rect
+       x="63.5"
+       y="77"
+       width="1.5"
+       height="0.5"
+       id="rect115" />
     <!-- Row 3 -->
     <!-- 5 -->
-    <rect x="54.5" y="85.5" width="1.5" height="0.5"/>
-    <rect x="54.5" y="85.5" width="0.5" height="1.5"/>
-    <rect x="54.5" y="87" width="1.5" height="0.5"/>
-    <rect x="55.5" y="87" width="0.5" height="1.5"/>
-    <rect x="54.5" y="88" width="1.5" height="0.5"/>
+    <rect
+       x="54.5"
+       y="85.5"
+       width="1.5"
+       height="0.5"
+       id="rect116" />
+    <rect
+       x="54.5"
+       y="85.5"
+       width="0.5"
+       height="1.5"
+       id="rect117" />
+    <rect
+       x="54.5"
+       y="87"
+       width="1.5"
+       height="0.5"
+       id="rect118" />
+    <rect
+       x="55.5"
+       y="87"
+       width="0.5"
+       height="1.5"
+       id="rect119" />
+    <rect
+       x="54.5"
+       y="88"
+       width="1.5"
+       height="0.5"
+       id="rect120" />
     <!-- 6 -->
-    <rect x="63.5" y="85.5" width="1.5" height="0.5"/>
-    <rect x="63.5" y="85.5" width="0.5" height="3"/>
-    <rect x="63.5" y="87" width="1.5" height="0.5"/>
-    <rect x="64.5" y="87" width="0.5" height="1.5"/>
-    <rect x="63.5" y="88" width="1.5" height="0.5"/>
-    
+    <rect
+       x="63.5"
+       y="85.5"
+       width="1.5"
+       height="0.5"
+       id="rect121" />
+    <rect
+       x="63.5"
+       y="85.5"
+       width="0.5"
+       height="3"
+       id="rect122" />
+    <rect
+       x="63.5"
+       y="87"
+       width="1.5"
+       height="0.5"
+       id="rect123" />
+    <rect
+       x="64.5"
+       y="87"
+       width="0.5"
+       height="1.5"
+       id="rect124" />
+    <rect
+       x="63.5"
+       y="88"
+       width="1.5"
+       height="0.5"
+       id="rect125" />
     <!-- Row 4 (NEW) -->
     <!-- 7 -->
-    <rect x="54.5" y="95.5" width="1.5" height="0.5"/>
-    <rect x="55.5" y="96" width="0.5" height="2.5"/>
+    <rect
+       x="54.5"
+       y="95.5"
+       width="1.5"
+       height="0.5"
+       id="rect126" />
+    <rect
+       x="55.5"
+       y="96"
+       width="0.5"
+       height="2.5"
+       id="rect127" />
     <!-- 8 -->
-    <rect x="63.5" y="95.5" width="1" height="0.5"/>
-    <rect x="63.5" y="97" width="1" height="0.5"/>
-    <rect x="63.5" y="98" width="1" height="0.5"/>
-    <rect x="63.5" y="95.5" width="0.5" height="1.5"/>
-    <rect x="64" y="95.5" width="0.5" height="1.5"/>
-    <rect x="63.5" y="97.5" width="0.5" height="1"/>
-    <rect x="64" y="97.5" width="0.5" height="1"/>
+    <rect
+       x="63.5"
+       y="95.5"
+       width="1"
+       height="0.5"
+       id="rect128" />
+    <rect
+       x="63.5"
+       y="97"
+       width="1"
+       height="0.5"
+       id="rect129" />
+    <rect
+       x="63.5"
+       y="98"
+       width="1"
+       height="0.5"
+       id="rect130" />
+    <rect
+       x="63.5"
+       y="95.5"
+       width="0.5"
+       height="1.5"
+       id="rect131" />
+    <rect
+       x="64"
+       y="95.5"
+       width="0.5"
+       height="1.5"
+       id="rect132" />
+    <rect
+       x="63.5"
+       y="97.5"
+       width="0.5"
+       height="1"
+       id="rect133" />
+    <rect
+       x="64"
+       y="97.5"
+       width="0.5"
+       height="1"
+       id="rect134" />
   </g>
-  
   <!-- Bottom Branding - No Such Device (as paths) -->
-  <g fill="#CBD5E0">
+  <g
+     fill="#cbd5e0"
+     id="g178"
+     transform="matrix(0.61468938,0,0,1.072751,15.116032,-2.5280956)">
     <!-- No Such Device -->
     <!-- N -->
-    <rect x="6" y="116" width="1" height="4"/>
-    <rect x="6" y="116" width="3" height="1"/>
-    <rect x="8" y="116" width="1" height="4"/>
-    
+    <rect
+       x="6"
+       y="116"
+       width="1"
+       height="4"
+       id="rect135" />
+    <rect
+       x="6"
+       y="116"
+       width="3"
+       height="1"
+       id="rect136" />
+    <rect
+       x="8"
+       y="116"
+       width="1"
+       height="4"
+       id="rect137" />
     <!-- o -->
-    <rect x="11" y="116" width="2" height="1"/>
-    <rect x="11" y="116" width="1" height="4"/>
-    <rect x="12" y="119" width="2" height="1"/>
-    <rect x="13" y="116" width="1" height="4"/>
-    
+    <rect
+       x="11"
+       y="116"
+       width="2"
+       height="1"
+       id="rect138" />
+    <rect
+       x="11"
+       y="116"
+       width="1"
+       height="4"
+       id="rect139" />
+    <rect
+       x="12"
+       y="119"
+       width="2"
+       height="1"
+       id="rect140" />
+    <rect
+       x="13"
+       y="116"
+       width="1"
+       height="4"
+       id="rect141" />
     <!-- S -->
-    <rect x="16" y="116" width="2" height="1"/>
-    <rect x="16" y="116" width="1" height="2"/>
-    <rect x="16" y="117.5" width="2" height="1"/>
-    <rect x="17" y="117.5" width="1" height="2"/>
-    <rect x="16" y="119" width="2" height="1"/>
-    
+    <rect
+       x="16"
+       y="116"
+       width="2"
+       height="1"
+       id="rect142" />
+    <rect
+       x="16"
+       y="116"
+       width="1"
+       height="2"
+       id="rect143" />
+    <rect
+       x="16"
+       y="117.5"
+       width="2"
+       height="1"
+       id="rect144" />
+    <rect
+       x="17"
+       y="117.5"
+       width="1"
+       height="2"
+       id="rect145" />
+    <rect
+       x="16"
+       y="119"
+       width="2"
+       height="1"
+       id="rect146" />
     <!-- u -->
-    <rect x="20" y="116" width="1" height="3"/>
-    <rect x="20" y="119" width="2" height="1"/>
-    <rect x="22" y="116" width="1" height="3"/>
-    
+    <rect
+       x="20"
+       y="116"
+       width="1"
+       height="3"
+       id="rect147" />
+    <rect
+       x="20"
+       y="119"
+       width="2"
+       height="1"
+       id="rect148" />
+    <rect
+       x="22"
+       y="116"
+       width="1"
+       height="3"
+       id="rect149" />
     <!-- c -->
-    <rect x="25" y="116" width="2" height="1"/>
-    <rect x="25" y="116" width="1" height="4"/>
-    <rect x="25" y="119" width="2" height="1"/>
-    
+    <rect
+       x="25"
+       y="116"
+       width="2"
+       height="1"
+       id="rect150" />
+    <rect
+       x="25"
+       y="116"
+       width="1"
+       height="4"
+       id="rect151" />
+    <rect
+       x="25"
+       y="119"
+       width="2"
+       height="1"
+       id="rect152" />
     <!-- h -->
-    <rect x="29" y="115" width="1" height="5"/>
-    <rect x="29" y="117" width="2" height="1"/>
-    <rect x="31" y="117" width="1" height="3"/>
-    
+    <rect
+       x="29"
+       y="115"
+       width="1"
+       height="5"
+       id="rect153" />
+    <rect
+       x="29"
+       y="117"
+       width="2"
+       height="1"
+       id="rect154" />
+    <rect
+       x="31"
+       y="117"
+       width="1"
+       height="3"
+       id="rect155" />
     <!-- D -->
-    <rect x="35" y="116" width="1" height="4"/>
-    <rect x="35" y="116" width="2" height="1"/>
-    <rect x="37" y="116" width="1" height="2"/>
-    <rect x="36" y="118" width="1" height="1"/>
-    <rect x="35" y="119" width="2" height="1"/>
-    
+    <rect
+       x="35"
+       y="116"
+       width="1"
+       height="4"
+       id="rect156" />
+    <rect
+       x="35"
+       y="116"
+       width="2"
+       height="1"
+       id="rect157" />
+    <rect
+       x="37"
+       y="116"
+       width="1"
+       height="2"
+       id="rect158" />
+    <rect
+       x="36"
+       y="118"
+       width="1"
+       height="1"
+       id="rect159" />
+    <rect
+       x="35"
+       y="119"
+       width="2"
+       height="1"
+       id="rect160" />
     <!-- e -->
-    <rect x="40" y="116" width="2" height="1"/>
-    <rect x="40" y="116" width="1" height="4"/>
-    <rect x="40" y="117.5" width="2" height="1"/>
-    <rect x="40" y="119" width="2" height="1"/>
-    
+    <rect
+       x="40"
+       y="116"
+       width="2"
+       height="1"
+       id="rect161" />
+    <rect
+       x="40"
+       y="116"
+       width="1"
+       height="4"
+       id="rect162" />
+    <rect
+       x="40"
+       y="117.5"
+       width="2"
+       height="1"
+       id="rect163" />
+    <rect
+       x="40"
+       y="119"
+       width="2"
+       height="1"
+       id="rect164" />
     <!-- v -->
-    <rect x="44" y="116" width="1" height="2"/>
-    <rect x="45" y="118" width="1" height="1"/>
-    <rect x="46" y="119" width="1" height="1"/>
-    <rect x="47" y="118" width="1" height="1"/>
-    <rect x="48" y="116" width="1" height="2"/>
-    
+    <rect
+       x="44"
+       y="116"
+       width="1"
+       height="2"
+       id="rect165" />
+    <rect
+       x="45"
+       y="118"
+       width="1"
+       height="1"
+       id="rect166" />
+    <rect
+       x="46"
+       y="119"
+       width="1"
+       height="1"
+       id="rect167" />
+    <rect
+       x="47"
+       y="118"
+       width="1"
+       height="1"
+       id="rect168" />
+    <rect
+       x="48"
+       y="116"
+       width="1"
+       height="2"
+       id="rect169" />
     <!-- i -->
-    <rect x="51" y="114.5" width="1" height="1"/>
-    <rect x="51" y="116" width="1" height="4"/>
-    
+    <rect
+       x="51"
+       y="114.5"
+       width="1"
+       height="1"
+       id="rect170" />
+    <rect
+       x="51"
+       y="116"
+       width="1"
+       height="4"
+       id="rect171" />
     <!-- c -->
-    <rect x="54" y="116" width="2" height="1"/>
-    <rect x="54" y="116" width="1" height="4"/>
-    <rect x="54" y="119" width="2" height="1"/>
-    
+    <rect
+       x="54"
+       y="116"
+       width="2"
+       height="1"
+       id="rect172" />
+    <rect
+       x="54"
+       y="116"
+       width="1"
+       height="4"
+       id="rect173" />
+    <rect
+       x="54"
+       y="119"
+       width="2"
+       height="1"
+       id="rect174" />
     <!-- e -->
-    <rect x="58" y="116" width="2" height="1"/>
-    <rect x="58" y="116" width="1" height="4"/>
-    <rect x="58" y="117.5" width="2" height="1"/>
-    <rect x="58" y="119" width="2" height="1"/>
+    <rect
+       x="58"
+       y="116"
+       width="2"
+       height="1"
+       id="rect175" />
+    <rect
+       x="58"
+       y="116"
+       width="1"
+       height="4"
+       id="rect176" />
+    <rect
+       x="58"
+       y="117.5"
+       width="2"
+       height="1"
+       id="rect177" />
+    <rect
+       x="58"
+       y="119"
+       width="2"
+       height="1"
+       id="rect178" />
   </g>
-  
 </svg>
