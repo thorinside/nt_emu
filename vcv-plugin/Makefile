@@ -14,6 +14,9 @@ FLAGS += -I../emulator/include
 SOURCES += $(wildcard src/*.cpp)
 SOURCES += $(wildcard src/*/*.cpp)
 
+# Add VCV-specific fonts implementation for shared font system
+SOURCES += src/fonts_vcv.cpp
+
 # Add ApiShim for drawing API support (commented out due to memory corruption)
 # SOURCES += ../emulator/src/core/api_shim.cpp
 
