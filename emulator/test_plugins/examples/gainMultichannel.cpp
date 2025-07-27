@@ -151,11 +151,21 @@ static const _NT_factory factory =
 	.description = "Applies gain",
 	.numSpecifications = ARRAY_SIZE(specifications),
 	.specifications = specifications,
+	.calculateStaticRequirements = nullptr,
+	.initialise = nullptr,
 	.calculateRequirements = calculateRequirements,
 	.construct = construct,
 	.parameterChanged = parameterChanged,
 	.step = step,
 	.draw = NULL,
+	.midiRealtime = nullptr,
+	.midiMessage = nullptr,
+	.tags = kNT_tagUtility,
+	.hasCustomUi = nullptr,
+	.customUi = nullptr,
+	.setupUi = nullptr,
+	.serialise = nullptr,
+	.deserialise = nullptr,
 };
 
 uintptr_t pluginEntry( _NT_selector selector, uint32_t data )
@@ -170,4 +180,9 @@ uintptr_t pluginEntry( _NT_selector selector, uint32_t data )
 		return (uintptr_t)( ( data == 0 ) ? &factory : NULL );
 	}
 	return 0;
+}
+
+extern "C" const _NT_factory* NT_getFactoryPtr()
+{
+	return &factory;
 }

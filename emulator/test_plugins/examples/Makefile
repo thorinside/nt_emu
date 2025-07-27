@@ -26,6 +26,11 @@ gainCustomUI-nostubs.dylib: gainCustomUI.cpp
 	@echo "Building $@ (without API stubs for VCV plugin)..."
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $< -undefined dynamic_lookup
 
+# Test executables (built without -shared flag)
+test_%: test_%.cpp
+	@echo "Building test executable $@..."
+	$(CXX) $(CXXFLAGS) -I../../include -o $@ $<
+
 # Clean target
 clean:
 	rm -f *.dylib *.o

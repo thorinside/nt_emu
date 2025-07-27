@@ -49,14 +49,14 @@ static void api_drawShapeF(_NT_shape shape, float x0, float y0, float x1, float 
 
 static int api_intToString(char* buffer, int32_t value) {
     if (!buffer) return 0;
-    return sprintf(buffer, "%d", value);
+    return snprintf(buffer, 32, "%d", value);
 }
 
 static int api_floatToString(char* buffer, float value, int decimalPlaces) {
     if (!buffer) return 0;
     char format[16];
-    sprintf(format, "%%.%df", decimalPlaces);
-    return sprintf(buffer, format, value);
+    snprintf(format, sizeof(format), "%%.%df", decimalPlaces);
+    return snprintf(buffer, 32, format, value);
 }
 
 // Stub implementations for parameter/MIDI functions (to be implemented when needed)

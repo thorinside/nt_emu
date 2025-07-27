@@ -2,17 +2,20 @@
 #include <dlfcn.h>
 #include <distingnt/api.h>
 
-int main() {
+int main(int argc, char* argv[]) {
     std::cout << "=== Simple Plugin Test ===" << std::endl;
     
-    // Load gain plugin
-    void* handle = dlopen("./gain.dylib", RTLD_LAZY);
+    // Get plugin path from command line, default to gain.dylib
+    const char* plugin_path = (argc > 1) ? argv[1] : "./gain.dylib";
+    
+    // Load plugin
+    void* handle = dlopen(plugin_path, RTLD_LAZY);
     if (!handle) {
-        std::cout << "✗ Failed to load gain: " << dlerror() << std::endl;
+        std::cout << "✗ Failed to load " << plugin_path << ": " << dlerror() << std::endl;
         return 1;
     }
     
-    std::cout << "✓ Loaded gain plugin" << std::endl;
+    std::cout << "✓ Loaded plugin: " << plugin_path << std::endl;
     
     // Get plugin entry
     typedef uintptr_t (*PluginEntryFunc)(_NT_selector, uint32_t);
@@ -45,7 +48,7 @@ int main() {
     // Test static requirements
     if (factory->calculateStaticRequirements) {
         std::cout << "  Has calculateStaticRequirements" << std::endl;
-        _NT_staticRequirements staticReqs = {0};
+        _NT_staticRequirements staticReqs = {};
         factory->calculateStaticRequirements(staticReqs);
         std::cout << "  Static DRAM: " << staticReqs.dram << " bytes" << std::endl;
     } else {
@@ -55,7 +58,7 @@ int main() {
     // Test algorithm requirements
     if (factory->calculateRequirements) {
         std::cout << "  Testing calculateRequirements..." << std::endl;
-        _NT_algorithmRequirements reqs = {0};
+        _NT_algorithmRequirements reqs = {};
         factory->calculateRequirements(reqs, nullptr);
         std::cout << "  ✓ Calculated requirements:" << std::endl;
         std::cout << "    Parameters: " << reqs.numParameters << std::endl;

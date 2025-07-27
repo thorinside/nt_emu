@@ -3,7 +3,7 @@
 #include <iostream>
 #include <sys/stat.h>
 
-typedef _NT_factory* (*FactoryFunc)();
+typedef uintptr_t (*PluginEntryFunc)(_NT_selector, uint32_t);
 
 PluginLoader::PluginLoader() {
 }
@@ -27,46 +27,52 @@ bool PluginLoader::loadPlugin(const std::string& path) {
         return false;
     }
     
-    // Get the factory function
-    FactoryFunc getFactory = (FactoryFunc)dlsym(plugin_.handle, "NT_getFactoryPtr");
-    if (!getFactory) {
-        std::cerr << "Plugin missing NT_getFactoryPtr symbol: " << dlerror() << std::endl;
+    // Get the pluginEntry function
+    PluginEntryFunc pluginEntry = (PluginEntryFunc)dlsym(plugin_.handle, "pluginEntry");
+    if (!pluginEntry) {
+        std::cerr << "Plugin missing pluginEntry symbol: " << dlerror() << std::endl;
         cleanup();
         return false;
     }
     
-    plugin_.factory = getFactory();
+    // Check API version
+    uintptr_t version = pluginEntry(kNT_selector_version, 0);
+    if (version != kNT_apiVersionCurrent) {
+        std::cerr << "API version mismatch: " << version << " vs " << kNT_apiVersionCurrent << std::endl;
+        cleanup();
+        return false;
+    }
+    
+    // Get number of factories (should be 1)
+    uintptr_t numFactories = pluginEntry(kNT_selector_numFactories, 0);
+    if (numFactories < 1) {
+        std::cerr << "No factories in plugin" << std::endl;
+        cleanup();
+        return false;
+    }
+    
+    // Get factory pointer for index 0
+    plugin_.factory = (_NT_factory*)pluginEntry(kNT_selector_factoryInfo, 0);
     if (!plugin_.factory) {
-        std::cerr << "Factory function returned null" << std::endl;
+        std::cerr << "Failed to get factory" << std::endl;
         cleanup();
         return false;
     }
     
-    // Check API version compatibility
-    if (!plugin_.factory->getAPIVersion) {
-        std::cerr << "Plugin factory missing getAPIVersion function" << std::endl;
-        cleanup();
-        return false;
-    }
-    
-    unsigned int apiVersion = plugin_.factory->getAPIVersion(plugin_.factory);
-    if (apiVersion > kNT_apiVersion) {
-        std::cerr << "Plugin API version " << apiVersion << " is newer than emulator version " << kNT_apiVersion << std::endl;
-        cleanup();
-        return false;
-    }
+    // API version already checked via selector
     
     // Get static requirements and allocate shared memory
-    if (!plugin_.factory->getStaticRequirements) {
-        std::cerr << "Plugin factory missing getStaticRequirements function" << std::endl;
+    if (!plugin_.factory->calculateStaticRequirements) {
+        std::cerr << "Plugin factory missing calculateStaticRequirements function" << std::endl;
         cleanup();
         return false;
     }
     
-    auto staticReqs = plugin_.factory->getStaticRequirements(plugin_.factory);
-    if (staticReqs.memorySize > 0) {
+    _NT_staticRequirements staticReqs = {};
+    plugin_.factory->calculateStaticRequirements(staticReqs);
+    if (staticReqs.dram > 0) {
         // Use posix_memalign for better compatibility
-        if (posix_memalign(&plugin_.shared_memory, 16, staticReqs.memorySize) != 0) {
+        if (posix_memalign(&plugin_.shared_memory, 16, staticReqs.dram) != 0) {
             std::cerr << "Failed to allocate shared memory" << std::endl;
             cleanup();
             return false;
@@ -79,24 +85,23 @@ bool PluginLoader::loadPlugin(const std::string& path) {
             return false;
         }
         
-        if (plugin_.factory->initialise(plugin_.factory, plugin_.shared_memory) != 0) {
-            std::cerr << "Factory initialization failed" << std::endl;
-            cleanup();
-            return false;
-        }
+        _NT_staticMemoryPtrs staticPtrs = {};
+        staticPtrs.dram = (uint8_t*)plugin_.shared_memory;
+        plugin_.factory->initialise(staticPtrs, staticReqs);
     }
     
     // Get algorithm requirements and allocate instance memory
-    if (!plugin_.factory->getRequirements) {
-        std::cerr << "Plugin factory missing getRequirements function" << std::endl;
+    if (!plugin_.factory->calculateRequirements) {
+        std::cerr << "Plugin factory missing calculateRequirements function" << std::endl;
         cleanup();
         return false;
     }
     
-    auto reqs = plugin_.factory->getRequirements(plugin_.factory);
-    if (reqs.memorySize > 0) {
+    _NT_algorithmRequirements reqs = {};
+    plugin_.factory->calculateRequirements(reqs, nullptr);
+    if (reqs.dram > 0) {
         // Use posix_memalign for better compatibility
-        if (posix_memalign(&plugin_.instance_memory, 16, reqs.memorySize) != 0) {
+        if (posix_memalign(&plugin_.instance_memory, 16, reqs.dram) != 0) {
             std::cerr << "Failed to allocate instance memory" << std::endl;
             cleanup();
             return false;
@@ -109,7 +114,9 @@ bool PluginLoader::loadPlugin(const std::string& path) {
             return false;
         }
         
-        plugin_.algorithm = plugin_.factory->construct(plugin_.factory, plugin_.instance_memory);
+        _NT_algorithmMemoryPtrs algPtrs = {};
+        algPtrs.dram = (uint8_t*)plugin_.instance_memory;
+        plugin_.algorithm = plugin_.factory->construct(algPtrs, reqs, nullptr);
         if (!plugin_.algorithm) {
             std::cerr << "Algorithm construction failed" << std::endl;
             cleanup();
@@ -126,19 +133,13 @@ bool PluginLoader::loadPlugin(const std::string& path) {
 }
 
 void PluginLoader::unloadPlugin() {
-    if (plugin_.is_loaded && plugin_.factory && plugin_.algorithm) {
-        if (plugin_.factory->destruct) {
-            plugin_.factory->destruct(plugin_.factory, plugin_.algorithm);
-        }
+    if (plugin_.is_loaded && plugin_.algorithm) {
+        // No explicit destruct function in new API - algorithm cleanup is automatic
         plugin_.algorithm = nullptr;
     }
     
-    if (plugin_.factory) {
-        if (plugin_.factory->terminate) {
-            plugin_.factory->terminate(plugin_.factory);
-        }
-        plugin_.factory = nullptr;
-    }
+    // No terminate function in new API
+    plugin_.factory = nullptr;
     
     cleanup();
     plugin_.is_loaded = false;
@@ -146,8 +147,8 @@ void PluginLoader::unloadPlugin() {
 
 bool PluginLoader::validatePlugin(void* handle) {
     // Check for required symbols
-    if (!dlsym(handle, "NT_getFactoryPtr")) {
-        std::cerr << "Plugin missing required NT_getFactoryPtr symbol" << std::endl;
+    if (!dlsym(handle, "pluginEntry")) {
+        std::cerr << "Plugin missing required pluginEntry symbol" << std::endl;
         return false;
     }
     

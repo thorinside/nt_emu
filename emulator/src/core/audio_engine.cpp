@@ -275,22 +275,31 @@ void AudioEngine::processAudio(const float* input, float* output, unsigned long 
             mapMultiChannelInput(frame_input, samples_to_process);
         }
         
-        // Create bus pointers for the plugin and zero disabled inputs for plugin processing
-        float* bus_ptrs[NUM_BUSES];
+        // Create flat bus buffer for the plugin - buses arranged consecutively
         std::array<std::array<float, SAMPLES_PER_BLOCK>, NUM_BUSES> plugin_buses = audio_buses_;
+        std::array<float, NUM_BUSES * SAMPLES_PER_BLOCK> flat_bus_buffer;
         
+        // Copy bus data to flat buffer and zero disabled inputs
         for (int i = 0; i < NUM_BUSES; i++) {
             // For input buses (0-11), only pass enabled ones to plugin
             if (i < 12 && !input_enabled_[i]) {
                 plugin_buses[i].fill(0.0f);
             }
-            bus_ptrs[i] = plugin_buses[i].data();
+            std::copy(plugin_buses[i].begin(), plugin_buses[i].end(), 
+                     flat_bus_buffer.begin() + i * SAMPLES_PER_BLOCK);
         }
         
         // Process through plugin
         try {
-            if (algorithm_->step) {
-                algorithm_->step(algorithm_, bus_ptrs, samples_to_process);
+            if (factory_ && factory_->step) {
+                factory_->step(algorithm_, flat_bus_buffer.data(), samples_to_process);
+                
+                // Copy processed data back from flat buffer to plugin_buses
+                for (int i = 0; i < NUM_BUSES; i++) {
+                    std::copy(flat_bus_buffer.begin() + i * SAMPLES_PER_BLOCK,
+                             flat_bus_buffer.begin() + (i + 1) * SAMPLES_PER_BLOCK,
+                             plugin_buses[i].begin());
+                }
             }
         } catch (...) {
             std::cerr << "Plugin processing error" << std::endl;

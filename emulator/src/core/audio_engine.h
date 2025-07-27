@@ -28,7 +28,9 @@ public:
     bool isRunning() const { return stream_ != nullptr && !Pa_IsStreamStopped(stream_); }
     
     void setAlgorithm(_NT_algorithm* algorithm) { algorithm_ = algorithm; }
+    void setFactory(_NT_factory* factory) { factory_ = factory; }
     _NT_algorithm* getAlgorithm() const { return algorithm_; }
+    _NT_factory* getFactory() const { return factory_; }
     
     // Device configuration
     bool configureDevices(const AudioConfiguration& config);
@@ -52,6 +54,7 @@ public:
 private:
     PaStream* stream_ = nullptr;
     _NT_algorithm* algorithm_ = nullptr;
+    _NT_factory* factory_ = nullptr;
     
     // Configuration state
     AudioConfiguration current_config_;

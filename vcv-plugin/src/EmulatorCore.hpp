@@ -287,9 +287,21 @@ inline void EmulatorCore::processAudio(float* buses, int numFramesBy4) {
     // Process hardware changes
     processHardwareChanges();
     
-    // Call algorithm step function
+    // Call algorithm step function with crash protection
     if (current_algorithm_->factory->step) {
-        current_algorithm_->factory->step(current_algorithm_->algorithm, buses, numFramesBy4);
+        try {
+            current_algorithm_->factory->step(current_algorithm_->algorithm, buses, numFramesBy4);
+        } catch (const std::exception& e) {
+            // Plugin crashed during audio processing - disable it
+            printf("Plugin crashed during audio processing: %s\n", e.what());
+            // Clear the current algorithm to prevent further crashes
+            current_algorithm_ = nullptr;
+        } catch (...) {
+            // Plugin crashed during audio processing - disable it
+            printf("Plugin crashed during audio processing: unknown error\n");
+            // Clear the current algorithm to prevent further crashes
+            current_algorithm_ = nullptr;
+        }
     }
 }
 
@@ -326,7 +338,13 @@ inline void EmulatorCore::processHardwareChanges() {
     for (int i = 0; i < 3; i++) {
         if (hardware_state_.pots[i] != previous_hardware_state_.pots[i]) {
             if (current_algorithm_->factory->parameterChanged) {
-                current_algorithm_->factory->parameterChanged(current_algorithm_->algorithm, i);
+                try {
+                    current_algorithm_->factory->parameterChanged(current_algorithm_->algorithm, i);
+                } catch (...) {
+                    printf("Plugin crashed during parameterChanged\n");
+                    current_algorithm_ = nullptr;
+                    return;
+                }
             }
         }
     }
@@ -364,10 +382,16 @@ inline void EmulatorCore::updateDisplay() {
     
     // Let algorithm draw if it has a draw function
     if (current_algorithm_->factory->draw) {
-        bool suppress_default = current_algorithm_->factory->draw(current_algorithm_->algorithm);
-        if (!suppress_default) {
-            // Draw default parameter display if algorithm doesn't suppress it
-            // TODO: Implement default parameter display
+        try {
+            bool suppress_default = current_algorithm_->factory->draw(current_algorithm_->algorithm);
+            if (!suppress_default) {
+                // Draw default parameter display if algorithm doesn't suppress it
+                // TODO: Implement default parameter display
+            }
+        } catch (...) {
+            printf("Plugin crashed during draw\n");
+            current_algorithm_ = nullptr;
+            return;
         }
     }
     

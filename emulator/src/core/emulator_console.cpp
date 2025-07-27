@@ -60,9 +60,11 @@ bool EmulatorConsole::loadPlugin(const std::string& path) {
     
     // Set up the plugin with our systems
     auto* algorithm = plugin_loader_->getAlgorithm();
+    auto* factory = plugin_loader_->getFactory();
     if (algorithm) {
         ApiShim::setAlgorithm(algorithm);
         audio_engine_->setAlgorithm(algorithm);
+        audio_engine_->setFactory(factory);
         
         std::cout << "Plugin loaded: " << path << std::endl;
         
@@ -82,6 +84,7 @@ void EmulatorConsole::unloadPlugin() {
         stopAudio();
         
         audio_engine_->setAlgorithm(nullptr);
+        audio_engine_->setFactory(nullptr);
         ApiShim::setAlgorithm(nullptr);
         
         plugin_loader_->unloadPlugin();
