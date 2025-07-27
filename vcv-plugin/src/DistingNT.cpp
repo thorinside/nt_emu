@@ -717,6 +717,36 @@ struct DistingNT : Module {
         }
     }
     
+    void reloadPlugin() {
+        if (!isPluginLoaded() || pluginPath.empty()) {
+            loadingMessage = "No plugin to reload";
+            loadingMessageTimer = 1.5f;
+            displayDirty = true;
+            return;
+        }
+        
+        // Store current state
+        std::string currentPath = pluginPath;
+        std::vector<int32_t> currentSpecs = currentSpecifications;
+        
+        // Unload current plugin
+        unloadPlugin();
+        
+        // Reload from same path
+        if (loadPlugin(currentPath)) {
+            // Try to restore specifications if still valid
+            if (!currentSpecs.empty() && currentSpecs.size() <= pluginSpecifications.size()) {
+                currentSpecifications = currentSpecs;
+                useCustomSpecifications = true;
+            }
+            loadingMessage = "Plugin reloaded";
+        } else {
+            loadingMessage = "Reload failed";
+        }
+        loadingMessageTimer = 1.5f;
+        displayDirty = true;
+    }
+    
     // Plugin specification discovery (phase 1 of loading)
     struct PluginSpecificationInfo {
         std::string path;
@@ -2741,6 +2771,9 @@ struct DistingNTWidget : ModuleWidget {
             // Unload option
             if (module->isPluginLoaded()) {
                 menu->addChild(new MenuSeparator);
+                menu->addChild(createMenuItem("Reload Plugin", "", [=]() {
+                    module->reloadPlugin();
+                }));
                 menu->addChild(createMenuItem("Unload Plugin", "", [=]() {
                     module->unloadPlugin();
                 }));
