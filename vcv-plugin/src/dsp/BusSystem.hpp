@@ -5,7 +5,7 @@
 using namespace rack;
 
 // Forward declaration
-struct DistingNT;
+struct NtEmu;
 
 class BusSystem {
 private:

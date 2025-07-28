@@ -4,11 +4,11 @@
 using namespace rack;
 
 // Forward declarations
-struct DistingNT;
+struct NtEmu;
 struct VCVDisplayBuffer;
 
 struct OLEDWidget : FramebufferWidget {
-    DistingNT* module = nullptr;
+    NtEmu* module = nullptr;
     
     // Display dimensions matching Disting NT OLED
     static constexpr int DISPLAY_WIDTH = 256;

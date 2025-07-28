@@ -2,7 +2,7 @@
 #include "../EmulatorCore.hpp"
 
 // Forward declaration implementation will be resolved at link time
-struct DistingNT;
+struct NtEmu;
 
 void OLEDWidget::step() {
     // We'll implement this in the DistingNT.cpp file to avoid circular dependencies

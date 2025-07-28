@@ -5,11 +5,11 @@
 
 using namespace rack;
 
-struct DistingNTPressablePot : componentlibrary::RoundBigBlackKnob {
+struct NtEmuPressablePot : componentlibrary::RoundBigBlackKnob {
     EmulatorCore* emulatorCore = nullptr;
     int potIndex = 0;  // 0, 1, or 2 for left, center, right pot
     
-    DistingNTPressablePot() : componentlibrary::RoundBigBlackKnob() {
+    NtEmuPressablePot() : componentlibrary::RoundBigBlackKnob() {
         // Constructor automatically sets up the correct SVGs via parent class
     }
     
