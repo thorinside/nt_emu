@@ -1121,6 +1121,14 @@ struct DistingNT : Module, IParameterObserver {
             processControls();
         }
         
+        // Always process menu button (Button 1) even when menu is active
+        if (menuSystem->isMenuActive()) {
+            if (buttonTriggers[0].process(params[BUTTON_1_PARAM].getValue())) {
+                onButtonPress(0, true);
+                displayDirty = true;
+            }
+        }
+        
         // Sync routing matrix with plugin algorithm values if plugin is loaded
         // Skip sync during menu mode to avoid conflicts with parameter editing
         if (isPluginLoaded() && pluginManager && pluginManager->getAlgorithm() && pluginManager->getAlgorithm()->v && menuMode == MENU_OFF) {
@@ -1279,15 +1287,18 @@ struct DistingNT : Module, IParameterObserver {
     void onButtonPress(int button, bool pressed) {
         INFO("Button %d %s", button + 1, pressed ? "pressed" : "released");
         if (pressed) {
-            // Button 1 is the menu button
+            // Button 1 always toggles menu
             if (button == 0) {
                 INFO("Menu button pressed - toggling menu");
                 toggleMenuMode();
             } else {
-                emulatorCore.pressButton(button);
+                // Buttons 2-4 pass through to emulator when menu is not active
+                if (!menuSystem->isMenuActive()) {
+                    emulatorCore.pressButton(button);
+                }
             }
         } else {
-            if (button != 0) { // Don't send button 1 release to emulator
+            if (!menuSystem->isMenuActive() && button != 0) {
                 emulatorCore.releaseButton(button);
             }
         }

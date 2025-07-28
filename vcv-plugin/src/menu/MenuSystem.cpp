@@ -16,7 +16,8 @@ MenuSystem::MenuSystem(ParameterSystem* paramSystem) : parameterSystem(paramSyst
 void MenuSystem::toggleMenu() {
     if (currentState == State::OFF) {
         if (canNavigate()) {
-            enterState(State::PAGE_SELECT);
+            // Enter menu with all controls active simultaneously
+            enterState(State::VALUE_EDIT);
         }
     } else {
         exitMenu();
@@ -30,64 +31,31 @@ void MenuSystem::exitMenu() {
 }
 
 void MenuSystem::enterState(State newState) {
-    if (newState != currentState) {
-        transition(newState);
-    }
+    // Simplified state entry - no state machine transitions
+    currentState = newState;
+    onStateEnter(currentState);
+    notifyStateChanged();
+    notifyModeChanged();
 }
 
 void MenuSystem::processNavigation(const std::array<float, 3>& potValues, 
                                   const std::array<int, 2>& encoderValues,
                                   const std::array<bool, 2>& encoderPressed) {
-    if (!canNavigate()) {
-        exitMenu();
+    if (!canNavigate() || currentState == State::OFF) {
         return;
     }
     
-    // Check for encoder press changes first
-    for (int i = 0; i < 2; i++) {
-        if (hasEncoderPressChanged(i, encoderPressed[i]) && encoderPressed[i]) {
-            // Handle encoder press based on current state
-            switch (currentState) {
-                case State::PAGE_SELECT:
-                    if (parameterSystem->hasParameters()) {
-                        enterState(State::PARAM_SELECT);
-                    }
-                    break;
-                case State::PARAM_SELECT:
-                    parameterEditValue = parameterSystem->getParameterValue(parameterSystem->getCurrentParamIndex());
-                    enterState(State::VALUE_EDIT);
-                    break;
-                case State::VALUE_EDIT:
-                    confirmParameterEdit();
-                    enterState(State::PARAM_SELECT);
-                    break;
-                case State::OFF:
-                default:
-                    break;
-            }
-        }
-    }
+    // All three controls work independently and simultaneously
+    // Left Pot: selects parameter page
+    processPageSelection(potValues[0]);
     
-    // Process navigation based on current state
-    switch (currentState) {
-        case State::PAGE_SELECT:
-            processPageSelection(potValues[0]); // Left pot
-            break;
-            
-        case State::PARAM_SELECT:
-            processParameterSelection(potValues[1], // Center pot
-                                    encoderValues[0] - inputTracker.lastEncoderValues[0]); // Left encoder delta
-            break;
-            
-        case State::VALUE_EDIT:
-            processValueEditing(potValues[2], // Right pot
-                              encoderValues[1] - inputTracker.lastEncoderValues[1]); // Right encoder delta
-            break;
-            
-        case State::OFF:
-        default:
-            break;
-    }
+    // Center Pot and Left Encoder: select parameter
+    int leftEncoderDelta = encoderValues[0] - inputTracker.lastEncoderValues[0];
+    processParameterSelection(potValues[1], leftEncoderDelta);
+    
+    // Right Pot and Right Encoder: modify parameter value
+    int rightEncoderDelta = encoderValues[1] - inputTracker.lastEncoderValues[1];
+    processValueEditing(potValues[2], rightEncoderDelta);
     
     // Update input tracking
     inputTracker.lastPotValues = potValues;
@@ -112,14 +80,18 @@ void MenuSystem::navigateToParameter(int paramIndex) {
 void MenuSystem::editParameterValue(int delta) {
     if (currentState != State::VALUE_EDIT) return;
     
-    int paramIndex = parameterSystem->getCurrentParamIndex();
-    const _NT_parameter* param = parameterSystem->getParameterInfo(paramIndex);
+    int actualParamIndex = getActualParameterIndex();
+    if (actualParamIndex < 0) return;
+    
+    const _NT_parameter* param = parameterSystem->getParameterInfo(actualParamIndex);
     
     if (param) {
         int newValue = clamp(parameterEditValue + delta, (int)param->min, (int)param->max);
         if (newValue != parameterEditValue) {
             parameterEditValue = newValue;
-            notifyParameterChanged(paramIndex, (int16_t)parameterEditValue);
+            // Set the value immediately in the parameter system
+            parameterSystem->setParameterValue(actualParamIndex, (int16_t)parameterEditValue);
+            notifyParameterChanged(actualParamIndex, (int16_t)parameterEditValue);
         }
     }
 }
@@ -127,24 +99,51 @@ void MenuSystem::editParameterValue(int delta) {
 void MenuSystem::setParameterValue(int value) {
     if (currentState != State::VALUE_EDIT) return;
     
-    int paramIndex = parameterSystem->getCurrentParamIndex();
-    const _NT_parameter* param = parameterSystem->getParameterInfo(paramIndex);
+    int actualParamIndex = getActualParameterIndex();
+    if (actualParamIndex < 0) return;
+    
+    const _NT_parameter* param = parameterSystem->getParameterInfo(actualParamIndex);
     
     if (param) {
         int clampedValue = clamp(value, (int)param->min, (int)param->max);
         if (clampedValue != parameterEditValue) {
             parameterEditValue = clampedValue;
-            notifyParameterChanged(paramIndex, (int16_t)parameterEditValue);
+            // Set the value immediately in the parameter system
+            parameterSystem->setParameterValue(actualParamIndex, (int16_t)parameterEditValue);
+            notifyParameterChanged(actualParamIndex, (int16_t)parameterEditValue);
         }
     }
 }
 
 void MenuSystem::confirmParameterEdit() {
     if (currentState == State::VALUE_EDIT) {
-        int paramIndex = parameterSystem->getCurrentParamIndex();
-        parameterSystem->setParameterValue(paramIndex, (int16_t)parameterEditValue);
-        parameterSystem->confirmParameterValue();
+        int actualParamIndex = getActualParameterIndex();
+        if (actualParamIndex >= 0) {
+            parameterSystem->setParameterValue(actualParamIndex, (int16_t)parameterEditValue);
+            parameterSystem->confirmParameterValue();
+        }
     }
+}
+
+int MenuSystem::getActualParameterIndex() const {
+    if (!parameterSystem->hasParameterPages()) return -1;
+    
+    int pageIndex = parameterSystem->getCurrentPageIndex();
+    if (pageIndex >= (int)parameterSystem->getPageCount()) return -1;
+    
+    const _NT_parameterPage* page = parameterSystem->getPageInfo(pageIndex);
+    if (!page) return -1;
+    
+    int paramIndexInPage = parameterSystem->getCurrentParamIndex();
+    if (paramIndexInPage >= page->numParams) return -1;
+    
+    // If page has parameter index array, use it
+    if (page->params) {
+        return page->params[paramIndexInPage];
+    }
+    
+    // Otherwise, assume sequential indexing
+    return paramIndexInPage;
 }
 
 void MenuSystem::addObserver(IMenuObserver* observer) {
@@ -224,6 +223,11 @@ void MenuSystem::onStateEnter(State state) {
             break;
             
         case State::PAGE_SELECT:
+            // Reset input tracking to prevent spurious encoder press detection
+            inputTracker.lastEncoderPressed.fill(false);
+            inputTracker.lastPotValues.fill(-1.0f);
+            inputTracker.lastEncoderValues.fill(0);
+            
             // Reset to first page
             if (parameterSystem->getPageCount() > 0) {
                 parameterSystem->setCurrentPage(0);
@@ -236,8 +240,16 @@ void MenuSystem::onStateEnter(State state) {
             break;
             
         case State::VALUE_EDIT:
-            // Initialize edit value with current parameter value
-            parameterEditValue = parameterSystem->getParameterValue(parameterSystem->getCurrentParamIndex());
+            // Initialize edit value with current parameter value using actual parameter index
+            {
+                int actualParamIndex = getActualParameterIndex();
+                if (actualParamIndex >= 0) {
+                    parameterEditValue = parameterSystem->getParameterValue(actualParamIndex);
+                }
+            }
+            // Reset tracking to ensure all controls are responsive
+            inputTracker.lastPotValues.fill(-1.0f);
+            inputTracker.lastEncoderValues.fill(0);
             break;
     }
 }
@@ -253,8 +265,7 @@ void MenuSystem::onStateExit(State state) {
 }
 
 void MenuSystem::transition(State newState) {
-    onStateExit(currentState);
-    previousState = currentState;
+    // Simplified transition - no state machine complexity
     currentState = newState;
     onStateEnter(currentState);
     notifyStateChanged();
@@ -291,14 +302,19 @@ void MenuSystem::processParameterSelection(float potValue, int encoderDelta) {
 }
 
 void MenuSystem::processValueEditing(float potValue, int encoderDelta) {
-    int paramIndex = parameterSystem->getCurrentParamIndex();
-    const _NT_parameter* param = parameterSystem->getParameterInfo(paramIndex);
+    // Get the actual parameter index from the current page
+    int actualParamIndex = getActualParameterIndex();
+    if (actualParamIndex < 0) {
+        INFO("MenuSystem: Invalid parameter index");
+        return;
+    }
     
+    const _NT_parameter* param = parameterSystem->getParameterInfo(actualParamIndex);
     if (!param) return;
     
     // Handle right pot (absolute)
     if (hasPotChanged(2, potValue)) {
-        int newValue = calculateValueFromPot(potValue, paramIndex);
+        int newValue = calculateValueFromPot(potValue, actualParamIndex);
         setParameterValue(newValue);
     }
     
@@ -313,6 +329,7 @@ bool MenuSystem::hasPotChanged(int potIndex, float newValue) {
     
     float lastValue = inputTracker.lastPotValues[potIndex];
     bool changed = std::abs(newValue - lastValue) > potSensitivity;
+    
     
     if (changed) {
         inputTracker.lastPotValues[potIndex] = newValue;
@@ -354,10 +371,20 @@ int MenuSystem::calculatePageFromPot(float potValue) const {
 int MenuSystem::calculateParamFromPot(float potValue) const {
     if (!parameterSystem) return 0;
     
-    int paramCount = parameterSystem->getParameterCount();
+    // Get the current page's parameter count
+    int pageIndex = parameterSystem->getCurrentPageIndex();
+    if (pageIndex >= (int)parameterSystem->getPageCount()) return 0;
+    
+    const _NT_parameterPage* page = parameterSystem->getPageInfo(pageIndex);
+    if (!page) return 0;
+    
+    int paramCount = page->numParams;
+    
+    // Special case: if there's only one parameter, always return 0
     if (paramCount <= 1) return 0;
     
-    int paramIndex = (int)(potValue * (paramCount - 1));
+    // For multiple parameters, use rounding for better accuracy
+    int paramIndex = (int)std::round(potValue * (paramCount - 1));
     return clamp(paramIndex, 0, paramCount - 1);
 }
 
@@ -366,7 +393,10 @@ int MenuSystem::calculateValueFromPot(float potValue, int paramIndex) const {
     if (!param) return 0;
     
     int range = param->max - param->min;
-    int value = param->min + (int)(potValue * range);
+    // Use rounding instead of truncation for better accuracy
+    int value = param->min + (int)std::round(potValue * range);
+    
+    
     return clamp(value, (int)param->min, (int)param->max);
 }
 

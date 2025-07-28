@@ -128,6 +128,8 @@ void ParameterSystem::extractParameterData() {
         }
         
         INFO("ParameterSystem: Extracted %zu parameter pages", parameterPages.size());
+        INFO("ParameterSystem: hasParameters=%d, hasParameterPages=%d", 
+             hasParameters(), hasParameterPages());
         
         // Set algorithm routing matrix pointer
         try {

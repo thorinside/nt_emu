@@ -79,7 +79,6 @@ private:
     
     // State machine
     State currentState = State::OFF;
-    State previousState = State::OFF;
     
     // Current editing state
     int parameterEditValue = 0;
@@ -127,6 +126,9 @@ private:
     void notifyStateChanged();
     void notifyModeChanged();
     void notifyParameterChanged(int paramIndex, int16_t value);
+    
+    // Helper to get the actual parameter index from page-relative index
+    int getActualParameterIndex() const;
     
     // Utility
     template<typename T>
