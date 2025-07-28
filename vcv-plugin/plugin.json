@@ -14,14 +14,6 @@
   "changelogUrl": "",
   "modules": [
     {
-      "slug": "TestModule",
-      "name": "Test Module",
-      "description": "Simple test module",
-      "tags": [
-        "Utility"
-      ]
-    },
-    {
       "slug": "DistingNT",
       "name": "nt_emu",
       "description": "Multi-algorithm DSP module emulator with plugin support",
@@ -34,14 +26,6 @@
         "Reverb",
         "Delay",
         "Filter"
-      ]
-    },
-    {
-      "slug": "PressableWidgetsDebugTest",
-      "name": "Pressable Widgets Debug Test",
-      "description": "Test module for pressable pots and encoders with visual indicators",
-      "tags": [
-        "Utility"
       ]
     }
   ]
