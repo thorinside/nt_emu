@@ -7,4 +7,4 @@ using namespace rack;
 extern Plugin* pluginInstance;
 
 // Forward-declare each Model, defined in each module source file
-extern Model* modelDistingNT;
+extern Model* modelNtEmu;

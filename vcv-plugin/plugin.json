@@ -1,6 +1,6 @@
 {
-  "slug": "DistingNT",
-  "name": "nt_emu",
+  "slug": "nt_emu",
+  "name": "NT Emulator",
   "version": "2.0.0",
   "license": "MIT",
   "brand": "No Such Device",
@@ -14,8 +14,8 @@
   "changelogUrl": "",
   "modules": [
     {
-      "slug": "DistingNT",
-      "name": "nt_emu",
+      "slug": "nt_emu",
+      "name": "NT Emulator",
       "description": "Multi-algorithm DSP module emulator with plugin support",
       "tags": [
         "Effect",

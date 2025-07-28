@@ -2316,4 +2316,4 @@ struct DistingNTWidget : ModuleWidget {
     }
 };
 
-Model* modelDistingNT = createModel<DistingNT, DistingNTWidget>("DistingNT");
+Model* modelNtEmu = createModel<DistingNT, DistingNTWidget>("nt_emu");

@@ -6,7 +6,7 @@ void init(Plugin* p) {
     pluginInstance = p;
 
     // Add modules
-    p->addModel(modelDistingNT);
+    p->addModel(modelNtEmu);
 
     // Any other plugin initialization code goes here
 }
