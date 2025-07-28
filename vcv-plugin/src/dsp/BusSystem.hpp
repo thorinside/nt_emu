@@ -5,7 +5,7 @@
 using namespace rack;
 
 // Forward declaration
-struct NtEmu;
+struct EmulatorModule;
 
 class BusSystem {
 private:

@@ -5,7 +5,7 @@
 
 using namespace rack;
 
-struct NtEmuPressableEncoder : app::SvgKnob {
+struct EmulatorPressableEncoder : app::SvgKnob {
     EmulatorCore* emulatorCore = nullptr;
     int encoderIndex = 0;  // 0 or 1 for left or right encoder
     
@@ -18,7 +18,7 @@ struct NtEmuPressableEncoder : app::SvgKnob {
     // Make it quite sensitive so small movements generate steps
     static constexpr float STEP_THRESHOLD = 0.05f;  // ~20 steps per unit of parameter change
     
-    NtEmuPressableEncoder() {
+    EmulatorPressableEncoder() {
         // Configure for infinite rotation first
         minAngle = -INFINITY;
         maxAngle = INFINITY;
@@ -27,11 +27,11 @@ struct NtEmuPressableEncoder : app::SvgKnob {
         speed = 0.2f;  // Faster speed for encoder (smaller value = faster rotation)
         
         // Set the rotating foreground SVG (with the dot)
-        setSvg(Svg::load(asset::plugin(pluginInstance, "res/NtEmuEncoder_fg.svg")));
+        setSvg(Svg::load(asset::plugin(pluginInstance, "res/DistingNTEncoder_fg.svg")));
         
         // Add background SVG behind the rotating part
         auto bg = new widget::SvgWidget();
-        bg->setSvg(Svg::load(asset::plugin(pluginInstance, "res/NtEmuEncoder.svg")));
+        bg->setSvg(Svg::load(asset::plugin(pluginInstance, "res/DistingNTEncoder.svg")));
         // Add background to frame buffer, below transform widget
         fb->addChildBelow(bg, tw);
     }
@@ -73,7 +73,7 @@ struct NtEmuPressableEncoder : app::SvgKnob {
             
             // Debug extreme values
             if (std::abs(currentValue) > 1000.0f) {
-                INFO("NtEmuPressableEncoder[%d]: Large param value = %f", encoderIndex, currentValue);
+                INFO("DistingNTPressableEncoder[%d]: Large param value = %f", encoderIndex, currentValue);
             }
             
             if (delta != 0.0f) {
@@ -104,7 +104,7 @@ struct NtEmuPressableEncoder : app::SvgKnob {
                     
                     // Safety check to prevent infinite loop
                     if (stepsGenerated > 100) {
-                        WARN("NtEmuPressableEncoder: Too many steps in one frame! accumulated=%f", accumulatedDelta);
+                        WARN("EmulatorPressableEncoder: Too many steps in one frame! accumulated=%f", accumulatedDelta);
                         accumulatedDelta = 0.0f;
                         break;
                     }

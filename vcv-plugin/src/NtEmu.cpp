@@ -6,8 +6,8 @@
 #include "InfiniteEncoder.hpp"
 #include "widgets/PressablePot.hpp"
 #include "widgets/PressableEncoder.hpp"
-#include "widgets/NtEmuPressablePot.hpp"
-#include "widgets/NtEmuPressableEncoder.hpp"
+#include "widgets/EmulatorPressablePot.hpp"
+#include "widgets/EmulatorPressableEncoder.hpp"
 #include "widgets/SimpleEncoder.hpp"
 #include "nt_api_interface.h"
 #include "../../emulator/src/core/fonts.h"
@@ -390,25 +390,25 @@ struct _NT_staticRequirements_old {
 };
 
 // Forward declaration
-struct NtEmu;
+struct EmulatorModule;
 
 // Context-aware encoder parameter quantity
 struct ContextAwareEncoderQuantity : EncoderParamQuantity {
-    NtEmu* distingModule = nullptr;
+    EmulatorModule* distingModule = nullptr;
     bool isLeftEncoder = true;
     
     std::string getDisplayValueString() override;
 };
 
 // Custom output port widget with dynamic tooltips
-struct NtEmuOutputPort : PJ301MPort {
-    NtEmu* distingModule = nullptr;
+struct TooltipOutputPort : PJ301MPort {
+    EmulatorModule* distingModule = nullptr;
     int outputIndex = 0;
     
     void onHover(const HoverEvent& e) override;
 };
 
-struct NtEmu : Module, IParameterObserver {
+struct EmulatorModule : Module, IParameterObserver {
     enum ParamIds {
         // Pots
         POT_L_PARAM, POT_C_PARAM, POT_R_PARAM,
@@ -545,7 +545,7 @@ struct NtEmu : Module, IParameterObserver {
     dsp::SchmittTrigger buttonTriggers[4];
     dsp::SchmittTrigger encoderLPressTrigger, encoderRPressTrigger;
     
-    NtEmu() {
+    EmulatorModule() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
         
         // Configure parameters
@@ -635,10 +635,10 @@ struct NtEmu : Module, IParameterObserver {
         // Setup MIDI output callback
         setupMidiOutput();
         
-        INFO("NtEmu constructor completed successfully");
+        INFO("EmulatorModule constructor completed successfully");
     }
     
-    ~NtEmu() {
+    ~EmulatorModule() {
         // Unregister observer
         if (parameterSystem) {
             parameterSystem->removeObserver(this);
@@ -1055,7 +1055,7 @@ struct NtEmu : Module, IParameterObserver {
     void process(const ProcessArgs& args) override {
         static int processCount = 0;
         if (processCount++ < 5) {
-            INFO("NtEmu process() called, count=%d", processCount);
+            INFO("EmulatorModule process() called, count=%d", processCount);
         }
         
         try {
@@ -1096,7 +1096,7 @@ struct NtEmu : Module, IParameterObserver {
             
             // Debug log encoder deltas if non-zero
             if (encoderDeltas[0] != 0 || encoderDeltas[1] != 0) {
-                INFO("NtEmu: Encoder deltas before menu: L=%d R=%d", 
+                INFO("EmulatorModule: Encoder deltas before menu: L=%d R=%d", 
                      encoderDeltas[0], encoderDeltas[1]);
             }
             
@@ -1171,9 +1171,9 @@ struct NtEmu : Module, IParameterObserver {
         updateLights();
         
         } catch (const std::exception& e) {
-            WARN("NtEmu process() exception: %s", e.what());
+            WARN("EmulatorModule process() exception: %s", e.what());
         } catch (...) {
-            WARN("NtEmu process() unknown exception");
+            WARN("EmulatorModule process() unknown exception");
         }
     }
     
@@ -1457,14 +1457,14 @@ struct NtEmu : Module, IParameterObserver {
 };
 
 // Custom OLED Widget with access to NtEmu module
-struct NtEmuOLEDWidget : FramebufferWidget {
-    NtEmu* module = nullptr;
+struct ModuleOLEDWidget : FramebufferWidget {
+    EmulatorModule* module = nullptr;
     
     // Display dimensions matching Disting NT OLED
     static constexpr int DISPLAY_WIDTH = 256;
     static constexpr int DISPLAY_HEIGHT = 64;
     
-    NtEmuOLEDWidget() {}
+    ModuleOLEDWidget() {}
     
     void step() override {
         // Check if we need to redraw
@@ -1482,7 +1482,7 @@ struct NtEmuOLEDWidget : FramebufferWidget {
             return;
         }
         
-        NtEmu* distingModule = dynamic_cast<NtEmu*>(module);
+        EmulatorModule* distingModule = dynamic_cast<EmulatorModule*>(module);
         
         // Set up coordinate system for 256x64 display
         nvgSave(args.vg);
@@ -1495,7 +1495,7 @@ struct NtEmuOLEDWidget : FramebufferWidget {
         nvgFill(args.vg);
         
         // Show menu interface if active
-        if (distingModule && distingModule->menuMode != NtEmu::MENU_OFF) {
+        if (distingModule && distingModule->menuMode != EmulatorModule::MENU_OFF) {
             drawMenuInterface(args.vg, distingModule);
         } else if (distingModule && distingModule->pluginManager && distingModule->pluginManager->getLoadingMessageTimer() > 0) {
             nvgFillColor(args.vg, nvgRGB(0, 255, 255)); // Cyan
@@ -1675,7 +1675,7 @@ struct NtEmuOLEDWidget : FramebufferWidget {
         }
     }
     
-    void drawMenuInterface(NVGcontext* vg, NtEmu* module) {
+    void drawMenuInterface(NVGcontext* vg, EmulatorModule* module) {
         // Hardware-style two-column layout: PAGES | PARAMETERS + VALUES
         
         // Define column positions and widths
@@ -1950,7 +1950,7 @@ struct NtEmuOLEDWidget : FramebufferWidget {
 
 // Implementation of ContextAwareEncoderQuantity
 std::string ContextAwareEncoderQuantity::getDisplayValueString() {
-    if (!distingModule || distingModule->menuMode == NtEmu::MENU_OFF) {
+    if (!distingModule || distingModule->menuMode == EmulatorModule::MENU_OFF) {
         return EncoderParamQuantity::getDisplayValueString();
     }
     
@@ -1967,8 +1967,8 @@ std::string ContextAwareEncoderQuantity::getDisplayValueString() {
     return EncoderParamQuantity::getDisplayValueString();
 }
 
-// Implementation of NtEmuOutputPort
-void NtEmuOutputPort::onHover(const HoverEvent& e) {
+// Implementation of TooltipOutputPort
+void TooltipOutputPort::onHover(const HoverEvent& e) {
     PJ301MPort::onHover(e);
     
     // Update tooltip based on current routing
@@ -1994,10 +1994,10 @@ void NtEmuOutputPort::onHover(const HoverEvent& e) {
     }
 }
 
-struct NtEmuWidget : ModuleWidget {
-    NtEmuWidget(NtEmu* module) {
+struct EmulatorWidget : ModuleWidget {
+    EmulatorWidget(EmulatorModule* module) {
         setModule(module);
-        setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/NtEmu.svg")));
+        setPanel(createPanel(asset::plugin(pluginInstance, "res/panels/DistingNT.svg")));
 
         // Add mounting screws (14HP module = 71.12mm width)
         addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
@@ -2006,7 +2006,7 @@ struct NtEmuWidget : ModuleWidget {
         addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
         // OLED Display (larger, centered at top)
-        NtEmuOLEDWidget* display = new NtEmuOLEDWidget();
+        ModuleOLEDWidget* display = new ModuleOLEDWidget();
         display->box.pos = mm2px(Vec(8.0, 8.0));
         display->box.size = mm2px(Vec(55.12, 15.0));
         if (module) {
@@ -2015,32 +2015,32 @@ struct NtEmuWidget : ModuleWidget {
         addChild(display);
 
         // 3 Pressable Pots (large knobs with press capability)
-        auto* potL = createParamCentered<NtEmuPressablePot>(mm2px(Vec(17.78, 35.0)), module, NtEmu::POT_L_PARAM);
+        auto* potL = createParamCentered<EmulatorPressablePot>(mm2px(Vec(17.78, 35.0)), module, EmulatorModule::POT_L_PARAM);
         if (module) potL->setEmulatorCore(&module->emulatorCore, 0);
         addParam(potL);
         
-        auto* potC = createParamCentered<NtEmuPressablePot>(mm2px(Vec(35.56, 35.0)), module, NtEmu::POT_C_PARAM);
+        auto* potC = createParamCentered<EmulatorPressablePot>(mm2px(Vec(35.56, 35.0)), module, EmulatorModule::POT_C_PARAM);
         if (module) potC->setEmulatorCore(&module->emulatorCore, 1);
         addParam(potC);
         
-        auto* potR = createParamCentered<NtEmuPressablePot>(mm2px(Vec(53.34, 35.0)), module, NtEmu::POT_R_PARAM);
+        auto* potR = createParamCentered<EmulatorPressablePot>(mm2px(Vec(53.34, 35.0)), module, EmulatorModule::POT_R_PARAM);
         if (module) potR->setEmulatorCore(&module->emulatorCore, 2);
         addParam(potR);
 
         // 2 Simple Encoders
-        auto* encoderL = createParamCentered<SimpleEncoder>(mm2px(Vec(26.67, 52.0)), module, NtEmu::ENCODER_L_PARAM);
+        auto* encoderL = createParamCentered<SimpleEncoder>(mm2px(Vec(26.67, 52.0)), module, EmulatorModule::ENCODER_L_PARAM);
         if (module) encoderL->setEmulatorCore(&module->emulatorCore, 0);
         addParam(encoderL);
         
-        auto* encoderR = createParamCentered<SimpleEncoder>(mm2px(Vec(44.45, 52.0)), module, NtEmu::ENCODER_R_PARAM);
+        auto* encoderR = createParamCentered<SimpleEncoder>(mm2px(Vec(44.45, 52.0)), module, EmulatorModule::ENCODER_R_PARAM);
         if (module) encoderR->setEmulatorCore(&module->emulatorCore, 1);
         addParam(encoderR);
 
         // 4 Buttons (vertical pairs - no LEDs)
-        addParam(createParamCentered<TL1105>(mm2px(Vec(14.5, 48.0)), module, NtEmu::BUTTON_1_PARAM));
-        addParam(createParamCentered<TL1105>(mm2px(Vec(14.5, 56.0)), module, NtEmu::BUTTON_2_PARAM));
-        addParam(createParamCentered<TL1105>(mm2px(Vec(56.5, 48.0)), module, NtEmu::BUTTON_3_PARAM));
-        addParam(createParamCentered<TL1105>(mm2px(Vec(56.5, 56.0)), module, NtEmu::BUTTON_4_PARAM));
+        addParam(createParamCentered<TL1105>(mm2px(Vec(14.5, 48.0)), module, EmulatorModule::BUTTON_1_PARAM));
+        addParam(createParamCentered<TL1105>(mm2px(Vec(14.5, 56.0)), module, EmulatorModule::BUTTON_2_PARAM));
+        addParam(createParamCentered<TL1105>(mm2px(Vec(56.5, 48.0)), module, EmulatorModule::BUTTON_3_PARAM));
+        addParam(createParamCentered<TL1105>(mm2px(Vec(56.5, 56.0)), module, EmulatorModule::BUTTON_4_PARAM));
 
         // 12 Inputs (3 rows of 4) - balanced margins
         float inputStartY = 70.0;
@@ -2051,7 +2051,7 @@ struct NtEmuWidget : ModuleWidget {
                 int index = row * 4 + col;
                 float x = 10.0 + col * jackSpacing;  // Balanced positioning
                 float y = inputStartY + row * rowSpacing;
-                addInput(createInputCentered<PJ301MPort>(mm2px(Vec(x, y)), module, NtEmu::AUDIO_INPUT_1 + index));
+                addInput(createInputCentered<PJ301MPort>(mm2px(Vec(x, y)), module, EmulatorModule::AUDIO_INPUT_1 + index));
             }
         }
 
@@ -2064,8 +2064,8 @@ struct NtEmuWidget : ModuleWidget {
                 float y = inputStartY + row * rowSpacing;
                 
                 // Create custom output port with dynamic tooltips
-                NtEmuOutputPort* outputPort = createOutputCentered<NtEmuOutputPort>(
-                    mm2px(Vec(x, y)), module, NtEmu::AUDIO_OUTPUT_1 + index);
+                TooltipOutputPort* outputPort = createOutputCentered<TooltipOutputPort>(
+                    mm2px(Vec(x, y)), module, EmulatorModule::AUDIO_OUTPUT_1 + index);
                 if (module) {
                     outputPort->distingModule = module;
                     outputPort->outputIndex = index;
@@ -2075,12 +2075,12 @@ struct NtEmuWidget : ModuleWidget {
         }
         
         // MIDI activity LEDs (near the display)
-        addChild(createLightCentered<SmallLight<YellowLight>>(mm2px(Vec(5.0, 8.0)), module, NtEmu::MIDI_INPUT_LIGHT));
-        addChild(createLightCentered<SmallLight<YellowLight>>(mm2px(Vec(66.0, 8.0)), module, NtEmu::MIDI_OUTPUT_LIGHT));
+        addChild(createLightCentered<SmallLight<YellowLight>>(mm2px(Vec(5.0, 8.0)), module, EmulatorModule::MIDI_INPUT_LIGHT));
+        addChild(createLightCentered<SmallLight<YellowLight>>(mm2px(Vec(66.0, 8.0)), module, EmulatorModule::MIDI_OUTPUT_LIGHT));
     }
     
     void appendContextMenu(Menu* menu) override {
-        NtEmu* module = dynamic_cast<NtEmu*>(this->module);
+        EmulatorModule* module = dynamic_cast<EmulatorModule*>(this->module);
         if (!module) return;
         
         menu->addChild(new MenuSeparator);
@@ -2134,7 +2134,7 @@ struct NtEmuWidget : ModuleWidget {
         // This will be implemented when we have actual algorithms loaded
     }
     
-    void loadPluginDialog(NtEmu* module, std::string startPath = "") {
+    void loadPluginDialog(EmulatorModule* module, std::string startPath = "") {
         if (startPath.empty()) {
             startPath = module->lastPluginFolder.empty() ? 
                 asset::user("") : module->lastPluginFolder;
@@ -2218,12 +2218,12 @@ struct NtEmuWidget : ModuleWidget {
 
     // Specification dialog window  
     struct SpecificationDialog : ui::MenuOverlay {
-        NtEmu* module = nullptr;
-        NtEmu::PluginSpecificationInfo specInfo;
+        EmulatorModule* module = nullptr;
+        EmulatorModule::PluginSpecificationInfo specInfo;
         std::vector<int32_t> specificationValues;
         std::vector<NumericTextField*> textFields;
         
-        SpecificationDialog(NtEmu* module, const NtEmu::PluginSpecificationInfo& info) 
+        SpecificationDialog(EmulatorModule* module, const EmulatorModule::PluginSpecificationInfo& info) 
             : module(module), specInfo(info) {
             
             // Validate specifications vector before using it
@@ -2310,10 +2310,10 @@ struct NtEmuWidget : ModuleWidget {
         }
     };
     
-    void showSpecificationDialog(NtEmu* module, const NtEmu::PluginSpecificationInfo& specInfo) {
+    void showSpecificationDialog(EmulatorModule* module, const EmulatorModule::PluginSpecificationInfo& specInfo) {
         SpecificationDialog* dialog = new SpecificationDialog(module, specInfo);
         APP->scene->addChild(dialog);
     }
 };
 
-Model* modelNtEmu = createModel<NtEmu, NtEmuWidget>("nt_emu");
+Model* modelNtEmu = createModel<EmulatorModule, EmulatorWidget>("nt_emu");
