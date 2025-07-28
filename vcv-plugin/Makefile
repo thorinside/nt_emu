@@ -30,16 +30,4 @@ DISTRIBUTABLES += res
 # Include the VCV Rack plugin Makefile framework
 include $(RACK_DIR)/plugin.mk
 
-# Fix for rsync issue - override the dist target
-dist: all
-	rm -rf dist
-	mkdir -p dist/$(SLUG)
-	cp plugin.dylib dist/$(SLUG)/
-	strip -S dist/$(SLUG)/plugin.dylib
-ifdef ARCH_MAC
-	install_name_tool -change libRack.dylib /tmp/Rack2/libRack.dylib dist/$(SLUG)/plugin.dylib
-	otool -L dist/$(SLUG)/plugin.dylib
-	codesign -f -s - dist/$(SLUG)/plugin.dylib
-endif
-	cp -R $(DISTRIBUTABLES) dist/$(SLUG)/
-	cd dist && tar --no-xattrs -c $(SLUG) | zstd -19 -o $(SLUG)-$(VERSION)-$(ARCH).vcvplugin
+# Use default dist target from plugin.mk

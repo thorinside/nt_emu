@@ -6,7 +6,12 @@
 #include "InfiniteEncoder.hpp"
 #include "nt_api_interface.h"
 #include "../../emulator/src/core/fonts.h"
-// #include "../../emulator/src/core/api_shim.h" // Removed due to memory corruption
+// New modular components
+#include "plugin/PluginManager.hpp"
+#include "plugin/PluginExecutor.hpp"
+#include "parameter/ParameterSystem.hpp"
+#include "menu/MenuSystem.hpp"
+#include "midi/MidiProcessor.hpp"
 #include <componentlibrary.hpp>
 #include <osdialog.h>
 #include <map>
@@ -193,19 +198,16 @@ extern "C" {
     
     // Additional NT_* functions needed by plugins
     __attribute__((visibility("default"))) int32_t NT_algorithmIndex(const _NT_algorithm* algorithm) {
-        // TODO: Implement proper algorithm index lookup
         // For now, return 0 as we only support one algorithm at a time in VCV
         return 0;
     }
     
     __attribute__((visibility("default"))) uint32_t NT_parameterOffset(void) {
-        // TODO: Implement parameter offset for VCV parameter mapping
         // For now, return 0 as VCV handles parameter indexing differently
         return 0;
     }
     
     __attribute__((visibility("default"))) void NT_setParameterFromUi(uint32_t algorithmIndex, uint32_t parameter, int16_t value) {
-        // TODO: Connect to VCV parameter system
         // This should update VCV module parameters when plugins call this function
         INFO("NT_setParameterFromUi called: alg=%d, param=%d, value=%d", algorithmIndex, parameter, value);
     }
@@ -255,19 +257,15 @@ extern "C" {
     
     // MIDI functions (stubs for now)
     __attribute__((visibility("default"))) void NT_sendMidiByte(uint32_t destination, uint8_t b0) {
-        // TODO: Connect to VCV MIDI system
     }
     
     __attribute__((visibility("default"))) void NT_sendMidi2ByteMessage(uint32_t destination, uint8_t b0, uint8_t b1) {
-        // TODO: Connect to VCV MIDI system
     }
     
     __attribute__((visibility("default"))) void NT_sendMidi3ByteMessage(uint32_t destination, uint8_t b0, uint8_t b1, uint8_t b2) {
-        // TODO: Connect to VCV MIDI system
     }
     
     __attribute__((visibility("default"))) void NT_sendMidiSysEx(uint32_t destination, const uint8_t* data, uint32_t count, bool end) {
-        // TODO: Connect to VCV MIDI system
     }
 }
 
@@ -372,14 +370,14 @@ extern "C" {
     #define PLUGIN_EXT ".so"
 #endif
 
-// Old API structures for compatibility with simple_gain plugin
+// Legacy API structures for compatibility
 struct _NT_memoryRequirements {
     uint32_t memorySize;
     uint32_t numRequirements;
     void* requirements;
 };
 
-// Old version of _NT_staticRequirements with memorySize field
+// Legacy _NT_staticRequirements with memorySize field
 struct _NT_staticRequirements_old {
     uint32_t memorySize;
     uint32_t numRequirements;
@@ -405,7 +403,7 @@ struct DistingNTOutputPort : PJ301MPort {
     void onHover(const HoverEvent& e) override;
 };
 
-struct DistingNT : Module {
+struct DistingNT : Module, IParameterObserver {
     enum ParamIds {
         // Pots
         POT_L_PARAM, POT_C_PARAM, POT_R_PARAM,
@@ -457,34 +455,28 @@ struct DistingNT : Module {
     BusSystem busSystem;
     EmulatorCore emulatorCore;
     
-    // MIDI ports
-    midi::InputQueue midiInput;
-    midi::Output midiOutput;
+    // New modular components
+    std::unique_ptr<PluginManager> pluginManager;
+    std::unique_ptr<PluginExecutor> pluginExecutor;
+    std::unique_ptr<ParameterSystem> parameterSystem;
+    std::unique_ptr<MenuSystem> menuSystem;
+    std::unique_ptr<MidiProcessor> midiProcessor;
     
-    // MIDI activity lights
+    // MIDI activity divider
     dsp::ClockDivider midiActivityDivider;
-    float midiInputLight = 0.f;
-    float midiOutputLight = 0.f;
     
-    // Note: USB/Breakout routing is handled by hardware, not relevant in VCV emulation
+    // Compatibility helpers
+    bool isPluginLoaded() const {
+        return pluginManager && pluginManager->isLoaded();
+    }
     
-    // Plugin loading
-    void* pluginHandle = nullptr;
-    _NT_factory* pluginFactory = nullptr;
-    _NT_algorithm* pluginAlgorithm = nullptr;
-    void* pluginSharedMemory = nullptr;
-    void* pluginInstanceMemory = nullptr;
-    std::string pluginPath;
-    std::string lastPluginFolder;
+    // MIDI access getters
+    midi::InputQueue& getMidiInput() { return midiProcessor->getInputQueue(); }
+    midi::Output& getMidiOutput() { return midiProcessor->getOutput(); }
     
     // Member variables for two-phase plugin loading with specifications
-    std::vector<int32_t> currentSpecifications;
-    bool useCustomSpecifications = false;
-    std::vector<int32_t> pluginSpecifications; // Persistent storage of loaded plugin specs
-    
-    // Display notification
-    std::string loadingMessage;
-    float loadingMessageTimer = 0.f;
+    // Plugin loading state
+    std::string lastPluginFolder;
     
     // Display state
     bool displayDirty = true;
@@ -498,16 +490,8 @@ struct DistingNT : Module {
     };
     
     MenuMode menuMode = MENU_OFF;
-    int currentPageIndex = 0;
-    int currentParamIndex = 0;
     int parameterEditValue = 0;
     
-    // Cached parameter data from plugin
-    std::vector<_NT_parameterPage> parameterPages;
-    std::vector<_NT_parameter> parameters;
-    
-    // Routing matrix (parameter index -> bus mapping)
-    std::array<int16_t, 256> routingMatrix;
     
     // UI interaction tracking
     bool leftEncoderPressed = false;
@@ -611,8 +595,7 @@ struct DistingNT : Module {
         // Initialize emulator core
         emulatorCore.initialize(APP->engine->getSampleRate());
         
-        // Initialize routing matrices
-        routingMatrix.fill(0);
+        // Initialize bus routing matrices
         busInputMap.fill(-1);
         busOutputMap.fill(-1);
         
@@ -624,50 +607,49 @@ struct DistingNT : Module {
         // Configure MIDI activity divider
         midiActivityDivider.setDivision(512);
         
+        // Initialize new modular components (C++11 compatible)
+        pluginManager.reset(new PluginManager());
+        pluginExecutor.reset(new PluginExecutor(pluginManager.get()));
+        parameterSystem.reset(new ParameterSystem(pluginManager.get()));
+        menuSystem.reset(new MenuSystem(parameterSystem.get()));
+        midiProcessor.reset(new MidiProcessor(pluginExecutor.get()));
+        
+        // Initialize parameter system routing matrix with parameter defaults
+        for (size_t i = 0; i < parameterSystem->getParameterCount() && i < parameterSystem->getRoutingMatrix().size(); i++) {
+            parameterSystem->getRoutingMatrix()[i] = parameterSystem->getParameters()[i].def;
+        }
+        
+        // Sync algorithm's v[] array with the initialized parameter defaults
+        if (pluginManager->getAlgorithm()) {
+            pluginManager->getAlgorithm()->v = parameterSystem->getRoutingMatrix().data();
+        }
+        
+        // Register as observer for parameter changes
+        parameterSystem->addObserver(this);
+        
         // Setup MIDI output callback
         setupMidiOutput();
+        
+        INFO("DistingNT constructor completed successfully");
     }
     
-    // MIDI setup method
+    ~DistingNT() {
+        // Unregister observer
+        if (parameterSystem) {
+            parameterSystem->removeObserver(this);
+        }
+    }
+    
+    // MIDI setup method - simplified for modular architecture
     void setupMidiOutput() {
-        // Connect MidiHandler callback to VCV MIDI output
-        emulatorCore.getMidiHandler().setMidiOutputCallback(
-            [this](const uint8_t* data, size_t size) {
-                // Convert raw bytes to VCV Message
-                midi::Message msg;
-                msg.setSize(size);
-                for (size_t i = 0; i < size; i++) {
-                    msg.bytes[i] = data[i];
-                }
-                
-                // In VCV Rack, all MIDI goes to the selected VCV MIDI output
-                // Hardware-level USB/Breakout routing is not applicable here
-                
-                // Apply channel filter if set
-                if (midiOutput.channel >= 0) {
-                    uint8_t status = data[0] & 0xF0;
-                    // Only filter channel messages (0x80-0xEF)
-                    if (status >= 0x80 && status < 0xF0) {
-                        uint8_t channel = data[0] & 0x0F;
-                        if (channel != midiOutput.channel) {
-                            return;  // Skip if wrong channel
-                        }
-                    }
-                }
-                
-                // Send to VCV MIDI output
-                midiOutput.sendMessage(msg);
-                
-                // Flash activity light
-                midiOutputLight = 1.f;
-            }
-        );
+        // Setup MIDI output using new MidiProcessor
+        if (midiProcessor) {
+            midiProcessor->setupMidiOutput();
+        }
+        
     }
     
-    // Plugin helper methods (inline definitions to resolve forward references)
-    bool isPluginLoaded() const {
-        return pluginHandle && pluginFactory && pluginAlgorithm;
-    }
+    // Plugin helper methods now handled by PluginManager
     
     bool isValidPointer(void* ptr, size_t size = sizeof(void*)) {
         if (!ptr) return false;
@@ -689,61 +671,31 @@ struct DistingNT : Module {
     
     void unloadPlugin() {
         menuMode = MENU_OFF;
-        parameters.clear();
-        parameterPages.clear();
-        pluginAlgorithm = nullptr;
-        pluginFactory = nullptr;
-        if (pluginInstanceMemory) {
-            free(pluginInstanceMemory);
-            pluginInstanceMemory = nullptr;
-        }
-        if (pluginSharedMemory) {
-            free(pluginSharedMemory);
-            pluginSharedMemory = nullptr;
-        }
-        if (pluginHandle) {
-            #ifdef ARCH_WIN
-                FreeLibrary((HMODULE)pluginHandle);
-            #else
-                dlclose(pluginHandle);
-            #endif
-            pluginHandle = nullptr;
-        }
-        if (!pluginPath.empty()) {
-            pluginPath.clear();
-            loadingMessage = "Plugin unloaded";
-            loadingMessageTimer = 1.5f;
-            displayDirty = true;
-        }
+        parameterSystem->clearParameters();
+        pluginManager->unloadPlugin();
+        displayDirty = true;
     }
     
     void reloadPlugin() {
-        if (!isPluginLoaded() || pluginPath.empty()) {
-            loadingMessage = "No plugin to reload";
-            loadingMessageTimer = 1.5f;
+        if (!isPluginLoaded() || pluginManager->getPluginPath().empty()) {
             displayDirty = true;
             return;
         }
         
         // Store current state
-        std::string currentPath = pluginPath;
-        std::vector<int32_t> currentSpecs = currentSpecifications;
+        std::string currentPath = pluginManager->getPluginPath();
+        std::vector<int32_t> currentSpecs = pluginManager->getSpecifications();
         
         // Unload current plugin
         unloadPlugin();
         
         // Reload from same path
-        if (loadPlugin(currentPath)) {
-            // Try to restore specifications if still valid
-            if (!currentSpecs.empty() && currentSpecs.size() <= pluginSpecifications.size()) {
-                currentSpecifications = currentSpecs;
-                useCustomSpecifications = true;
-            }
-            loadingMessage = "Plugin reloaded";
+        if (!currentSpecs.empty()) {
+            pluginManager->loadPlugin(currentPath, currentSpecs);
         } else {
-            loadingMessage = "Reload failed";
+            pluginManager->loadPlugin(currentPath);
         }
-        loadingMessageTimer = 1.5f;
+        
         displayDirty = true;
     }
     
@@ -819,14 +771,14 @@ struct DistingNT : Module {
     // MIDI input processing
     void processMidiMessage(const midi::Message& msg) {
         // Route to plugin if loaded
-        if (isPluginLoaded() && pluginAlgorithm && pluginFactory && msg.bytes.size() > 0) {
+        if (isPluginLoaded() && pluginManager && pluginManager->getAlgorithm() && pluginManager->getFactory() && msg.bytes.size() > 0) {
             uint8_t status = msg.bytes[0] & 0xF0;
             
             // Route real-time messages (0xF0-0xFF)
             if (status >= 0xF0) {
-                if (pluginFactory->midiRealtime) {
+                if (pluginManager->getFactory()->midiRealtime) {
                     try {
-                        pluginFactory->midiRealtime(pluginAlgorithm, msg.bytes[0]);
+                        pluginManager->getFactory()->midiRealtime(pluginManager->getAlgorithm(), msg.bytes[0]);
                     } catch (...) {
                         WARN("Plugin crashed during midiRealtime - unloading");
                         unloadPlugin();
@@ -836,13 +788,13 @@ struct DistingNT : Module {
             }
             // Route channel messages (Note On/Off, CC, Program Change, etc.)
             else if (msg.bytes.size() >= 2) {
-                if (pluginFactory->midiMessage) {
+                if (pluginManager->getFactory()->midiMessage) {
                     try {
                         uint8_t byte0 = msg.bytes[0];
                         uint8_t byte1 = msg.bytes[1];
                         uint8_t byte2 = (msg.bytes.size() >= 3) ? msg.bytes[2] : 0;
                         
-                        pluginFactory->midiMessage(pluginAlgorithm, byte0, byte1, byte2);
+                        pluginManager->getFactory()->midiMessage(pluginManager->getAlgorithm(), byte0, byte1, byte2);
                     } catch (...) {
                         WARN("Plugin crashed during midiMessage - unloading");
                         unloadPlugin();
@@ -858,688 +810,74 @@ struct DistingNT : Module {
     
     // Plugin loading methods
     bool loadPlugin(const std::string& path) {
-        try {
-            unloadPlugin();
+        bool success = pluginManager->loadPlugin(path);
+        
+        if (success) {
+            // Extract parameter information from loaded plugin
+            parameterSystem->extractParameterData();
             
-            // Platform-specific loading
-            #ifdef ARCH_WIN
-                pluginHandle = LoadLibraryA(path.c_str());
-            #else
-                // First, ensure our own symbols are globally available
-                // Get path to our own plugin
-                Dl_info info;
-                if (dladdr((void*)&NT_screen, &info) && info.dli_fname) {
-                    INFO("Our plugin path: %s", info.dli_fname);
-                    // Reopen our own plugin with RTLD_GLOBAL to export symbols
-                    void* ourHandle = dlopen(info.dli_fname, RTLD_NOW | RTLD_GLOBAL);
-                    INFO("Reopened our plugin with RTLD_GLOBAL: %p", ourHandle);
-                } else {
-                    INFO("Could not determine our plugin path");
-                }
-                
-                // Check if we can find our own symbol now
-                void* testSymbol = dlsym(RTLD_DEFAULT, "_NT_screen");
-                INFO("Found _NT_screen symbol: %p", testSymbol);
-                
-                pluginHandle = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
-            #endif
-            
-            if (!pluginHandle) {
-                std::string error;
-                #ifdef ARCH_WIN
-                    error = "Windows error"; // GetLastError() formatting
-                #else
-                    const char* dlerr = dlerror();
-                    error = dlerr ? std::string(dlerr) : "Unknown error";
-                #endif
-                WARN("Failed to load plugin from path '%s': %s", path.c_str(), error.c_str());
-                loadingMessage = "Error: Failed to load plugin - " + error;
-                loadingMessageTimer = 4.0f;
-                return false;
-            }
-            
-            // Try new API first (pluginEntry)
-            typedef uintptr_t (*PluginEntryFunc)(_NT_selector selector, uint32_t data);
-            PluginEntryFunc pluginEntry;
-            #ifdef ARCH_WIN
-                pluginEntry = (PluginEntryFunc)GetProcAddress((HMODULE)pluginHandle, "pluginEntry");
-            #else
-                pluginEntry = (PluginEntryFunc)dlsym(pluginHandle, "pluginEntry");
-            #endif
-            
-            if (!pluginEntry) {
-                unloadPlugin();
-                loadingMessage = "Error: Plugin missing pluginEntry symbol";
-                loadingMessageTimer = 4.0f;
-                return false;
-            }
-            
-            // Check API version
-            uintptr_t apiVersion = pluginEntry(kNT_selector_version, 0);
-            if (apiVersion != kNT_apiVersionCurrent) {
-                unloadPlugin();
-                loadingMessage = "Error: API version mismatch";
-                loadingMessageTimer = 4.0f;
-                return false;
-            }
-            
-            // Get number of factories
-            uintptr_t numFactories = pluginEntry(kNT_selector_numFactories, 0);
-            if (numFactories == 0) {
-                unloadPlugin();
-                loadingMessage = "Error: No factories found";
-                loadingMessageTimer = 4.0f;
-                return false;
-            }
-            
-            // Get first factory
-            pluginFactory = (_NT_factory*)pluginEntry(kNT_selector_factoryInfo, 0);
-            if (!pluginFactory) {
-                unloadPlugin();
-                loadingMessage = "Error: Factory access failed";
-                loadingMessageTimer = 4.0f;
-                return false;
-            }
-            
-            // Handle memory allocation and algorithm construction
-            if (pluginFactory->calculateStaticRequirements && pluginFactory->initialise) {
-                _NT_staticRequirements staticReqs{};
-                pluginFactory->calculateStaticRequirements(staticReqs);
-                
-                if (staticReqs.dram > 0) {
-                    if (posix_memalign(&pluginSharedMemory, 16, staticReqs.dram) != 0) {
-                        unloadPlugin();
-                        loadingMessage = "Error: Memory allocation failed";
-                        loadingMessageTimer = 4.0f;
-                        return false;
-                    }
-                    
-                    _NT_staticMemoryPtrs staticPtrs{};
-                    staticPtrs.dram = (uint8_t*)pluginSharedMemory;
-                    
-                    pluginFactory->initialise(staticPtrs, staticReqs);
-                }
-            }
-            
-            // Get algorithm requirements and create instance
-            if (pluginFactory->calculateRequirements && pluginFactory->construct) {
-                _NT_algorithmRequirements reqs{};
-                
-                // Prepare specifications array - use custom values if provided, otherwise defaults
-                std::vector<int32_t> specValues;
-                const int32_t* specifications = nullptr;
-                
-                if (pluginFactory->numSpecifications > 0 && pluginFactory->specifications) {
-                    if (useCustomSpecifications && currentSpecifications.size() >= pluginFactory->numSpecifications) {
-                        INFO("Plugin has %u specifications, using custom values", pluginFactory->numSpecifications);
-                        specValues = currentSpecifications; // Use custom specifications
-                        specValues.resize(pluginFactory->numSpecifications); // Ensure correct size
-                        for (uint32_t i = 0; i < pluginFactory->numSpecifications; i++) {
-                            INFO("  Spec[%u]: %s = %d (custom, range: %d to %d)", 
-                                 i, pluginFactory->specifications[i].name, 
-                                 specValues[i], pluginFactory->specifications[i].min, pluginFactory->specifications[i].max);
-                        }
-                    } else {
-                        INFO("Plugin has %u specifications, using default values", pluginFactory->numSpecifications);
-                        specValues.resize(pluginFactory->numSpecifications);
-                        for (uint32_t i = 0; i < pluginFactory->numSpecifications; i++) {
-                            specValues[i] = pluginFactory->specifications[i].def;
-                            INFO("  Spec[%u]: %s = %d (default, range: %d to %d)", 
-                                 i, pluginFactory->specifications[i].name, 
-                                 specValues[i], pluginFactory->specifications[i].min, pluginFactory->specifications[i].max);
-                        }
-                    }
-                    specifications = specValues.data();
-                    // Store specifications persistently for use during audio processing
-                    pluginSpecifications = specValues;
-                } else {
-                    INFO("Plugin has no specifications");
-                    pluginSpecifications.clear();
-                }
-                
-                pluginFactory->calculateRequirements(reqs, specifications);
-                
-                // Calculate total memory needed
-                size_t totalMem = reqs.sram + reqs.dram + reqs.dtc + reqs.itc;
-                if (totalMem > 0) {
-                    if (posix_memalign(&pluginInstanceMemory, 16, totalMem) != 0) {
-                        unloadPlugin();
-                        loadingMessage = "Error: Instance memory allocation failed";
-                        loadingMessageTimer = 4.0f;
-                        return false;
-                    }
-                    
-                    // Set up memory pointers
-                    _NT_algorithmMemoryPtrs memPtrs{};
-                    uint8_t* ptr = (uint8_t*)pluginInstanceMemory;
-                    memPtrs.sram = ptr; ptr += reqs.sram;
-                    memPtrs.dram = ptr; ptr += reqs.dram;
-                    memPtrs.dtc = ptr; ptr += reqs.dtc;
-                    memPtrs.itc = ptr;
-                    
-                    // construct() returns status code, algorithm is placed at SRAM location
-                    _NT_algorithm* result = pluginFactory->construct(memPtrs, reqs, specifications);
-                    
-                    // Check if construct returned a valid pointer or if algorithm is at SRAM location
-                    if (result != nullptr && (uintptr_t)result > 0x1000) {
-                        // Use returned pointer
-                        pluginAlgorithm = result;
-                        INFO("Algorithm construction: using returned pointer 0x%p", result);
-                    } else {
-                        // Algorithm should be constructed at SRAM location
-                        pluginAlgorithm = (_NT_algorithm*)memPtrs.sram;
-                        INFO("Algorithm construction: using SRAM location 0x%p (construct returned 0x%x)", 
-                             pluginAlgorithm, (unsigned)(uintptr_t)result);
-                    }
-                    
-                    // Validate the algorithm pointer more thoroughly
-                    if (!pluginAlgorithm) {
-                        unloadPlugin();
-                        loadingMessage = "Error: Algorithm pointer is NULL";
-                        loadingMessageTimer = 4.0f;
-                        return false;
-                    }
-                    
-                    // Connect the parameter values array to our routing matrix
-                    // This is critical - the algorithm expects v[] to contain current parameter values
-                    pluginAlgorithm->v = routingMatrix.data();
-                    INFO("Connected parameter values array: pluginAlgorithm->v = 0x%p", pluginAlgorithm->v);
-                    
-                    if (!isValidPointer(pluginAlgorithm)) {
-                        WARN("Algorithm pointer validation failed: 0x%p", pluginAlgorithm);
-                        unloadPlugin();
-                        loadingMessage = "Error: Invalid algorithm pointer";
-                        loadingMessageTimer = 4.0f;
-                        return false;
-                    }
-                    
-                    // Try to validate the algorithm structure by reading first few bytes
-                    try {
-                        volatile uint8_t* testPtr = (volatile uint8_t*)pluginAlgorithm;
-                        uint8_t testByte = testPtr[0];
-                        (void)testByte;
-                        INFO("Algorithm memory validation: first byte readable");
-                    } catch (...) {
-                        WARN("Algorithm memory validation failed - cannot read first byte");
-                        unloadPlugin();
-                        loadingMessage = "Error: Algorithm memory corruption";
-                        loadingMessageTimer = 4.0f;
-                        return false;
-                    }
-                }
-            }
-            
-            // Try to set API interface for the loaded plugin (optional, for backward compatibility)
-            NT_setAPI_func setAPIFunc = nullptr;
-            #ifdef ARCH_WIN
-                setAPIFunc = (NT_setAPI_func)GetProcAddress((HMODULE)pluginHandle, "NT_setAPI");
-            #else
-                setAPIFunc = (NT_setAPI_func)dlsym(pluginHandle, "NT_setAPI");
-            #endif
-            
-            if (setAPIFunc) {
-                // Plugin supports new API interface
-                const NT_API_Interface* api = getNT_API();
-                setAPIFunc(api);
-                INFO("Plugin %s: API interface provided successfully", rack::system::getFilename(path).c_str());
-            } else {
-                // Plugin uses old direct symbol linking - this is still supported
-                INFO("Plugin %s: Using legacy direct symbol linking", rack::system::getFilename(path).c_str());
-            }
-            
-            // Success
-            pluginPath = path;
-            std::string filename = rack::system::getFilename(path);
-            loadingMessage = string::f("Loaded: %s", filename.c_str());
-            loadingMessageTimer = 2.0f;
             displayDirty = true;
-            
-            // Debug: Verify draw function pointer after reload
-            INFO("Plugin loaded successfully: pluginFactory=%p, draw=%p", 
-                 pluginFactory, pluginFactory ? pluginFactory->draw : nullptr);
-            
-            // Extract parameter information - but only if algorithm is properly constructed
-            if (pluginAlgorithm && pluginInstanceMemory) {
-                // Add a small delay to ensure memory is settled
-                try {
-                    extractParameterData();
-                } catch (...) {
-                    WARN("Exception in extractParameterData - skipping parameter extraction");
-                    // Clear any partial data
-                    parameters.clear();
-                    parameterPages.clear();
-                }
-            }
-            
-            return true;
-            
-        } catch (const std::exception& e) {
-            WARN("Plugin load failed: %s", e.what());
-            loadingMessage = string::f("Error: %s", e.what());
-            loadingMessageTimer = 4.0f;
-            unloadPlugin();
-            return false;
-        } catch (...) {
-            WARN("Plugin load failed: Unknown error");
-            loadingMessage = "Error: Unknown failure";
-            loadingMessageTimer = 4.0f;
-            unloadPlugin();
-            return false;
         }
+        
+        return success;
     }
     
     // Overloaded loadPlugin that accepts custom specifications
     bool loadPlugin(const std::string& path, const std::vector<int32_t>& customSpecifications) {
-        INFO("Loading plugin with %zu custom specifications", customSpecifications.size());
-        for (size_t i = 0; i < customSpecifications.size(); i++) {
-            INFO("  Custom spec[%zu] = %d", i, customSpecifications[i]);
+        bool success = pluginManager->loadPlugin(path, customSpecifications);
+        
+        if (success) {
+            // Extract parameter information from loaded plugin
+            parameterSystem->extractParameterData();
+            
+            displayDirty = true;
         }
         
-        // Store specifications in member variables for use during loading
-        currentSpecifications = customSpecifications;
-        useCustomSpecifications = true;
-        
-        // Call the main loading method
-        bool result = loadPlugin(path);
-        
-        // Reset custom specification mode
-        useCustomSpecifications = false;
-        currentSpecifications.clear();
-        
-        return result;
+        return success;
     }
     
     
-    void extractParameterData() {
-        // First, validate pluginAlgorithm pointer with extensive checks
-        if (!pluginAlgorithm || !isValidPointer(pluginAlgorithm)) {
-            WARN("extractParameterData: pluginAlgorithm is null or invalid");
-            return;
-        }
-        
-        // Clear existing data first
-        parameterPages.clear();
-        parameters.clear();
-        
-        try {
-            // Get algorithm requirements to know expected parameter count
-            _NT_algorithmRequirements reqs;
-            memset(&reqs, 0, sizeof(reqs));
-            if (pluginFactory && pluginFactory->calculateRequirements) {
-                try {
-                    // Prepare specifications array with default values if factory has specifications
-                    std::vector<int32_t> specValues;
-                    const int32_t* specifications = nullptr;
-                    
-                    if (pluginFactory->numSpecifications > 0 && pluginFactory->specifications) {
-                        if (!pluginSpecifications.empty()) {
-                            // Use the actual loaded specifications, not defaults
-                            specValues = pluginSpecifications;
-                            INFO("Using loaded specifications for parameter extraction");
-                            for (uint32_t i = 0; i < specValues.size(); i++) {
-                                INFO("  Loaded spec[%u] = %d", i, specValues[i]);
-                            }
-                        } else {
-                            // Fallback to default values if no loaded specifications
-                            specValues.resize(pluginFactory->numSpecifications);
-                            for (uint32_t i = 0; i < pluginFactory->numSpecifications; i++) {
-                                specValues[i] = pluginFactory->specifications[i].def;
-                            }
-                            INFO("Using default specifications for parameter extraction");
-                        }
-                        specifications = specValues.data();
-                    }
-                    
-                    pluginFactory->calculateRequirements(reqs, specifications);
-                    INFO("Plugin expects %u parameters", reqs.numParameters);
-                } catch (...) {
-                    WARN("Failed to get algorithm requirements");
-                    return;
-                }
-            } else {
-                WARN("No calculateRequirements function available");
-                return;
-            }
-            
-            // Validate algorithm structure access
-            const _NT_parameter* parametersPtr = nullptr;
-            const _NT_parameterPages* parameterPagesPtr = nullptr;
-            
-            try {
-                // Safely read the parameters pointer
-                volatile const _NT_parameter* volatile* ptrToPtr = 
-                    (volatile const _NT_parameter* volatile*)&pluginAlgorithm->parameters;
-                parametersPtr = (const _NT_parameter*)*ptrToPtr;
-                
-                // Safely read the parameter pages pointer
-                volatile const _NT_parameterPages* volatile* pagesPtrToPtr = 
-                    (volatile const _NT_parameterPages* volatile*)&pluginAlgorithm->parameterPages;
-                parameterPagesPtr = (const _NT_parameterPages*)*pagesPtrToPtr;
-            } catch (...) {
-                WARN("extractParameterData: Cannot read algorithm structure fields");
-                return;
-            }
-            
-            // Extract parameters
-            if (reqs.numParameters > 0) {
-                if (parametersPtr == nullptr) {
-                    INFO("extractParameterData: parameters pointer is NULL (plugin may have no parameters)");
-                } else {
-                    // Check for known corruption patterns
-                    uintptr_t paramAddr = (uintptr_t)parametersPtr;
-                    if (paramAddr == 0x3f800000 || 
-                        (paramAddr >= 0x3f000000 && paramAddr <= 0x40000000)) {
-                        WARN("extractParameterData: parameters pointer is corrupted address (0x%p)", parametersPtr);
-                        return;
-                    }
-                    
-                    if (!isValidPointer((void*)parametersPtr)) {
-                        WARN("extractParameterData: parameters pointer is invalid (0x%p)", parametersPtr);
-                        return;
-                    }
-                    
-                    // Extract each parameter safely
-                    for (uint32_t i = 0; i < reqs.numParameters; i++) {
-                        try {
-                            const _NT_parameter* param = &parametersPtr[i];
-                            
-                            // Validate parameter structure
-                            if (!isValidPointer((void*)param->name)) {
-                                WARN("Parameter %u has invalid name pointer", i);
-                                continue;
-                            }
-                            
-                            // Test name access
-                            if (param->name[0] == '\0') {
-                                WARN("Parameter %u has empty name", i);
-                                continue;
-                            }
-                            
-                            // Validate parameter ranges
-                            if (param->min > param->max) {
-                                WARN("Parameter %u has invalid range: %d > %d", i, param->min, param->max);
-                                continue;
-                            }
-                            
-                            // Copy parameter safely
-                            _NT_parameter paramCopy;
-                            paramCopy.name = param->name;
-                            paramCopy.min = param->min;
-                            paramCopy.max = param->max;
-                            paramCopy.def = param->def;
-                            paramCopy.unit = param->unit;
-                            paramCopy.scaling = param->scaling;
-                            paramCopy.enumStrings = param->enumStrings;
-                            
-                            parameters.push_back(paramCopy);
-                            INFO("Extracted parameter %u: '%s' [%d-%d, def=%d]", 
-                                 i, param->name, param->min, param->max, param->def);
-                        } catch (...) {
-                            WARN("Failed to extract parameter %u", i);
-                            continue;
-                        }
-                    }
-                }
-            }
-            
-            INFO("Extracted %zu parameters", parameters.size());
-            
-            // Extract parameter pages if available
-            if (parameterPagesPtr != nullptr && isValidPointer((void*)parameterPagesPtr)) {
-                try {
-                    uint32_t numPages = parameterPagesPtr->numPages;
-                    const _NT_parameterPage* pagesArray = parameterPagesPtr->pages;
-                    
-                    if (numPages > 0 && numPages <= 32 && isValidPointer((void*)pagesArray)) { // Reasonable limit
-                        for (uint32_t pageIdx = 0; pageIdx < numPages; pageIdx++) {
-                            const _NT_parameterPage* page = &pagesArray[pageIdx];
-                            
-                            // Validate page structure
-                            if (!isValidPointer((void*)page->name) || !isValidPointer((void*)page->params)) {
-                                WARN("Page %u has invalid pointers", pageIdx);
-                                continue;
-                            }
-                            
-                            if (page->numParams == 0 || page->numParams > parameters.size()) {
-                                WARN("Page %u has invalid param count: %u", pageIdx, page->numParams);
-                                continue;
-                            }
-                            
-                            // Copy page safely
-                            _NT_parameterPage pageCopy;
-                            pageCopy.name = page->name;
-                            pageCopy.numParams = page->numParams;
-                            pageCopy.params = page->params; // Keep pointer reference for now
-                            
-                            parameterPages.push_back(pageCopy);
-                            INFO("Extracted page %u: '%s' (%u params)", 
-                                 pageIdx, page->name, page->numParams);
-                        }
-                    }
-                } catch (...) {
-                    WARN("Failed to extract parameter pages");
-                    parameterPages.clear();
-                }
-            }
-            
-            INFO("Extracted %zu parameter pages", parameterPages.size());
-            
-            // Initialize routing matrix with parameter defaults
-            for (size_t i = 0; i < parameters.size() && i < routingMatrix.size(); i++) {
-                if (parameters[i].min <= parameters[i].def && parameters[i].def <= parameters[i].max) {
-                    routingMatrix[i] = parameters[i].def;
-                } else {
-                    routingMatrix[i] = parameters[i].min;
-                }
-            }
-            
-        } catch (const std::exception& e) {
-            WARN("Parameter extraction failed with exception: %s", e.what());
-            parameters.clear();
-            parameterPages.clear();
-        } catch (...) {
-            WARN("Parameter extraction failed: Unknown error");
-            parameters.clear();
-            parameterPages.clear();
-        }
-        
-        // Create default page if we have parameters but no pages
-        if (!parameters.empty() && parameterPages.empty()) {
-            INFO("Creating default parameter page");
-            _NT_parameterPage defaultPage;
-            defaultPage.name = "Parameters";
-            defaultPage.numParams = std::min((size_t)parameters.size(), (size_t)255);
-            
-            // Create a parameter index array (this is a limitation - we need to store indices somewhere)
-            // For now, we'll handle this in the parameter navigation functions
-            defaultPage.params = nullptr; // Will handle this in navigation functions
-            parameterPages.push_back(defaultPage);
-        }
-        
-        // Initialize routing matrix with default parameter values
-        if (!parameters.empty() && pluginAlgorithm) {
-            for (size_t i = 0; i < parameters.size() && i < routingMatrix.size(); i++) {
-                routingMatrix[i] = parameters[i].def;
-            }
-            
-            // Call parameterChanged for each parameter to let plugin initialize
-            if (pluginFactory && pluginFactory->parameterChanged) {
-                for (size_t i = 0; i < parameters.size(); i++) {
-                    safeExecutePlugin([&]() {
-                        pluginFactory->parameterChanged(pluginAlgorithm, i);
-                    }, "parameterChanged");
-                }
-            }
-        }
-        
-        // Update parameter-based routing after extracting parameters
-        if (!parameters.empty()) {
-            updateParameterRouting();
-            
-            // Debug: Log routing information
-            INFO("Parameter routing updated. Input mappings: %zu, Output mappings: %zu", 
-                 paramInputRouting.size(), paramOutputRouting.size());
-            for (const auto& pair : paramInputRouting) {
-                INFO("Input routing: param[%d]='%s' value=%d -> bus %d", 
-                     (int)pair.first, parameters[pair.first].name, routingMatrix[pair.first], pair.second.busIndex);
-            }
-            for (const auto& pair : paramOutputRouting) {
-                INFO("Output routing: param[%d]='%s' value=%d -> bus %d", 
-                     (int)pair.first, parameters[pair.first].name, routingMatrix[pair.first], pair.second.busIndex);
-            }
-        }
-    }
+    // extractParameterData now handled by ParameterSystem
     
     void toggleMenuMode() {
-        if (menuMode == MENU_OFF) {
-            // Only enter menu if plugin is valid and we have parameter data
-            if (!pluginAlgorithm || parameters.empty() || parameterPages.empty()) {
-                INFO("Cannot enter menu: pluginAlgorithm=%p, parameters.size()=%zu, parameterPages.size()=%zu", 
-                     pluginAlgorithm, parameters.size(), parameterPages.size());
-                return; // Can't enter menu without valid plugin and parameters
+        // Delegate to the new MenuSystem
+        menuSystem->toggleMenu();
+        
+        // Sync legacy menuMode with MenuSystem state for backward compatibility
+        if (menuSystem->isMenuActive()) {
+            switch (menuSystem->getCurrentState()) {
+                case MenuSystem::State::PAGE_SELECT:
+                    menuMode = MENU_PAGE_SELECT;
+                    break;
+                case MenuSystem::State::PARAM_SELECT:
+                    menuMode = MENU_PARAM_SELECT;
+                    break;
+                case MenuSystem::State::VALUE_EDIT:
+                    menuMode = MENU_VALUE_EDIT;
+                    break;
+                default:
+                    menuMode = MENU_OFF;
+                    break;
             }
-            INFO("Entering parameter menu with %zu parameters across %zu pages", 
-                 parameters.size(), parameterPages.size());
-            menuMode = MENU_PAGE_SELECT;
-            currentPageIndex = 0;
-            currentParamIndex = 0;
         } else {
-            INFO("Exiting parameter menu");
             menuMode = MENU_OFF;
-            if (pluginAlgorithm) {
+            if (pluginManager->getAlgorithm()) {
                 applyRoutingChanges();
             }
         }
         displayDirty = true;
     }
     
-    void processMenuNavigation() {
-        // Safety checks - exit menu if plugin is invalid or no data
-        if (!pluginAlgorithm || parameters.empty() || parameterPages.empty()) {
-            menuMode = MENU_OFF;
-            displayDirty = true;
-            return;
-        }
-        
-        // Track last values to detect changes
-        static float lastLeftPotValue = -1.0f;
-        static float lastCenterPotValue = -1.0f;
-        static float lastRightPotValue = -1.0f;
-        static int lastLeftEncoder = 0;
-        static int lastRightEncoder = 0;
-        
-        // Read current values
-        float leftPotValue = params[POT_L_PARAM].getValue();
-        float centerPotValue = params[POT_C_PARAM].getValue();
-        float rightPotValue = params[POT_R_PARAM].getValue();
-        int currentLeftEncoder = (int)params[ENCODER_L_PARAM].getValue();
-        int currentRightEncoder = (int)params[ENCODER_R_PARAM].getValue();
-        
-        // === Page Selection (Left Pot) ===
-        if (std::fabs(leftPotValue - lastLeftPotValue) > 0.00001f && parameterPages.size() > 1) {
-            int newPageIndex = (int)(leftPotValue * (parameterPages.size() - 1));
-            if (newPageIndex != currentPageIndex && newPageIndex >= 0 && newPageIndex < (int)parameterPages.size()) {
-                setCurrentPage(newPageIndex);
-            }
-            lastLeftPotValue = leftPotValue;
-        }
-        
-        // === Parameter Selection (Center Pot or Left Encoder) ===
-        const _NT_parameterPage& currentPage = parameterPages[currentPageIndex];
-        
-        // Center pot
-        if (std::fabs(centerPotValue - lastCenterPotValue) > 0.00001f && currentPage.numParams > 1) {
-            int newParamIndex = (int)(centerPotValue * (currentPage.numParams - 1));
-            if (newParamIndex != currentParamIndex && newParamIndex >= 0 && newParamIndex < currentPage.numParams) {
-                setCurrentParam(newParamIndex);
-            }
-            lastCenterPotValue = centerPotValue;
-        }
-        
-        // Left encoder (relative)
-        int leftDelta = currentLeftEncoder - lastLeftEncoder;
-        if (leftDelta != 0 && currentPage.numParams > 0) {
-            int newParamIndex = clamp(currentParamIndex + leftDelta, 0, (int)currentPage.numParams - 1);
-            if (newParamIndex != currentParamIndex) {
-                setCurrentParam(newParamIndex);
-            }
-            lastLeftEncoder = currentLeftEncoder;
-        }
-        
-        // === Parameter Value Editing (Right Pot or Right Encoder) ===
-        int paramIdx = getCurrentParameterIndex();
-        if (paramIdx >= 0 && paramIdx < (int)parameters.size()) {
-            const _NT_parameter& param = parameters[paramIdx];
-            int currentValue = routingMatrix[paramIdx];
-            
-            // Right pot (absolute)
-            if (std::fabs(rightPotValue - lastRightPotValue) > 0.00001f) {
-                int newValue = (int)(rightPotValue * (param.max - param.min)) + param.min;
-                if (newValue != currentValue) {
-                    setParameterValue(paramIdx, newValue);
-                }
-                lastRightPotValue = rightPotValue;
-            }
-            
-            // Right encoder (relative)
-            int rightDelta = currentRightEncoder - lastRightEncoder;
-            if (rightDelta != 0) {
-                int newValue = clamp(currentValue + rightDelta, (int)param.min, (int)param.max);
-                if (newValue != currentValue) {
-                    setParameterValue(paramIdx, newValue);
-                }
-                lastRightEncoder = currentRightEncoder;
-            }
-        }
-        
-        // Right encoder press: Optional (values are now applied immediately via pots/encoders)
-        if (params[ENCODER_R_PRESS_PARAM].getValue() > 0 && !rightEncoderPressed) {
-            rightEncoderPressed = true;
-            // Could be used for additional functions in the future
-            displayDirty = true;
-        } else if (params[ENCODER_R_PRESS_PARAM].getValue() == 0) {
-            rightEncoderPressed = false;
-        }
-    }
-    
-    // Process discrete encoder steps using raw value directly
-    int processDiscreteEncoder(int paramId) {
-        int currentValue = (int)params[paramId].getValue();
-        
-        // The raw value IS the number of steps to move
-        int steps = currentValue;
-        
-        // Reset the parameter after consuming the steps
-        if (steps != 0) {
-            params[paramId].setValue(0.f);
-            
-        }
-        
-        return steps;
-    }
-    
-    // Get encoder steps for menu navigation
-    int getEncoderSteps(int paramId) {
-        return processDiscreteEncoder(paramId);
-    }
     
     // State update methods - single point of control
     void setCurrentPage(int pageIndex) {
-        if (pageIndex != currentPageIndex && pageIndex >= 0 && pageIndex < (int)parameterPages.size()) {
-            currentPageIndex = pageIndex;
-            currentParamIndex = 0; // Reset to first parameter when changing pages
-            displayDirty = true;
-        }
+        parameterSystem->setCurrentPage(pageIndex);
+        displayDirty = true;
     }
     
     void setCurrentParam(int paramIndex) {
-        if (paramIndex != currentParamIndex && currentPageIndex < (int)parameterPages.size()) {
-            const _NT_parameterPage& page = parameterPages[currentPageIndex];
-            if (paramIndex >= 0 && paramIndex < page.numParams) {
-                currentParamIndex = paramIndex;
-                displayDirty = true;
-            }
-        }
+        parameterSystem->setCurrentParam(paramIndex);
+        displayDirty = true;
     }
     
     bool isRoutingParameter(const _NT_parameter& param) {
@@ -1551,43 +889,36 @@ struct DistingNT : Module {
     }
     
     void setParameterValue(int paramIdx, int value) {
-        if (paramIdx >= 0 && paramIdx < (int)parameters.size()) {
-            const _NT_parameter& param = parameters[paramIdx];
-            value = clamp(value, (int)param.min, (int)param.max);
-            if (routingMatrix[paramIdx] != value) {
-                routingMatrix[paramIdx] = value;
-                
-                // Notify plugin of parameter change
-                if (pluginFactory && pluginFactory->parameterChanged) {
-                    pluginFactory->parameterChanged(pluginAlgorithm, paramIdx);
-                }
-                
-                // Update routing immediately for routing parameters
-                if (isRoutingParameter(param)) {
-                    updateParameterRouting();
-                }
-                
-                displayDirty = true;
+        // Delegate to ParameterSystem
+        parameterSystem->setParameterValue(paramIdx, (int16_t)value);
+        
+        // Update routing immediately for routing parameters if this is a routing parameter
+        if (paramIdx >= 0 && paramIdx < (int)parameterSystem->getParameterCount()) {
+            const _NT_parameter& param = parameterSystem->getParameters()[paramIdx];
+            if (isRoutingParameter(param)) {
+                updateParameterRouting();
             }
         }
+        
+        displayDirty = true;
     }
     
     int getCurrentParameterIndex() {
-        if (currentPageIndex >= (int)parameterPages.size() || parameterPages.empty()) return -1;
+        if (parameterSystem->getCurrentPageIndex() >= (int)parameterSystem->getPageCount() || !parameterSystem->hasParameterPages()) return -1;
         
-        const _NT_parameterPage& page = parameterPages[currentPageIndex];
-        if (currentParamIndex >= page.numParams) return -1;
+        const _NT_parameterPage& page = parameterSystem->getParameterPages()[parameterSystem->getCurrentPageIndex()];
+        if (parameterSystem->getCurrentParamIndex() >= page.numParams) return -1;
         
         // Handle default page case (no parameter index array)
         if (page.params == nullptr) {
             // For default pages, assume sequential parameter indexing
-            if (currentParamIndex >= (int)parameters.size()) return -1;
-            return currentParamIndex;
+            if (parameterSystem->getCurrentParamIndex() >= (int)parameterSystem->getParameterCount()) return -1;
+            return parameterSystem->getCurrentParamIndex();
         }
         
         // Handle normal pages with parameter index arrays
-        int paramIdx = page.params[currentParamIndex];
-        if (paramIdx < 0 || paramIdx >= (int)parameters.size()) return -1;
+        int paramIdx = page.params[parameterSystem->getCurrentParamIndex()];
+        if (paramIdx < 0 || paramIdx >= (int)parameterSystem->getParameterCount()) return -1;
         
         return paramIdx;
     }
@@ -1596,23 +927,15 @@ struct DistingNT : Module {
         int paramIdx = getCurrentParameterIndex();
         if (paramIdx < 0 || paramIdx >= 256) return 0;
         
-        return routingMatrix[paramIdx];
+        return parameterSystem->getRoutingMatrix()[paramIdx];
     }
     
     void confirmParameterValue() {
         int paramIdx = getCurrentParameterIndex();
-        if (paramIdx < 0 || paramIdx >= 256) return;
+        if (paramIdx < 0) return;
         
-        routingMatrix[paramIdx] = parameterEditValue;
-        
-        // Notify plugin of parameter change
-        if (pluginAlgorithm) {
-            safeExecutePlugin([&]() {
-                if (pluginFactory->parameterChanged) {
-                    pluginFactory->parameterChanged(pluginAlgorithm, paramIdx);
-                }
-            }, "parameterChanged");
-        }
+        // Delegate to ParameterSystem which will handle plugin notification through observer pattern
+        parameterSystem->setParameterValue(paramIdx, parameterEditValue);
         
         routingDirty = true;
     }
@@ -1631,14 +954,14 @@ struct DistingNT : Module {
         paramOutputRouting.clear();
         
         // Scan parameters for input/output types
-        for (size_t i = 0; i < parameters.size(); i++) {
-            const _NT_parameter& param = parameters[i];
+        for (size_t i = 0; i < parameterSystem->getParameterCount(); i++) {
+            const _NT_parameter& param = parameterSystem->getParameters()[i];
             
             if (param.unit == kNT_unitAudioInput || param.unit == kNT_unitCvInput) {
                 // This parameter controls an input routing
                 paramInputRouting[i] = {
                     .paramIndex = (int)i,
-                    .busIndex = routingMatrix[i] > 0 ? routingMatrix[i] - 1 : -1,  // Convert to 0-based
+                    .busIndex = parameterSystem->getRoutingMatrix()[i] > 0 ? parameterSystem->getRoutingMatrix()[i] - 1 : -1,  // Convert to 0-based
                     .isCV = (param.unit == kNT_unitCvInput)
                 };
             }
@@ -1646,14 +969,14 @@ struct DistingNT : Module {
                 // This parameter controls an output routing
                 paramOutputRouting[i] = {
                     .paramIndex = (int)i,
-                    .busIndex = routingMatrix[i] > 0 ? routingMatrix[i] - 1 : -1,  // Convert to 0-based
+                    .busIndex = parameterSystem->getRoutingMatrix()[i] > 0 ? parameterSystem->getRoutingMatrix()[i] - 1 : -1,  // Convert to 0-based
                     .isCV = (param.unit == kNT_unitCvOutput),
                     .hasOutputMode = false,
                     .outputModeParamIndex = -1
                 };
                 
                 // Check if next parameter is output mode
-                if (i + 1 < parameters.size() && parameters[i + 1].unit == kNT_unitOutputMode) {
+                if (i + 1 < parameterSystem->getParameterCount() && parameterSystem->getParameters()[i + 1].unit == kNT_unitOutputMode) {
                     paramOutputRouting[i].hasOutputMode = true;
                     paramOutputRouting[i].outputModeParamIndex = i + 1;
                 }
@@ -1666,7 +989,7 @@ struct DistingNT : Module {
     
     void updateBusRouting() {
         // Validate plugin state before updating routing
-        if (!pluginAlgorithm || parameters.empty()) {
+        if (!pluginManager || !pluginManager->getAlgorithm() || !parameterSystem->hasParameters()) {
             return;
         }
         
@@ -1688,64 +1011,22 @@ struct DistingNT : Module {
     }
     
     void applyCustomRouting() {
-        // Simple fixed input routing: VCV inputs 1-12 -> Disting NT buses 1-12
-        // This matches the hardware architecture and works with any plugin
-        int currentSample = busSystem.getCurrentSampleIndex();
-        
-        // Clear all buses first for current sample
-        for (int bus = 0; bus < 28; bus++) {
-            busSystem.setBus(bus, currentSample, 0.0f);
-        }
-        
-        // Fixed routing: VCV Input 1 -> Bus 1, VCV Input 2 -> Bus 2, etc.
-        for (int i = 0; i < NUM_INPUTS; i++) {
-            if (inputs[AUDIO_INPUT_1 + i].isConnected()) {
-                float voltage = inputs[AUDIO_INPUT_1 + i].getVoltage();
-                int targetBus = i; // Bus 1-12 (0-based indices 0-11)
-                busSystem.setBus(targetBus, currentSample, voltage);
-                
-                // Enhanced debug output - show when we have actual audio signal
-                static int debugCount = 0;
-                if (debugCount++ < 50 || (std::abs(voltage) > 0.001f && debugCount < 200)) {
-                    INFO("Input routing: VCV input %d -> Bus %d (voltage=%.3f, connected=%d)", 
-                         i + 1, targetBus + 1, voltage, inputs[AUDIO_INPUT_1 + i].isConnected());
-                }
-            }
-        }
+        // For custom routing, just use the default routing for now
+        // This ensures all 12 inputs are properly routed to buses 0-11
+        busSystem.routeInputs(this);
     }
     
     void applyCustomOutputRouting() {
-        // Apply output routing based on parameter settings
-        static int debugCount = 0;
-        if (debugCount++ < 20) {
-            INFO("CUSTOM ROUTING: applyCustomOutputRouting called, parameters.size()=%zu", parameters.size());
-        }
-        
+        // Get current sample from the block
         int currentSample = busSystem.getCurrentSampleIndex();
         
-        // Clear outputs first
-        for (int i = 0; i < NUM_OUTPUTS; i++) {
-            outputs[i].setVoltage(0.0f);
-        }
-        
-        // Simple fixed routing: Disting NT output buses 13-20 -> VCV outputs 1-8
-        // Bus 13 (index 12) -> VCV output 1 (AUDIO_OUTPUT_1)
-        // Bus 14 (index 13) -> VCV output 2 (AUDIO_OUTPUT_2)
-        // etc.
-        for (int i = 0; i < NUM_OUTPUTS; i++) {
-            int sourceBus = 12 + i;  // Bus 13-20 (0-based indices 12-19)
-            float busValue = busSystem.getBus(sourceBus, currentSample);
+        // Route buses 12-17 to outputs 1-6 for current sample
+        for (int i = 0; i < 6 && i < NUM_OUTPUTS; i++) {
+            float busValue = busSystem.getBus(12 + i, currentSample);
             outputs[AUDIO_OUTPUT_1 + i].setVoltage(busValue);
-            
-            // Enhanced debug output - show when we have actual audio signal
-            static int debugCount = 0;
-            if (debugCount++ < 50 || (std::abs(busValue) > 0.001f && debugCount < 200)) {
-                INFO("Output routing: Bus %d -> VCV output %d (busValue=%.3f)", 
-                     sourceBus + 1, i + 1, busValue);
-            }
         }
         
-        // Advance to next sample
+        // Advance sample index
         busSystem.nextSample();
     }
     
@@ -1759,124 +1040,140 @@ struct DistingNT : Module {
             return true;
         } catch (const std::exception& e) {
             WARN("Plugin %s failed: %s", operation, e.what());
-            loadingMessage = string::f("Plugin Error: %s", operation);
-            loadingMessageTimer = 3.0f;
             return false;
         } catch (...) {
             WARN("Plugin %s failed: Unknown exception", operation);
-            loadingMessage = string::f("Plugin Error: %s", operation);
-            loadingMessageTimer = 3.0f;
             return false;
         }
     }
     
     void process(const ProcessArgs& args) override {
-        // Update loading message timer
-        if (loadingMessageTimer > 0) {
-            loadingMessageTimer -= args.sampleTime;
+        static int processCount = 0;
+        if (processCount++ < 5) {
+            INFO("DistingNT process() called, count=%d", processCount);
         }
         
-        // Process MIDI input
-        midi::Message msg;
-        while (midiInput.tryPop(&msg, args.frame)) {
-            processMidiMessage(msg);
-            midiInputLight = 1.f;
-        }
+        try {
+        
+        // Update plugin manager timers
+        pluginManager->updateLoadingTimer(args.sampleTime);
+        
+        // Process MIDI input using new MidiProcessor
+        midiProcessor->processInputMessages(args);
         
         // Update MIDI activity lights
         if (midiActivityDivider.process()) {
-            midiInputLight *= 0.9f;  // Decay
-            midiOutputLight *= 0.9f;
+            midiProcessor->updateActivityLights(args.sampleTime);
         }
         
-        // Handle menu navigation
-        if (params[ENCODER_L_PRESS_PARAM].getValue() > 0 && !leftEncoderPressed) {
+        // Menu toggle is handled by Button 1, not encoder press
+        // Update encoder press state tracking
+        if (params[ENCODER_L_PRESS_PARAM].getValue() > 0) {
             leftEncoderPressed = true;
-            toggleMenuMode();
         } else if (params[ENCODER_L_PRESS_PARAM].getValue() == 0) {
             leftEncoderPressed = false;
         }
         
-        if (menuMode != MENU_OFF) {
-            processMenuNavigation();
+        if (menuSystem->isMenuActive()) {
+            // Collect current input states for menu processing
+            std::array<float, 3> potValues = {
+                params[POT_L_PARAM].getValue(),
+                params[POT_C_PARAM].getValue(),
+                params[POT_R_PARAM].getValue()
+            };
+            
+            // Convert infinite encoder values to discrete steps for MenuSystem
+            // Track encoder deltas and accumulate into discrete steps
+            static float lastLeftEncoder = 0.f;
+            static float lastRightEncoder = 0.f;
+            static int leftEncoderSteps = 0;
+            static int rightEncoderSteps = 0;
+            
+            float currentLeftEncoder = params[ENCODER_L_PARAM].getValue();
+            float currentRightEncoder = params[ENCODER_R_PARAM].getValue();
+            
+            // Calculate deltas and convert to steps (threshold-based)
+            float leftDelta = currentLeftEncoder - lastLeftEncoder;
+            float rightDelta = currentRightEncoder - lastRightEncoder;
+            
+            const float stepThreshold = 0.1f; // Adjust sensitivity as needed
+            if (std::abs(leftDelta) > stepThreshold) {
+                leftEncoderSteps += (leftDelta > 0) ? 1 : -1;
+                lastLeftEncoder = currentLeftEncoder;
+            }
+            if (std::abs(rightDelta) > stepThreshold) {
+                rightEncoderSteps += (rightDelta > 0) ? 1 : -1;
+                lastRightEncoder = currentRightEncoder;
+            }
+            
+            std::array<int, 2> encoderValues = {
+                leftEncoderSteps,
+                rightEncoderSteps
+            };
+            std::array<bool, 2> encoderPressed = {
+                params[ENCODER_L_PRESS_PARAM].getValue() > 0,
+                params[ENCODER_R_PRESS_PARAM].getValue() > 0
+            };
+            
+            menuSystem->processNavigation(potValues, encoderValues, encoderPressed);
+        } else {
+            // Process control inputs when not in menu mode
+            processControls();
         }
-        
-        // Handle control inputs
-        processControls();
         
         // Sync routing matrix with plugin algorithm values if plugin is loaded
         // Skip sync during menu mode to avoid conflicts with parameter editing
-        if (isPluginLoaded() && pluginAlgorithm && menuMode == MENU_OFF) {
-            for (size_t i = 0; i < parameters.size() && i < routingMatrix.size(); i++) {
-                routingMatrix[i] = pluginAlgorithm->v[i];
+        if (isPluginLoaded() && pluginManager && pluginManager->getAlgorithm() && pluginManager->getAlgorithm()->v && menuMode == MENU_OFF) {
+            for (size_t i = 0; i < parameterSystem->getParameterCount() && i < parameterSystem->getRoutingMatrix().size(); i++) {
+                parameterSystem->getRoutingMatrix()[i] = pluginManager->getAlgorithm()->v[i];
             }
         }
         
-        // Apply custom routing if plugin is loaded, otherwise use default routing
-        if (isPluginLoaded() && !parameters.empty()) {
-            applyCustomRouting();
-        } else {
-            // Route inputs to buses (default behavior)
-            busSystem.routeInputs(this);
+        // Clear buses at the start of a new block
+        if (sampleCounter == 0) {
+            busSystem.clear();
         }
         
-        // Accumulate samples for block processing
-        sampleCounter++;
-        if (sampleCounter >= BLOCK_SIZE) {
+        // Route inputs to buses for current sample
+        busSystem.routeInputs(this);
+        
+        // Check if we've accumulated a full block (after routing input)
+        if (sampleCounter == BLOCK_SIZE - 1) {
             // Process algorithm with 4-sample blocks
             if (isPluginLoaded()) {
                 // Use plugin for audio processing
                 safeExecutePlugin([&]() {
-                    if (pluginFactory->step) {
-                        pluginFactory->step(pluginAlgorithm, busSystem.getBuses(), 1);
+                    // Add comprehensive null checks for plugin reload safety
+                    if (pluginManager && pluginManager->getFactory() && pluginManager->getAlgorithm() && pluginManager->getFactory()->step) {
+                        // Debug logging disabled for performance
                         
-                        // Debug: Check what the plugin wrote to output buses
-                        static int stepDebugCount = 0;
-                        if (stepDebugCount++ < 100) {
-                            int currentSample = busSystem.getCurrentSampleIndex();
-                            for (int bus = 12; bus < 16; bus++) { // Check buses 13-16
-                                float busValue = busSystem.getBus(bus, currentSample);
-                                if (std::abs(busValue) > 0.001f || stepDebugCount < 20) {
-                                    INFO("After plugin step: Bus %d = %.3f", bus + 1, busValue);
-                                }
-                            }
-                        }
+                        pluginManager->getFactory()->step(pluginManager->getAlgorithm(), busSystem.getBuses(), 1);
+                        
+                        // Debug logging disabled for performance
                     }
                 }, "step");
             } else {
                 // Use built-in emulator
                 emulatorCore.processAudio(busSystem.getBuses(), 1); // 1 = numFramesBy4
             }
-            sampleCounter = 0;
+            
+            // Don't reset - we'll output samples in sequence
         }
         
-        // Add basic debugging every time
-        static int routingDebugCount = 0;
-        if (routingDebugCount++ < 100) {
-            INFO("ROUTING DEBUG: isPluginLoaded()=%d, parameters.size()=%zu", 
-                 isPluginLoaded(), parameters.size());
-        }
+        // Route outputs for current sample
+        busSystem.routeOutputs(this);
         
-        // Apply custom output routing if plugin is loaded, otherwise use default routing
-        if (isPluginLoaded() && !parameters.empty()) {
-            static int customRoutingCount = 0;
-            if (customRoutingCount++ < 10) {
-                INFO("Using CUSTOM routing");
-            }
-            applyCustomOutputRouting();
-        } else {
-            // Debug why we're using default routing
-            static int fallbackDebugCount = 0;
-            if (fallbackDebugCount++ < 10) {
-                INFO("Using DEFAULT routing: isPluginLoaded()=%d, parameters.size()=%zu", 
-                     isPluginLoaded(), parameters.size());
-            }
-            // Route buses to outputs (default behavior)
-            busSystem.routeOutputs(this);
-        }
+        // Increment sample counter and wrap at block size
+        sampleCounter = (sampleCounter + 1) % BLOCK_SIZE;
         
         // Update lights
         updateLights();
+        
+        } catch (const std::exception& e) {
+            WARN("DistingNT process() exception: %s", e.what());
+        } catch (...) {
+            WARN("DistingNT process() unknown exception");
+        }
     }
     
     void processControls() {
@@ -1889,13 +1186,17 @@ struct DistingNT : Module {
         }
         
         // Process encoder press triggers
-        if (encoderLPressTrigger.process(params[ENCODER_L_PRESS_PARAM].getValue())) {
-            onEncoderPress(0);
-            displayDirty = true;
-        }
-        if (encoderRPressTrigger.process(params[ENCODER_R_PRESS_PARAM].getValue())) {
-            onEncoderPress(1);
-            displayDirty = true;
+        // Encoder press handling now done by MenuSystem in menu mode
+        // Legacy encoder press handling for non-menu mode (emulator core)
+        if (!menuSystem->isMenuActive()) {
+            if (encoderLPressTrigger.process(params[ENCODER_L_PRESS_PARAM].getValue())) {
+                onEncoderPress(0);
+                displayDirty = true;
+            }
+            if (encoderRPressTrigger.process(params[ENCODER_R_PRESS_PARAM].getValue())) {
+                onEncoderPress(1);
+                displayDirty = true;
+            }
         }
         
         // Update hardware state for emulator core
@@ -1957,17 +1258,17 @@ struct DistingNT : Module {
             lights[OUTPUT_LIGHT_1 + i].setBrightness(isRouted ? 1.0f : 0.0f);
         }
         
-        // Update MIDI activity lights
-        lights[MIDI_INPUT_LIGHT].setBrightness(midiInputLight);
-        lights[MIDI_OUTPUT_LIGHT].setBrightness(midiOutputLight);
+        // Update MIDI activity lights using new MidiProcessor
+        lights[MIDI_INPUT_LIGHT].setBrightness(midiProcessor->getMidiInputLight());
+        lights[MIDI_OUTPUT_LIGHT].setBrightness(midiProcessor->getMidiOutputLight());
     }
     
     void onParameterChange(int parameter, float value) {
         if (isPluginLoaded()) {
             // Forward parameter changes to plugin
             safeExecutePlugin([&]() {
-                if (pluginFactory->parameterChanged) {
-                    pluginFactory->parameterChanged(pluginAlgorithm, parameter);
+                if (pluginManager->getFactory()->parameterChanged) {
+                    pluginManager->getFactory()->parameterChanged(pluginManager->getAlgorithm(), parameter);
                 }
             }, "parameterChanged");
         } else {
@@ -1976,9 +1277,11 @@ struct DistingNT : Module {
     }
     
     void onButtonPress(int button, bool pressed) {
+        INFO("Button %d %s", button + 1, pressed ? "pressed" : "released");
         if (pressed) {
             // Button 1 is the menu button
             if (button == 0) {
+                INFO("Menu button pressed - toggling menu");
                 toggleMenuMode();
             } else {
                 emulatorCore.pressButton(button);
@@ -2028,9 +1331,8 @@ struct DistingNT : Module {
         json_t* rootJ = emulatorCore.saveState();
         
         // Save plugin info if loaded
-        if (!pluginPath.empty()) {
-            json_object_set_new(rootJ, "pluginPath", json_string(pluginPath.c_str()));
-            json_object_set_new(rootJ, "lastFolder", json_string(lastPluginFolder.c_str()));
+        if (!pluginManager->getPluginPath().empty()) {
+            json_object_set_new(rootJ, "pluginPath", json_string(pluginManager->getPluginPath().c_str()));
         }
         
         // Save parameter values
@@ -2043,18 +1345,18 @@ struct DistingNT : Module {
         // Save routing matrix
         json_t* routingJ = json_array();
         for (int i = 0; i < 256; i++) {
-            if (routingMatrix[i] != 0) {
+            if (parameterSystem->getRoutingMatrix()[i] != 0) {
                 json_t* routeJ = json_object();
                 json_object_set_new(routeJ, "param", json_integer(i));
-                json_object_set_new(routeJ, "bus", json_integer(routingMatrix[i]));
+                json_object_set_new(routeJ, "bus", json_integer(parameterSystem->getRoutingMatrix()[i]));
                 json_array_append_new(routingJ, routeJ);
             }
         }
         json_object_set_new(rootJ, "routing", routingJ);
         
         // Save MIDI settings
-        json_object_set_new(rootJ, "midiInput", midiInput.toJson());
-        json_object_set_new(rootJ, "midiOutput", midiOutput.toJson());
+        json_object_set_new(rootJ, "midiInput", midiProcessor->getInputQueue().toJson());
+        json_object_set_new(rootJ, "midiOutput", midiProcessor->getOutput().toJson());
         
         return rootJ;
     }
@@ -2093,9 +1395,9 @@ struct DistingNT : Module {
         json_t* routingJ = json_object_get(rootJ, "routing");
         if (routingJ) {
             // Reset to defaults first
-            for (size_t i = 0; i < parameters.size(); i++) {
-                if (i < routingMatrix.size()) {
-                    routingMatrix[i] = parameters[i].def;
+            for (size_t i = 0; i < parameterSystem->getParameterCount(); i++) {
+                if (i < parameterSystem->getRoutingMatrix().size()) {
+                    parameterSystem->getRoutingMatrix()[i] = parameterSystem->getParameters()[i].def;
                 }
             }
             
@@ -2107,7 +1409,7 @@ struct DistingNT : Module {
                     int param = json_integer_value(json_object_get(routeJ, "param"));
                     int bus = json_integer_value(json_object_get(routeJ, "bus"));
                     if (param >= 0 && param < 256) {
-                        routingMatrix[param] = bus;
+                        parameterSystem->getRoutingMatrix()[param] = bus;
                     }
                 }
             }
@@ -2119,14 +1421,35 @@ struct DistingNT : Module {
         // Restore MIDI settings
         json_t* midiInputJ = json_object_get(rootJ, "midiInput");
         if (midiInputJ) {
-            midiInput.fromJson(midiInputJ);
+            midiProcessor->getInputQueue().fromJson(midiInputJ);
         }
         
         json_t* midiOutputJ = json_object_get(rootJ, "midiOutput");
         if (midiOutputJ) {
-            midiOutput.fromJson(midiOutputJ);
+            midiProcessor->getOutput().fromJson(midiOutputJ);
         }
         
+        displayDirty = true;
+    }
+    
+    // IParameterObserver interface implementation
+    void onParameterChanged(int index, int16_t value) override {
+        // Notify plugin of parameter change
+        if (pluginManager->getFactory() && pluginManager->getFactory()->parameterChanged) {
+            pluginManager->getFactory()->parameterChanged(pluginManager->getAlgorithm(), index);
+        }
+        displayDirty = true;
+    }
+    
+    void onParameterPageChanged(int pageIndex) override {
+        displayDirty = true;
+    }
+    
+    void onParametersExtracted() override {
+        // Sync algorithm's v[] pointer with ParameterSystem's routing matrix
+        if (pluginManager->getAlgorithm()) {
+            pluginManager->getAlgorithm()->v = parameterSystem->getRoutingMatrix().data();
+        }
         displayDirty = true;
     }
 };
@@ -2172,16 +1495,16 @@ struct DistingNTOLEDWidget : FramebufferWidget {
         // Show menu interface if active
         if (distingModule && distingModule->menuMode != DistingNT::MENU_OFF) {
             drawMenuInterface(args.vg, distingModule);
-        } else if (distingModule && distingModule->loadingMessageTimer > 0) {
+        } else if (distingModule && distingModule->pluginManager && distingModule->pluginManager->getLoadingMessageTimer() > 0) {
             nvgFillColor(args.vg, nvgRGB(0, 255, 255)); // Cyan
             nvgFontSize(args.vg, 16);
             nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
             
             // Fade out effect
-            float alpha = std::min(1.0f, distingModule->loadingMessageTimer);
+            float alpha = std::min(1.0f, distingModule->pluginManager->getLoadingMessageTimer());
             nvgFillColor(args.vg, nvgRGBA(0, 255, 255, (int)(255 * alpha)));
             
-            nvgText(args.vg, 128, 32, distingModule->loadingMessage.c_str(), NULL);
+            nvgText(args.vg, 128, 32, distingModule->pluginManager->getLoadingMessage().c_str(), NULL);
         } else {
             // Check if plugin has custom drawing
             if (distingModule && distingModule->isPluginLoaded()) {
@@ -2193,7 +1516,7 @@ struct DistingNTOLEDWidget : FramebufferWidget {
                 
                 // Try plugin drawing
                 bool pluginDrew = false;
-                if (distingModule->pluginFactory && distingModule->pluginFactory->draw) {
+                if (distingModule->pluginManager && distingModule->pluginManager->getFactory() && distingModule->pluginManager->getFactory()->draw) {
                     static int drawCallCount = 0;
                     if (drawCallCount++ < 5) {
                         INFO("Calling plugin draw() function, attempt %d", drawCallCount);
@@ -2201,13 +1524,14 @@ struct DistingNTOLEDWidget : FramebufferWidget {
                 } else {
                     static int failureCount = 0;
                     if (failureCount++ < 5) {
-                        INFO("Cannot call plugin draw(): pluginFactory=%p, draw=%p", 
-                             distingModule->pluginFactory, 
-                             distingModule->pluginFactory ? distingModule->pluginFactory->draw : nullptr);
+                        INFO("Cannot call plugin draw(): pluginManager=%p, pluginFactory=%p, draw=%p", 
+                             distingModule->pluginManager.get(),
+                             distingModule->pluginManager ? distingModule->pluginManager->getFactory() : nullptr, 
+                             (distingModule->pluginManager && distingModule->pluginManager->getFactory()) ? distingModule->pluginManager->getFactory()->draw : nullptr);
                     }
                 }
                 
-                if (distingModule->pluginFactory && distingModule->pluginFactory->draw) {
+                if (distingModule->pluginManager && distingModule->pluginManager->getFactory() && distingModule->pluginManager->getFactory()->draw) {
                     
                     // Clear NT_screen buffer before plugin draws
                     memset(NT_screen, 0, sizeof(NT_screen));
@@ -2215,12 +1539,12 @@ struct DistingNTOLEDWidget : FramebufferWidget {
                     static int pluginDrawCallCount = 0;
                     if (pluginDrawCallCount++ < 5) {
                         INFO("About to call plugin draw() for %s, attempt %d", 
-                             distingModule->pluginFactory->name ? distingModule->pluginFactory->name : "unknown", 
+                             distingModule->pluginManager->getFactory()->name ? distingModule->pluginManager->getFactory()->name : "unknown", 
                              pluginDrawCallCount);
                     }
                     
                     distingModule->safeExecutePlugin([&]() {
-                        pluginDrew = distingModule->pluginFactory->draw(distingModule->pluginAlgorithm);
+                        pluginDrew = distingModule->pluginManager->getFactory()->draw(distingModule->pluginManager->getAlgorithm());
                         
                         static int drawResultCount = 0;
                         if (drawResultCount++ < 5) {
@@ -2262,8 +1586,8 @@ struct DistingNTOLEDWidget : FramebufferWidget {
                     nvgFontSize(args.vg, 14);
                     nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
                     
-                    if (distingModule->pluginFactory && distingModule->pluginFactory->name) {
-                        nvgText(args.vg, 128, 32, distingModule->pluginFactory->name, NULL);
+                    if (distingModule->pluginManager && distingModule->pluginManager->getFactory() && distingModule->pluginManager->getFactory()->name) {
+                        nvgText(args.vg, 128, 32, distingModule->pluginManager->getFactory()->name, NULL);
                     } else {
                         nvgText(args.vg, 128, 32, "Plugin Loaded", NULL);
                     }
@@ -2368,18 +1692,18 @@ struct DistingNTOLEDWidget : FramebufferWidget {
         int pageStartIdx = 0;
         
         // Center current page in view
-        if (module->currentPageIndex > 2 && module->parameterPages.size() > visiblePages) {
-            pageStartIdx = std::min(module->currentPageIndex - 2, 
-                                   std::max(0, (int)module->parameterPages.size() - visiblePages));
+        if (module->parameterSystem->getCurrentPageIndex() > 2 && module->parameterSystem->getPageCount() > visiblePages) {
+            pageStartIdx = std::min(module->parameterSystem->getCurrentPageIndex() - 2, 
+                                   std::max(0, (int)module->parameterSystem->getPageCount() - visiblePages));
         }
         
         // Draw pages
-        for (int i = 0; i < visiblePages && (pageStartIdx + i) < (int)module->parameterPages.size(); i++) {
+        for (int i = 0; i < visiblePages && (pageStartIdx + i) < (int)module->parameterSystem->getPageCount(); i++) {
             int pageIdx = pageStartIdx + i;
-            const _NT_parameterPage& page = module->parameterPages[pageIdx];
+            const _NT_parameterPage& page = module->parameterSystem->getParameterPages()[pageIdx];
             float y = 8 + i * 10;
             
-            bool isCurrentPage = (pageIdx == module->currentPageIndex);
+            bool isCurrentPage = (pageIdx == module->parameterSystem->getCurrentPageIndex());
             
             // Brighter color for current page (instead of bold)
             nvgFillColor(vg, isCurrentPage ? nvgRGB(255, 255, 255) : nvgRGB(120, 120, 120));
@@ -2400,23 +1724,23 @@ struct DistingNTOLEDWidget : FramebufferWidget {
             nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
             nvgText(vg, pageColumn + pageWidth/2, 2, "▲", NULL);
         }
-        if (pageStartIdx + visiblePages < (int)module->parameterPages.size()) {
+        if (pageStartIdx + visiblePages < (int)module->parameterSystem->getPageCount()) {
             nvgFillColor(vg, nvgRGB(160, 160, 160));
             nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
             nvgText(vg, pageColumn + pageWidth/2, 56, "▼", NULL);
         }
         
         // === RIGHT COLUMN: PARAMETER LIST WITH VALUES ===
-        if (module->currentPageIndex < (int)module->parameterPages.size()) {
-            const _NT_parameterPage& currentPage = module->parameterPages[module->currentPageIndex];
+        if (module->parameterSystem->getCurrentPageIndex() < (int)module->parameterSystem->getPageCount()) {
+            const _NT_parameterPage& currentPage = module->parameterSystem->getParameterPages()[module->parameterSystem->getCurrentPageIndex()];
             
             if (currentPage.numParams > 0) {
                 const int visibleParams = 5;
                 int paramStartIdx = 0;
                 
                 // Center current parameter in view
-                if (module->currentParamIndex > 2 && currentPage.numParams > visibleParams) {
-                    paramStartIdx = std::min(module->currentParamIndex - 2, 
+                if (module->parameterSystem->getCurrentParamIndex() > 2 && currentPage.numParams > visibleParams) {
+                    paramStartIdx = std::min(module->parameterSystem->getCurrentParamIndex() - 2, 
                                            std::max(0, (int)currentPage.numParams - visibleParams));
                 }
                 
@@ -2432,12 +1756,12 @@ struct DistingNTOLEDWidget : FramebufferWidget {
                         paramIdx = currentPage.params[paramListIdx];
                     }
                     
-                    if (paramIdx < 0 || paramIdx >= (int)module->parameters.size()) continue;
+                    if (paramIdx < 0 || paramIdx >= (int)module->parameterSystem->getParameterCount()) continue;
                     
-                    const _NT_parameter& param = module->parameters[paramIdx];
+                    const _NT_parameter& param = module->parameterSystem->getParameters()[paramIdx];
                     float y = 8 + i * 10;
                     
-                    bool isCurrentParam = (paramListIdx == module->currentParamIndex);
+                    bool isCurrentParam = (paramListIdx == module->parameterSystem->getCurrentParamIndex());
                     
                     // PARAMETER NAME - brighter color for current parameter
                     nvgFillColor(vg, isCurrentParam ? nvgRGB(255, 255, 255) : nvgRGB(140, 140, 140));
@@ -2445,7 +1769,7 @@ struct DistingNTOLEDWidget : FramebufferWidget {
                     nvgText(vg, paramColumn, y, param.name, NULL);
                     
                     // PARAMETER VALUE (beside the name)
-                    int value = module->routingMatrix[paramIdx];
+                    int value = module->parameterSystem->getRoutingMatrix()[paramIdx];
                     char valueStr[32];
                     formatParameterValue(valueStr, param, value);
                     
@@ -2629,10 +1953,10 @@ std::string ContextAwareEncoderQuantity::getDisplayValueString() {
     }
     
     // Show current parameter name and value
-    int paramIdx = distingModule->currentParamIndex;
-    if (paramIdx >= 0 && paramIdx < (int)distingModule->parameters.size()) {
-        const _NT_parameter& param = distingModule->parameters[paramIdx];
-        int value = distingModule->routingMatrix[paramIdx];
+    int paramIdx = distingModule->parameterSystem->getCurrentParamIndex();
+    if (paramIdx >= 0 && paramIdx < (int)distingModule->parameterSystem->getParameterCount()) {
+        const _NT_parameter& param = distingModule->parameterSystem->getParameters()[paramIdx];
+        int value = distingModule->parameterSystem->getRoutingMatrix()[paramIdx];
         
         // Simple value display for now
         return std::string(param.name) + ": " + std::to_string(value);
@@ -2651,7 +1975,7 @@ void DistingNTOutputPort::onHover(const HoverEvent& e) {
         for (const auto& pair : distingModule->paramOutputRouting) {
             size_t paramIdx = pair.first;
             // Check if this parameter's routing would send to this output
-            const std::string& paramName = distingModule->parameters[paramIdx].name;
+            const std::string& paramName = distingModule->parameterSystem->getParameters()[paramIdx].name;
             int targetOutput = -1;
             
             // Extract output number from parameter name
@@ -2779,7 +2103,7 @@ struct DistingNTWidget : ModuleWidget {
                 }));
                 
                 // Show current plugin
-                std::string filename = rack::system::getFilename(module->pluginPath);
+                std::string filename = rack::system::getFilename(module->pluginManager->getPluginPath());
                 menu->addChild(createMenuLabel(string::f("Current: %s", filename.c_str())));
             }
         }));
@@ -2788,18 +2112,17 @@ struct DistingNTWidget : ModuleWidget {
         
         // MIDI Input submenu
         menu->addChild(createSubmenuItem("MIDI Input", "", [=](Menu* menu) {
-            appendMidiMenu(menu, &module->midiInput);
+            appendMidiMenu(menu, &module->midiProcessor->getInputQueue());
         }));
         
         // MIDI Output submenu
         menu->addChild(createSubmenuItem("MIDI Output", "", [=](Menu* menu) {
-            appendMidiMenu(menu, &module->midiOutput);
+            appendMidiMenu(menu, &module->midiProcessor->getOutput());
         }));
         
         menu->addChild(new MenuSeparator);
         menu->addChild(createMenuLabel("Algorithm"));
         
-        // TODO: Add algorithm selection items
         // This will be implemented when we have actual algorithms loaded
     }
     

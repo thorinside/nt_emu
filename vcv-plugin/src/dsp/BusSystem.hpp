@@ -54,9 +54,9 @@ public:
         
         int currentSample = getCurrentSampleIndex();
         
-        // Route buses 20-25 to 6 outputs (matches hardware specification)
+        // Route buses 12-17 to 6 outputs (matches AudioEngine and custom routing)
         for (int i = 0; i < 6; i++) {
-            float busValue = getBus(20 + i, currentSample);
+            float busValue = getBus(12 + i, currentSample);
             module->outputs[ModuleType::AUDIO_OUTPUT_1 + i].setVoltage(busValue);
         }
         

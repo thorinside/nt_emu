@@ -82,11 +82,7 @@ void drawChar(int x, int y, char c, FontType font, int color = 15) {
     int char_index = c - metrics.first_char;
     if (char_index < 0 || char_index > (metrics.last_char - metrics.first_char)) return;
     
-    // Get character width
-    int char_width = metrics.width;
-    if (metrics.widths) {
-        char_width = metrics.widths[char_index];
-    }
+    // Character width is handled by the caller (drawText)
     
     if (font == FontType::TINY) {
         // Tom Thumb 4x6: uses MSB ordering, render full bitmap but advance by character width

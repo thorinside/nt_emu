@@ -8,6 +8,41 @@ This is a **PRP (Product Requirement Prompt) Framework** repository, not a tradi
 
 ## Core Architecture
 
+### VCV Plugin Modular Architecture (Latest)
+
+**DistingNT Plugin** is being refactored from a 3000-line monolith into a modular architecture (WORK IN PROGRESS):
+
+```
+vcv-plugin/src/
+├── DistingNT.cpp           # Thin coordination layer (~500 lines target)
+├── plugin/
+│   ├── PluginManager.hpp   # Plugin loading/unloading (465 lines)
+│   └── PluginExecutor.hpp  # Safe plugin execution with error handling (190 lines)
+├── parameter/
+│   └── ParameterSystem.hpp # Parameter management & routing matrix (450 lines)
+├── menu/
+│   └── MenuSystem.hpp      # State machine for menu navigation (380 lines)
+├── midi/
+│   └── MidiProcessor.hpp   # MIDI I/O with activity tracking (220 lines)
+└── [existing components]
+    ├── dsp/BusSystem.hpp   # Audio routing
+    ├── EmulatorCore.hpp    # Core emulator logic
+    └── display/OLEDWidget.hpp # Display handling
+```
+
+**Key Patterns Implemented:**
+- **Dependency Injection**: Main module coordinates via smart pointers
+- **Observer Pattern**: Components notify of state changes  
+- **Safe Execution**: Comprehensive exception handling for plugin crashes
+- **C++11 Compatibility**: VCV Rack standard compliance
+- **Real-time Safety**: Audio thread considerations maintained
+
+**Current Status:**
+- ✅ **Modular Components**: All 5 core modules created (individual .hpp/.cpp files)
+- ⚠️ **Build Status**: `make clean && make` FAILS - compilation errors in DistingNT.cpp
+- ❌ **Integration**: Legacy method calls reference removed variables (pluginHandle, pluginFactory, etc.)
+- 🔄 **Next Steps**: Systematic migration of ~200+ legacy references to use new modular components
+
 ### Command-Driven System
 
 - **28+ pre-configured Claude Code commands** in `.claude/commands/`
@@ -73,19 +108,37 @@ uv run PRPs/scripts/prp_runner.py --prp [prp-name] --output-format stream-json
 ### Validation Gates (Must be Executable)
 
 ```bash
-# Level 1: Syntax & Style
-ruff check --fix && mypy .
+# CURRENT BUILD STATUS: FAILS
+make clean && make
+# ERROR: Multiple compilation errors in DistingNT.cpp
+# - Legacy references to removed variables (pluginHandle, pluginFactory, pluginAlgorithm)
+# - MIDI variable references (midiInputLight, midiOutputLight) 
+# - Parameter system integration incomplete
 
-# Level 2: Unit Tests
-uv run pytest tests/ -v
+# Individual component verification (when build is working):
+# make src/plugin/PluginManager.cpp.o
+# make src/parameter/ParameterSystem.cpp.o  
+# make src/menu/MenuSystem.cpp.o
+# make src/midi/MidiProcessor.cpp.o
 
-# Level 3: Integration
-uv run uvicorn main:app --reload
-curl -X POST http://localhost:8000/endpoint -H "Content-Type: application/json" -d '{...}'
-
-# Level 4: Deployment
-# mcp servers, or other creative ways to self validate
+# Integration test (after successful build):
+# cp dist/DistingNT/plugin.dylib ~/.Rack2/plugins/DistingNT/
+# /Applications/VCV\ Rack\ 2.app/Contents/MacOS/Rack -d
 ```
+
+### VCV Plugin Development Notes
+
+**Critical API Considerations:**
+- NT API uses C++11 features, ensure compatibility
+- Plugin execution must be exception-safe (crashes handled gracefully)
+- Parameter system requires proper bounds checking and clamping
+- MIDI processing needs thread-safe implementation
+- Display updates should only mark dirty when changed
+
+**Build Requirements:**
+- `make clean && make` for full rebuild
+- All new subdirectories automatically included via `$(wildcard src/*/*.cpp)`
+- Components compile independently for modular development
 
 ## Anti-Patterns to Avoid
 
