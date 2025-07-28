@@ -9,7 +9,7 @@ using namespace rack;
 MenuSystem::MenuSystem(ParameterSystem* paramSystem) : parameterSystem(paramSystem) {
     // Initialize input tracker
     inputTracker.lastPotValues.fill(-1.0f);
-    inputTracker.lastEncoderValues.fill(0);
+    // Encoder deltas are event-based, no tracking needed
     inputTracker.lastEncoderPressed.fill(false);
 }
 
@@ -39,7 +39,7 @@ void MenuSystem::enterState(State newState) {
 }
 
 void MenuSystem::processNavigation(const std::array<float, 3>& potValues, 
-                                  const std::array<int, 2>& encoderValues,
+                                  const std::array<int, 2>& encoderDeltas,
                                   const std::array<bool, 2>& encoderPressed) {
     if (!canNavigate() || currentState == State::OFF) {
         return;
@@ -50,16 +50,15 @@ void MenuSystem::processNavigation(const std::array<float, 3>& potValues,
     processPageSelection(potValues[0]);
     
     // Center Pot and Left Encoder: select parameter
-    int leftEncoderDelta = encoderValues[0] - inputTracker.lastEncoderValues[0];
-    processParameterSelection(potValues[1], leftEncoderDelta);
+    // encoderDeltas now contains the actual +1/-1 step values
+    processParameterSelection(potValues[1], encoderDeltas[0]);
     
     // Right Pot and Right Encoder: modify parameter value
-    int rightEncoderDelta = encoderValues[1] - inputTracker.lastEncoderValues[1];
-    processValueEditing(potValues[2], rightEncoderDelta);
+    processValueEditing(potValues[2], encoderDeltas[1]);
     
     // Update input tracking
     inputTracker.lastPotValues = potValues;
-    inputTracker.lastEncoderValues = encoderValues;
+    // Encoder deltas don't need to be tracked
     inputTracker.lastEncoderPressed = encoderPressed;
 }
 
@@ -71,6 +70,7 @@ void MenuSystem::navigateToPage(int pageIndex) {
 }
 
 void MenuSystem::navigateToParameter(int paramIndex) {
+    INFO("MenuSystem: navigateToParameter(%d) - valid=%d", paramIndex, isValidParamIndex(paramIndex));
     if (isValidParamIndex(paramIndex)) {
         parameterSystem->setCurrentParam(paramIndex);
         notifyStateChanged();
@@ -86,7 +86,13 @@ void MenuSystem::editParameterValue(int delta) {
     const _NT_parameter* param = parameterSystem->getParameterInfo(actualParamIndex);
     
     if (param) {
+        // Simply add the encoder delta to the current value
         int newValue = clamp(parameterEditValue + delta, (int)param->min, (int)param->max);
+        
+        // Debug logging
+        INFO("MenuSystem: editParameterValue - param '%s' delta=%d current=%d new=%d range=[%d,%d]", 
+             param->name, delta, parameterEditValue, newValue, (int)param->min, (int)param->max);
+        
         if (newValue != parameterEditValue) {
             parameterEditValue = newValue;
             // Set the value immediately in the parameter system
@@ -219,14 +225,14 @@ void MenuSystem::onStateEnter(State state) {
         case State::OFF:
             // Reset input tracking
             inputTracker.lastPotValues.fill(-1.0f);
-            inputTracker.lastEncoderValues.fill(0);
+            // Encoder deltas are event-based, no tracking needed
             break;
             
         case State::PAGE_SELECT:
             // Reset input tracking to prevent spurious encoder press detection
             inputTracker.lastEncoderPressed.fill(false);
             inputTracker.lastPotValues.fill(-1.0f);
-            inputTracker.lastEncoderValues.fill(0);
+            // Encoder deltas are event-based, no tracking needed
             
             // Reset to first page
             if (parameterSystem->getPageCount() > 0) {
@@ -245,11 +251,13 @@ void MenuSystem::onStateEnter(State state) {
                 int actualParamIndex = getActualParameterIndex();
                 if (actualParamIndex >= 0) {
                     parameterEditValue = parameterSystem->getParameterValue(actualParamIndex);
+                    INFO("MenuSystem: Entering VALUE_EDIT - paramIndex=%d, initialValue=%d", 
+                         actualParamIndex, parameterEditValue);
                 }
             }
             // Reset tracking to ensure all controls are responsive
             inputTracker.lastPotValues.fill(-1.0f);
-            inputTracker.lastEncoderValues.fill(0);
+            // Encoder deltas are event-based, no tracking needed
             break;
     }
 }
@@ -292,8 +300,13 @@ void MenuSystem::processParameterSelection(float potValue, int encoderDelta) {
     
     // Handle left encoder (relative)
     if (encoderDelta != 0) {
+        // Get the current page's parameter count
+        int pageIndex = parameterSystem->getCurrentPageIndex();
+        const _NT_parameterPage* page = parameterSystem->getPageInfo(pageIndex);
+        if (!page) return;
+        
         int currentParam = parameterSystem->getCurrentParamIndex();
-        int maxParams = parameterSystem->getParameterCount();
+        int maxParams = page->numParams;
         int newParamIndex = clamp(currentParam + encoderDelta, 0, maxParams - 1);
         if (newParamIndex != currentParam) {
             navigateToParameter(newParamIndex);
@@ -341,8 +354,8 @@ bool MenuSystem::hasPotChanged(int potIndex, float newValue) {
 bool MenuSystem::hasEncoderChanged(int encoderIndex, int newValue) {
     if (encoderIndex < 0 || encoderIndex >= 2) return false;
     
-    bool changed = newValue != inputTracker.lastEncoderValues[encoderIndex];
-    return changed;
+    // Encoder deltas are always "new" when non-zero
+    return newValue != 0;
 }
 
 bool MenuSystem::hasEncoderPressChanged(int encoderIndex, bool pressed) {

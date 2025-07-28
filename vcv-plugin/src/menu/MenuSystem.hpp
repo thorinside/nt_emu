@@ -40,7 +40,7 @@ public:
     
     // Navigation input processing
     void processNavigation(const std::array<float, 3>& potValues, 
-                          const std::array<int, 2>& encoderValues,
+                          const std::array<int, 2>& encoderDeltas,
                           const std::array<bool, 2>& encoderPressed);
     
     // Direct navigation
@@ -86,7 +86,7 @@ private:
     // Input tracking for change detection
     struct InputTracker {
         std::array<float, 3> lastPotValues = {-1.0f, -1.0f, -1.0f};
-        std::array<int, 2> lastEncoderValues = {0, 0};
+        // Encoder deltas are event-based, no need to track last values
         std::array<bool, 2> lastEncoderPressed = {false, false};
     };
     InputTracker inputTracker;

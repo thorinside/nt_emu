@@ -35,6 +35,14 @@
         "Delay",
         "Filter"
       ]
+    },
+    {
+      "slug": "PressableWidgetsDebugTest",
+      "name": "Pressable Widgets Debug Test",
+      "description": "Test module for pressable pots and encoders with visual indicators",
+      "tags": [
+        "Utility"
+      ]
     }
   ]
 }

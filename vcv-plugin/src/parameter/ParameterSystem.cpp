@@ -183,6 +183,9 @@ void ParameterSystem::setCurrentPage(int pageIndex) {
 void ParameterSystem::setCurrentParam(int paramIndex) {
     if (isValidParameterIndex(paramIndex)) {
         currentParamIndex = paramIndex;
+        INFO("ParameterSystem: setCurrentParam to %d (total params: %zu)", paramIndex, parameters.size());
+    } else {
+        WARN("ParameterSystem: Invalid param index %d (total params: %zu)", paramIndex, parameters.size());
     }
 }
 

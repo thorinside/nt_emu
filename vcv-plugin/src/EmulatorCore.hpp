@@ -163,6 +163,11 @@ public:
     void turnEncoder(int encoder, int delta);
     void pressEncoder(int encoder);
     void releaseEncoder(int encoder);
+    void clearEncoderDeltas();
+    
+    // Pot handling (for pressable pots)
+    void pressPot(int pot);
+    void releasePot(int pot);
     
     // State persistence
     json_t* saveState();
@@ -469,6 +474,23 @@ inline void EmulatorCore::pressEncoder(int encoder) {
 inline void EmulatorCore::releaseEncoder(int encoder) {
     if (encoder >= 0 && encoder < 2) {
         hardware_state_.encoder_pressed[encoder] = false;
+    }
+}
+
+inline void EmulatorCore::clearEncoderDeltas() {
+    hardware_state_.encoder_deltas[0] = 0;
+    hardware_state_.encoder_deltas[1] = 0;
+}
+
+inline void EmulatorCore::pressPot(int pot) {
+    if (pot >= 0 && pot < 3) {
+        hardware_state_.pot_pressed[pot] = true;
+    }
+}
+
+inline void EmulatorCore::releasePot(int pot) {
+    if (pot >= 0 && pot < 3) {
+        hardware_state_.pot_pressed[pot] = false;
     }
 }
 

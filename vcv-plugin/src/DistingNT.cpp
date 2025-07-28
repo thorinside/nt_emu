@@ -4,6 +4,11 @@
 #include "EmulatorCore.hpp"
 #include "EncoderParamQuantity.hpp"
 #include "InfiniteEncoder.hpp"
+#include "widgets/PressablePot.hpp"
+#include "widgets/PressableEncoder.hpp"
+#include "widgets/DistingNTPressablePot.hpp"
+#include "widgets/DistingNTPressableEncoder.hpp"
+#include "widgets/SimpleEncoder.hpp"
 #include "nt_api_interface.h"
 #include "../../emulator/src/core/fonts.h"
 // New modular components
@@ -1082,40 +1087,28 @@ struct DistingNT : Module, IParameterObserver {
                 params[POT_R_PARAM].getValue()
             };
             
-            // Convert infinite encoder values to discrete steps for MenuSystem
-            // Track encoder deltas and accumulate into discrete steps
-            static float lastLeftEncoder = 0.f;
-            static float lastRightEncoder = 0.f;
-            static int leftEncoderSteps = 0;
-            static int rightEncoderSteps = 0;
-            
-            float currentLeftEncoder = params[ENCODER_L_PARAM].getValue();
-            float currentRightEncoder = params[ENCODER_R_PARAM].getValue();
-            
-            // Calculate deltas and convert to steps (threshold-based)
-            float leftDelta = currentLeftEncoder - lastLeftEncoder;
-            float rightDelta = currentRightEncoder - lastRightEncoder;
-            
-            const float stepThreshold = 0.1f; // Adjust sensitivity as needed
-            if (std::abs(leftDelta) > stepThreshold) {
-                leftEncoderSteps += (leftDelta > 0) ? 1 : -1;
-                lastLeftEncoder = currentLeftEncoder;
-            }
-            if (std::abs(rightDelta) > stepThreshold) {
-                rightEncoderSteps += (rightDelta > 0) ? 1 : -1;
-                lastRightEncoder = currentRightEncoder;
-            }
-            
-            std::array<int, 2> encoderValues = {
-                leftEncoderSteps,
-                rightEncoderSteps
+            // Get encoder deltas from hardware state (set by encoder widgets)
+            const auto& hwState = emulatorCore.getHardwareState();
+            std::array<int, 2> encoderDeltas = {
+                hwState.encoder_deltas[0],
+                hwState.encoder_deltas[1]
             };
+            
+            // Debug log encoder deltas if non-zero
+            if (encoderDeltas[0] != 0 || encoderDeltas[1] != 0) {
+                INFO("DistingNT: Encoder deltas before menu: L=%d R=%d", 
+                     encoderDeltas[0], encoderDeltas[1]);
+            }
+            
             std::array<bool, 2> encoderPressed = {
-                params[ENCODER_L_PRESS_PARAM].getValue() > 0,
-                params[ENCODER_R_PRESS_PARAM].getValue() > 0
+                hwState.encoder_pressed[0],
+                hwState.encoder_pressed[1]
             };
             
-            menuSystem->processNavigation(potValues, encoderValues, encoderPressed);
+            menuSystem->processNavigation(potValues, encoderDeltas, encoderPressed);
+            
+            // Clear encoder deltas after processing
+            emulatorCore.clearEncoderDeltas();
         } else {
             // Process control inputs when not in menu mode
             processControls();
@@ -1224,9 +1217,7 @@ struct DistingNT : Module, IParameterObserver {
         hwState.pot_pressed[0] = params[ENCODER_L_PRESS_PARAM].getValue() > 0.5f;
         hwState.pot_pressed[2] = params[ENCODER_R_PRESS_PARAM].getValue() > 0.5f;
         
-        // Set encoder values from params
-        hwState.encoder_deltas[0] = 0;
-        hwState.encoder_deltas[1] = 0;
+        // Encoder deltas are now set by the encoder widgets themselves via turnEncoder()
         
         emulatorCore.updateHardwareState(hwState);
     }
@@ -2023,20 +2014,26 @@ struct DistingNTWidget : ModuleWidget {
         }
         addChild(display);
 
-        // 3 Pots (large knobs)
-        addParam(createParamCentered<RoundBigBlackKnob>(mm2px(Vec(17.78, 35.0)), module, DistingNT::POT_L_PARAM));
-        addParam(createParamCentered<RoundBigBlackKnob>(mm2px(Vec(35.56, 35.0)), module, DistingNT::POT_C_PARAM));
-        addParam(createParamCentered<RoundBigBlackKnob>(mm2px(Vec(53.34, 35.0)), module, DistingNT::POT_R_PARAM));
+        // 3 Pressable Pots (large knobs with press capability)
+        auto* potL = createParamCentered<DistingNTPressablePot>(mm2px(Vec(17.78, 35.0)), module, DistingNT::POT_L_PARAM);
+        if (module) potL->setEmulatorCore(&module->emulatorCore, 0);
+        addParam(potL);
+        
+        auto* potC = createParamCentered<DistingNTPressablePot>(mm2px(Vec(35.56, 35.0)), module, DistingNT::POT_C_PARAM);
+        if (module) potC->setEmulatorCore(&module->emulatorCore, 1);
+        addParam(potC);
+        
+        auto* potR = createParamCentered<DistingNTPressablePot>(mm2px(Vec(53.34, 35.0)), module, DistingNT::POT_R_PARAM);
+        if (module) potR->setEmulatorCore(&module->emulatorCore, 2);
+        addParam(potR);
 
-        // 2 Encoders (infinite encoders with high sensitivity)
-        auto* encoderL = createParamCentered<BefacoTinyKnob>(mm2px(Vec(26.67, 52.0)), module, DistingNT::ENCODER_L_PARAM);
-        encoderL->speed = 10.0f;  // Much higher sensitivity for encoder behavior
-        encoderL->snap = false;   // Disable snapping
+        // 2 Simple Encoders
+        auto* encoderL = createParamCentered<SimpleEncoder>(mm2px(Vec(26.67, 52.0)), module, DistingNT::ENCODER_L_PARAM);
+        if (module) encoderL->setEmulatorCore(&module->emulatorCore, 0);
         addParam(encoderL);
         
-        auto* encoderR = createParamCentered<BefacoTinyKnob>(mm2px(Vec(44.45, 52.0)), module, DistingNT::ENCODER_R_PARAM);
-        encoderR->speed = 10.0f;  // Much higher sensitivity for encoder behavior  
-        encoderR->snap = false;   // Disable snapping
+        auto* encoderR = createParamCentered<SimpleEncoder>(mm2px(Vec(44.45, 52.0)), module, DistingNT::ENCODER_R_PARAM);
+        if (module) encoderR->setEmulatorCore(&module->emulatorCore, 1);
         addParam(encoderR);
 
         // 4 Buttons (vertical pairs - no LEDs)
