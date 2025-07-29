@@ -31,3 +31,22 @@ DISTRIBUTABLES += res
 include $(RACK_DIR)/plugin.mk
 
 # Use default dist target from plugin.mk
+
+# Test plugin targets
+TEST_PLUGINS = test_customui_plugin.dylib drawtest_plugin.dylib fonttest_plugin.dylib
+
+test_customui_plugin.dylib: test_customui_plugin.cpp
+	$(CXX) $(CXXFLAGS) $(FLAGS) -shared -o $@ $< -I../emulator/include $(LDFLAGS)
+
+drawtest_plugin.dylib: drawtest_plugin.cpp
+	$(CXX) $(CXXFLAGS) $(FLAGS) -shared -o $@ $< -I../emulator/include $(LDFLAGS)
+
+fonttest_plugin.dylib: fonttest_plugin.cpp
+	$(CXX) $(CXXFLAGS) $(FLAGS) -shared -o $@ $< -I../emulator/include $(LDFLAGS)
+
+.PHONY: test-plugins
+test-plugins: $(TEST_PLUGINS)
+
+.PHONY: clean-test-plugins
+clean-test-plugins:
+	rm -f $(TEST_PLUGINS)

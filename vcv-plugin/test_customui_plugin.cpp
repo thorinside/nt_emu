@@ -89,17 +89,18 @@ void setupUi(_NT_algorithm* algorithm, _NT_float3& potValues)
 {
     TestCustomUiAlgorithm* alg = (TestCustomUiAlgorithm*)algorithm;
     
-    // Log the call with pot values
+    // Write plugin's current pot values to the host
+    potValues[0] = alg->pots[0];
+    potValues[1] = alg->pots[1];
+    potValues[2] = alg->pots[2];
+    
+    // Log what we're returning to the host
     char buf[128];
-    snprintf(buf, sizeof(buf), "setupUi: %.3f %.3f %.3f", potValues[0], potValues[1], potValues[2]);
+    snprintf(buf, sizeof(buf), "setupUi returning: %.3f %.3f %.3f", potValues[0], potValues[1], potValues[2]);
     alg->addEvent(buf);
     
     // Print to console for debugging
-    printf("TEST PLUGIN: setupUi called with pots: %.3f %.3f %.3f\n", potValues[0], potValues[1], potValues[2]);
-    
-    alg->pots[0] = potValues[0];
-    alg->pots[1] = potValues[1];
-    alg->pots[2] = potValues[2];
+    printf("TEST PLUGIN: setupUi returning pot values: %.3f %.3f %.3f\n", potValues[0], potValues[1], potValues[2]);
 }
 
 // Declare that we handle all controls

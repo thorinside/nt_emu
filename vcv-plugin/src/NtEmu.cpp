@@ -840,6 +840,12 @@ struct EmulatorModule : Module, IParameterObserver {
                      potValues[0], potValues[1], potValues[2]);
                 try {
                     pluginManager->getFactory()->setupUi(pluginManager->getAlgorithm(), potValues);
+                    // Set VCV pot parameters to match what the plugin wants
+                    params[POT_L_PARAM].setValue(potValues[0]);
+                    params[POT_C_PARAM].setValue(potValues[1]);
+                    params[POT_R_PARAM].setValue(potValues[2]);
+                    INFO("NtEmu::loadPlugin set pot values to: %.3f %.3f %.3f", 
+                         potValues[0], potValues[1], potValues[2]);
                 } catch (...) {
                     WARN("Plugin crashed during setupUi");
                 }
@@ -870,6 +876,12 @@ struct EmulatorModule : Module, IParameterObserver {
                      potValues[0], potValues[1], potValues[2]);
                 try {
                     pluginManager->getFactory()->setupUi(pluginManager->getAlgorithm(), potValues);
+                    // Set VCV pot parameters to match what the plugin wants
+                    params[POT_L_PARAM].setValue(potValues[0]);
+                    params[POT_C_PARAM].setValue(potValues[1]);
+                    params[POT_R_PARAM].setValue(potValues[2]);
+                    INFO("NtEmu::loadPlugin (with specs) set pot values to: %.3f %.3f %.3f", 
+                         potValues[0], potValues[1], potValues[2]);
                 } catch (...) {
                     WARN("Plugin crashed during setupUi");
                 }
@@ -923,6 +935,12 @@ struct EmulatorModule : Module, IParameterObserver {
                          potValues[0], potValues[1], potValues[2]);
                     try {
                         pluginManager->getFactory()->setupUi(pluginManager->getAlgorithm(), potValues);
+                        // Set VCV pot parameters to match what the plugin wants
+                        params[POT_L_PARAM].setValue(potValues[0]);
+                        params[POT_C_PARAM].setValue(potValues[1]);
+                        params[POT_R_PARAM].setValue(potValues[2]);
+                        INFO("NtEmu::toggleMenuMode set pot values to: %.3f %.3f %.3f", 
+                             potValues[0], potValues[1], potValues[2]);
                     } catch (...) {
                         WARN("Plugin crashed during setupUi on menu exit");
                     }

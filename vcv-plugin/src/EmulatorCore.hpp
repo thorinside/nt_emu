@@ -298,13 +298,21 @@ inline bool EmulatorCore::selectAlgorithm(int index) {
             ui_state_.lastPots[1] = hardware_state_.pots[1];
             ui_state_.lastPots[2] = hardware_state_.pots[2];
             
-            // Initialize pot values for soft takeover
+            // Get desired pot values from plugin
             float potValues[3] = {
                 hardware_state_.pots[0], 
                 hardware_state_.pots[1], 
                 hardware_state_.pots[2]
             };
             current_algorithm_->factory->setupUi(current_algorithm_->algorithm, potValues);
+            
+            // Update hardware state with plugin's desired pot values
+            hardware_state_.pots[0] = potValues[0];
+            hardware_state_.pots[1] = potValues[1];
+            hardware_state_.pots[2] = potValues[2];
+            
+            INFO("EmulatorCore::selectAlgorithm updated pot values to: %.3f %.3f %.3f", 
+                 potValues[0], potValues[1], potValues[2]);
         } catch (...) {
             printf("Plugin crashed during setupUi\n");
             current_algorithm_ = nullptr;
