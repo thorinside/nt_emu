@@ -2,12 +2,14 @@
 #include <app/SvgKnob.hpp>
 #include <componentlibrary.hpp>
 #include "../EmulatorCore.hpp"
+#include <functional>
 
 using namespace rack;
 
 struct SimpleEncoder : app::SvgKnob {
     EmulatorCore* emulatorCore = nullptr;
     int encoderIndex = 0;
+    std::function<void(int, int)> onEncoderChanged = nullptr;  // Callback for encoder changes
     
     // Mouse tracking for discrete steps
     float lastMouseY = 0.0f;
@@ -60,8 +62,10 @@ struct SimpleEncoder : app::SvgKnob {
         // Generate steps based on vertical mouse movement
         int steps = (int)(deltaY / PIXELS_PER_STEP);
         if (steps != 0) {
-            if (emulatorCore) {
-                emulatorCore->turnEncoder(encoderIndex, -steps);  // Invert for natural feel
+            if (onEncoderChanged) {
+                onEncoderChanged(encoderIndex, -steps);  // Invert for natural feel
+            } else if (emulatorCore) {
+                emulatorCore->turnEncoder(encoderIndex, -steps);  // Fallback
             }
             
             // Update visual rotation
@@ -82,8 +86,10 @@ struct SimpleEncoder : app::SvgKnob {
             // Generate steps when accumulator reaches threshold
             int steps = (int)scrollAccumulator;
             if (steps != 0) {
-                if (emulatorCore) {
-                    emulatorCore->turnEncoder(encoderIndex, steps);
+                if (onEncoderChanged) {
+                    onEncoderChanged(encoderIndex, steps);
+                } else if (emulatorCore) {
+                    emulatorCore->turnEncoder(encoderIndex, steps);  // Fallback
                 }
                 
                 // Update visual rotation
@@ -105,5 +111,9 @@ struct SimpleEncoder : app::SvgKnob {
     void setEmulatorCore(EmulatorCore* core, int index) {
         emulatorCore = core;
         encoderIndex = index;
+    }
+    
+    void setEncoderChangedCallback(std::function<void(int, int)> callback) {
+        onEncoderChanged = callback;
     }
 };

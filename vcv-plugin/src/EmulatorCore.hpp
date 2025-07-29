@@ -4,9 +4,13 @@
 #include <vector>
 #include <string>
 #include <array>
+#include <cmath>
 
 // Import Disting NT API types
 #include "../../emulator/include/distingnt/api.h"
+
+// Forward declaration for PluginManager
+class PluginManager;
 
 using namespace rack;
 
@@ -118,6 +122,13 @@ struct VCVPluginInstance {
     _NT_algorithmRequirements algorithm_reqs{};
 };
 
+// UI state tracking for customUi events
+struct CustomUiState {
+    uint16_t lastButtons = 0;
+    std::array<float, 3> lastPots{0.5f, 0.5f, 0.5f};
+    bool hasCustomUi = false;
+};
+
 // Core emulator adapted for VCV Rack
 class EmulatorCore {
 public:
@@ -141,6 +152,7 @@ public:
     // Hardware interface
     void updateHardwareState(const VCVHardwareState& state);
     const VCVHardwareState& getHardwareState() const { return hardware_state_; }
+    void processHardwareChanges(_NT_factory* factory = nullptr, _NT_algorithm* algorithm = nullptr);
     
     // Display
     VCVDisplayBuffer& getDisplayBuffer() { return display_buffer_; }
@@ -190,6 +202,9 @@ private:
     _NT_globals nt_globals_;
     std::vector<float> work_buffer_;
     
+    // Custom UI state tracking
+    CustomUiState ui_state_;
+    
     // Built-in algorithms
     void registerBuiltinAlgorithm(const std::string& name, _NT_factory* factory);
     bool initializeAlgorithm(VCVPluginInstance& instance);
@@ -197,7 +212,9 @@ private:
     
     // Hardware state change detection
     bool hasHardwareChanged() const;
-    void processHardwareChanges();
+    
+    // Custom UI support  
+    void sendCustomUiEvents(_NT_factory* factory, _NT_algorithm* algorithm);
     
     // Display management
     void clearDisplay();
@@ -272,6 +289,29 @@ inline bool EmulatorCore::selectAlgorithm(int index) {
         // Reset any state if needed
     }
     
+    // Check for customUi support and call setupUi if available
+    if (current_algorithm_ && current_algorithm_->factory && current_algorithm_->factory->setupUi) {
+        try {
+            INFO("EmulatorCore::selectAlgorithm calling setupUi for algorithm %d", index);
+            // Initialize UI state with current hardware values
+            ui_state_.lastPots[0] = hardware_state_.pots[0];
+            ui_state_.lastPots[1] = hardware_state_.pots[1];
+            ui_state_.lastPots[2] = hardware_state_.pots[2];
+            
+            // Initialize pot values for soft takeover
+            float potValues[3] = {
+                hardware_state_.pots[0], 
+                hardware_state_.pots[1], 
+                hardware_state_.pots[2]
+            };
+            current_algorithm_->factory->setupUi(current_algorithm_->algorithm, potValues);
+        } catch (...) {
+            printf("Plugin crashed during setupUi\n");
+            current_algorithm_ = nullptr;
+            return false;
+        }
+    }
+    
     display_buffer_.dirty = true;
     return true;
 }
@@ -334,45 +374,63 @@ inline bool EmulatorCore::hasHardwareChanged() const {
     return false;
 }
 
-inline void EmulatorCore::processHardwareChanges() {
-    if (!hasHardwareChanged() || !current_algorithm_ || !current_algorithm_->factory) {
+
+inline void EmulatorCore::processHardwareChanges(_NT_factory* factory, _NT_algorithm* algorithm) {
+    // Use passed parameters if available, otherwise fall back to built-in
+    if (!factory || !algorithm) {
+        if (current_algorithm_ && current_algorithm_->factory) {
+            factory = current_algorithm_->factory;
+            algorithm = current_algorithm_->algorithm;
+        }
+    }
+    
+    if (!factory || !algorithm) {
         return;
     }
     
-    // Process parameter changes (pots)
-    for (int i = 0; i < 3; i++) {
-        if (hardware_state_.pots[i] != previous_hardware_state_.pots[i]) {
-            if (current_algorithm_->factory->parameterChanged) {
-                try {
-                    current_algorithm_->factory->parameterChanged(current_algorithm_->algorithm, i);
-                } catch (...) {
-                    printf("Plugin crashed during parameterChanged\n");
-                    current_algorithm_ = nullptr;
-                    return;
+    // Check if plugin supports customUi
+    ui_state_.hasCustomUi = (factory->customUi != nullptr);
+    
+    // Send custom UI events if plugin supports it
+    if (ui_state_.hasCustomUi) {
+        sendCustomUiEvents(factory, algorithm);
+        // Clear encoder deltas after sending to customUi
+        clearEncoderDeltas();
+    } else {
+        // Process parameter changes (pots) for non-customUi plugins
+        for (int i = 0; i < 3; i++) {
+            if (hardware_state_.pots[i] != previous_hardware_state_.pots[i]) {
+                if (factory->parameterChanged) {
+                    try {
+                        factory->parameterChanged(algorithm, i);
+                    } catch (...) {
+                        printf("Plugin crashed during parameterChanged\n");
+                        return;
+                    }
                 }
             }
         }
-    }
-    
-    // Process button changes
-    for (int i = 0; i < 4; i++) {
-        if (hardware_state_.buttons[i] != previous_hardware_state_.buttons[i]) {
-            // Button state changed - could trigger custom UI or other functions
-            display_buffer_.dirty = true;
-        }
-    }
-    
-    // Process encoder changes
-    for (int i = 0; i < 2; i++) {
-        if (hardware_state_.encoder_deltas[i] != 0) {
-            // Handle encoder rotation
-            display_buffer_.dirty = true;
+        
+        // Process button changes for non-customUi plugins
+        for (int i = 0; i < 4; i++) {
+            if (hardware_state_.buttons[i] != previous_hardware_state_.buttons[i]) {
+                display_buffer_.dirty = true;
+            }
         }
         
-        if (hardware_state_.encoder_pressed[i] != previous_hardware_state_.encoder_pressed[i]) {
-            // Handle encoder press/release
-            display_buffer_.dirty = true;
+        // Process encoder changes for non-customUi plugins
+        for (int i = 0; i < 2; i++) {
+            if (hardware_state_.encoder_deltas[i] != 0) {
+                display_buffer_.dirty = true;
+            }
+            
+            if (hardware_state_.encoder_pressed[i] != previous_hardware_state_.encoder_pressed[i]) {
+                display_buffer_.dirty = true;
+            }
         }
+        
+        // Clear encoder deltas after processing
+        clearEncoderDeltas();
     }
 }
 
@@ -509,4 +567,77 @@ inline void EmulatorCore::cleanupAlgorithm(VCVPluginInstance& instance) {
 
 inline void EmulatorCore::renderAlgorithmDisplay() {
     // TODO: Implement algorithm-specific display rendering
+}
+
+
+inline void EmulatorCore::sendCustomUiEvents(_NT_factory* factory, _NT_algorithm* algorithm) {
+    if (!ui_state_.hasCustomUi || !factory || !algorithm || !factory->customUi) {
+        return;
+    }
+    
+    // Build _NT_uiData structure
+    _NT_uiData uiData = {};
+    uint16_t controls = 0;
+    
+    // Copy current pot values
+    for (int i = 0; i < 3; i++) {
+        uiData.pots[i] = hardware_state_.pots[i];
+        
+        // Check for pot changes
+        float potDiff = std::abs(hardware_state_.pots[i] - ui_state_.lastPots[i]);
+        if (potDiff > 0.001f) {
+            controls |= (kNT_potL << i);
+            ui_state_.lastPots[i] = hardware_state_.pots[i];
+        }
+    }
+    
+    // Build current button state
+    uint16_t currentButtons = 0;
+    for (int i = 0; i < 4; i++) {
+        if (hardware_state_.buttons[i]) {
+            currentButtons |= (kNT_button1 << i);
+        }
+    }
+    
+    // Add pot button states
+    for (int i = 0; i < 3; i++) {
+        if (hardware_state_.pot_pressed[i]) {
+            currentButtons |= (kNT_potButtonL << i);
+        }
+    }
+    
+    // Add encoder button states
+    for (int i = 0; i < 2; i++) {
+        if (hardware_state_.encoder_pressed[i]) {
+            currentButtons |= (kNT_encoderButtonL << i);
+        }
+    }
+    
+    // Detect button changes (edge detection)
+    uint16_t buttonChanges = currentButtons ^ ui_state_.lastButtons;
+    controls |= buttonChanges;
+    
+    // Set encoder deltas and controls
+    for (int i = 0; i < 2; i++) {
+        uiData.encoders[i] = hardware_state_.encoder_deltas[i];
+        if (hardware_state_.encoder_deltas[i] != 0) {
+            controls |= (kNT_encoderL << i);
+        }
+    }
+    
+    // Set the control fields
+    uiData.controls = controls;
+    uiData.lastButtons = ui_state_.lastButtons;
+    
+    // Update stored button state
+    ui_state_.lastButtons = currentButtons;
+    
+    // Call customUi if there are any changes
+    if (controls != 0) {
+        try {
+            factory->customUi(algorithm, uiData);
+        } catch (...) {
+            INFO("Plugin crashed during customUi");
+        }
+    }
 }

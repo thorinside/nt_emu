@@ -15,6 +15,7 @@ PluginManager::~PluginManager() {
 }
 
 bool PluginManager::loadPlugin(const std::string& path) {
+    INFO("PluginManager::loadPlugin called with path: %s", path.c_str());
     try {
         unloadPlugin();
         
@@ -103,6 +104,9 @@ bool PluginManager::loadPlugin(const std::string& path) {
         pluginPath = path;
         loadingMessage = "Plugin loaded successfully";
         loadingMessageTimer = 2.0f;
+        
+        // NOTE: setupUi should only be called when exiting parameter menu or on initial load
+        // The module (NtEmu) will handle calling setupUi with actual pot values after load completes
         
         notifyLoaded();
         INFO("Successfully loaded plugin: %s", path.c_str());

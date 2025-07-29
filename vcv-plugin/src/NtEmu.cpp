@@ -497,6 +497,11 @@ struct EmulatorModule : Module, IParameterObserver {
     MenuMode menuMode = MENU_OFF;
     int parameterEditValue = 0;
     
+    // Button 1 long press timing
+    double button1PressTime = 0.0;
+    bool button1LongPressHandled = false;
+    bool button1CurrentlyPressed = false;
+    
     
     // UI interaction tracking
     bool leftEncoderPressed = false;
@@ -544,6 +549,9 @@ struct EmulatorModule : Module, IParameterObserver {
     // Trigger detectors for buttons and encoders
     dsp::SchmittTrigger buttonTriggers[4];
     dsp::SchmittTrigger encoderLPressTrigger, encoderRPressTrigger;
+    
+    // Button state tracking for proper press/release events
+    bool lastButtonStates[4] = {false, false, false, false};
     
     EmulatorModule() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -821,6 +829,22 @@ struct EmulatorModule : Module, IParameterObserver {
             // Extract parameter information from loaded plugin
             parameterSystem->extractParameterData();
             
+            // Call setupUi with current pot values instead of defaults
+            if (pluginManager->getFactory() && pluginManager->getFactory()->setupUi && pluginManager->getAlgorithm()) {
+                float potValues[3] = {
+                    params[POT_L_PARAM].getValue(),
+                    params[POT_C_PARAM].getValue(),
+                    params[POT_R_PARAM].getValue()
+                };
+                INFO("NtEmu::loadPlugin calling setupUi with current pot values: %.3f %.3f %.3f", 
+                     potValues[0], potValues[1], potValues[2]);
+                try {
+                    pluginManager->getFactory()->setupUi(pluginManager->getAlgorithm(), potValues);
+                } catch (...) {
+                    WARN("Plugin crashed during setupUi");
+                }
+            }
+            
             displayDirty = true;
         }
         
@@ -835,6 +859,22 @@ struct EmulatorModule : Module, IParameterObserver {
             // Extract parameter information from loaded plugin
             parameterSystem->extractParameterData();
             
+            // Call setupUi with current pot values instead of defaults
+            if (pluginManager->getFactory() && pluginManager->getFactory()->setupUi && pluginManager->getAlgorithm()) {
+                float potValues[3] = {
+                    params[POT_L_PARAM].getValue(),
+                    params[POT_C_PARAM].getValue(),
+                    params[POT_R_PARAM].getValue()
+                };
+                INFO("NtEmu::loadPlugin (with specs) calling setupUi with current pot values: %.3f %.3f %.3f", 
+                     potValues[0], potValues[1], potValues[2]);
+                try {
+                    pluginManager->getFactory()->setupUi(pluginManager->getAlgorithm(), potValues);
+                } catch (...) {
+                    WARN("Plugin crashed during setupUi");
+                }
+            }
+            
             displayDirty = true;
         }
         
@@ -846,6 +886,7 @@ struct EmulatorModule : Module, IParameterObserver {
     
     void toggleMenuMode() {
         // Delegate to the new MenuSystem
+        bool wasActive = menuSystem->isMenuActive();
         menuSystem->toggleMenu();
         
         // Sync legacy menuMode with MenuSystem state for backward compatibility
@@ -866,8 +907,26 @@ struct EmulatorModule : Module, IParameterObserver {
             }
         } else {
             menuMode = MENU_OFF;
-            if (pluginManager->getAlgorithm()) {
+            
+            // When exiting menu, call setupUi if plugin supports it
+            if (wasActive && pluginManager->getAlgorithm()) {
                 applyRoutingChanges();
+                
+                // Call setupUi when exiting parameter menu
+                if (pluginManager->getFactory() && pluginManager->getFactory()->setupUi) {
+                    float potValues[3] = {
+                        params[POT_L_PARAM].getValue(),
+                        params[POT_C_PARAM].getValue(),
+                        params[POT_R_PARAM].getValue()
+                    };
+                    INFO("NtEmu::toggleMenuMode calling setupUi on menu exit with pot values: %.3f %.3f %.3f", 
+                         potValues[0], potValues[1], potValues[2]);
+                    try {
+                        pluginManager->getFactory()->setupUi(pluginManager->getAlgorithm(), potValues);
+                    } catch (...) {
+                        WARN("Plugin crashed during setupUi on menu exit");
+                    }
+                }
             }
         }
         displayDirty = true;
@@ -1053,11 +1112,6 @@ struct EmulatorModule : Module, IParameterObserver {
     }
     
     void process(const ProcessArgs& args) override {
-        static int processCount = 0;
-        if (processCount++ < 5) {
-            INFO("EmulatorModule process() called, count=%d", processCount);
-        }
-        
         try {
         
         // Update plugin manager timers
@@ -1078,6 +1132,9 @@ struct EmulatorModule : Module, IParameterObserver {
         } else if (params[ENCODER_L_PRESS_PARAM].getValue() == 0) {
             leftEncoderPressed = false;
         }
+        
+        // Always process Button 1 timing logic regardless of menu state
+        processButton1Timing();
         
         if (menuSystem->isMenuActive()) {
             // Collect current input states for menu processing
@@ -1110,25 +1167,20 @@ struct EmulatorModule : Module, IParameterObserver {
             // Clear encoder deltas after processing
             emulatorCore.clearEncoderDeltas();
         } else {
-            // Process control inputs when not in menu mode
-            processControls();
+            // Process control inputs when not in menu mode (excluding pot changes - handled directly by widgets)
+            processControlsExceptButton1();
         }
         
-        // Always process menu button (Button 1) even when menu is active
-        if (menuSystem->isMenuActive()) {
-            if (buttonTriggers[0].process(params[BUTTON_1_PARAM].getValue())) {
-                onButtonPress(0, true);
-                displayDirty = true;
-            }
-        }
+        // Button 1 timing is handled in processControls() - no need for separate handling
         
-        // Sync routing matrix with plugin algorithm values if plugin is loaded
-        // Skip sync during menu mode to avoid conflicts with parameter editing
-        if (isPluginLoaded() && pluginManager && pluginManager->getAlgorithm() && pluginManager->getAlgorithm()->v && menuMode == MENU_OFF) {
-            for (size_t i = 0; i < parameterSystem->getParameterCount() && i < parameterSystem->getRoutingMatrix().size(); i++) {
-                parameterSystem->getRoutingMatrix()[i] = pluginManager->getAlgorithm()->v[i];
-            }
-        }
+        // DISABLED: Sync routing matrix with plugin algorithm values 
+        // This was overriding VCV pot values with plugin v[] array (all zeros)
+        // For customUi, VCV controls should drive the plugin, not the other way around
+        // if (isPluginLoaded() && pluginManager && pluginManager->getAlgorithm() && pluginManager->getAlgorithm()->v && menuMode == MENU_OFF) {
+        //     for (size_t i = 0; i < parameterSystem->getParameterCount() && i < parameterSystem->getRoutingMatrix().size(); i++) {
+        //         parameterSystem->getRoutingMatrix()[i] = pluginManager->getAlgorithm()->v[i];
+        //     }
+        // }
         
         // Clear buses at the start of a new block
         if (sampleCounter == 0) {
@@ -1141,7 +1193,12 @@ struct EmulatorModule : Module, IParameterObserver {
         // Check if we've accumulated a full block (after routing input)
         if (sampleCounter == BLOCK_SIZE - 1) {
             // Process algorithm with 4-sample blocks
+            printf("Audio block complete, isPluginLoaded()=%s\n", isPluginLoaded() ? "true" : "false");
             if (isPluginLoaded()) {
+                // Process hardware changes for loaded plugins
+                printf("Processing hardware changes for loaded plugin\n");
+                emulatorCore.processHardwareChanges(pluginManager->getFactory(), pluginManager->getAlgorithm());
+                
                 // Use plugin for audio processing
                 safeExecutePlugin([&]() {
                     // Add comprehensive null checks for plugin reload safety
@@ -1177,35 +1234,86 @@ struct EmulatorModule : Module, IParameterObserver {
         }
     }
     
-    void processControls() {
-        // Process button triggers
-        for (int i = 0; i < 4; i++) {
-            if (buttonTriggers[i].process(params[BUTTON_1_PARAM + i].getValue())) {
-                onButtonPress(i, true);
+    void processButton1Timing() {
+        // Special handling for Button 1 (long press detection)
+        bool button1Pressed = params[BUTTON_1_PARAM].getValue() > 0.5f;
+        
+        if (button1Pressed && !button1CurrentlyPressed) {
+            // Button 1 just pressed
+            button1CurrentlyPressed = true;
+            button1PressTime = system::getTime();
+            button1LongPressHandled = false;
+        } else if (!button1Pressed && button1CurrentlyPressed) {
+            // Button 1 just released
+            button1CurrentlyPressed = false;
+            if (!button1LongPressHandled) {
+                // Short press
+                if (menuSystem->isMenuActive()) {
+                    // If menu is active, short press exits menu
+                    toggleMenuMode();
+                } else {
+                    // If menu is not active, send to customUi
+                    onButtonPress(0, true);  // Press
+                    onButtonPress(0, false); // Release
+                }
+            }
+            button1PressTime = 0.0;
+            button1LongPressHandled = false;
+            displayDirty = true;
+        } else if (button1Pressed && button1CurrentlyPressed && !button1LongPressHandled) {
+            // Check for long press (>500ms)
+            if (system::getTime() - button1PressTime > 0.5) {
+                // Long press detected - toggle menu
+                toggleMenuMode();
+                button1LongPressHandled = true;
                 displayDirty = true;
             }
+        }
+    }
+    
+    void processControlsExceptButton1() {
+        // Process other button triggers normally (2-4)
+        for (int i = 1; i < 4; i++) {
+            bool buttonPressed = params[BUTTON_1_PARAM + i].getValue() > 0.5f;
+            
+            // Detect press event
+            if (buttonPressed && !lastButtonStates[i]) {
+                onButtonPress(i, true);  // Press event
+                displayDirty = true;
+            }
+            // Detect release event
+            else if (!buttonPressed && lastButtonStates[i]) {
+                onButtonPress(i, false); // Release event
+                displayDirty = true;
+            }
+            
+            lastButtonStates[i] = buttonPressed;
         }
         
         // Process encoder press triggers
         // Encoder press handling now done by MenuSystem in menu mode
         // Legacy encoder press handling for non-menu mode (emulator core)
-        if (!menuSystem->isMenuActive()) {
-            if (encoderLPressTrigger.process(params[ENCODER_L_PRESS_PARAM].getValue())) {
-                onEncoderPress(0);
-                displayDirty = true;
-            }
-            if (encoderRPressTrigger.process(params[ENCODER_R_PRESS_PARAM].getValue())) {
-                onEncoderPress(1);
-                displayDirty = true;
-            }
+        if (encoderLPressTrigger.process(params[ENCODER_L_PRESS_PARAM].getValue())) {
+            onEncoderPress(0);
+            displayDirty = true;
         }
+        if (encoderRPressTrigger.process(params[ENCODER_R_PRESS_PARAM].getValue())) {
+            onEncoderPress(1);
+            displayDirty = true;
+        }
+    }
+    
+    void processControls() {
+        // processButton1Timing(); // Already called in main process() loop
+        processControlsExceptButton1();
         
         // Update hardware state for emulator core
         VCVHardwareState hwState;
         
         // Update pot values
         for (int i = 0; i < 3; i++) {
-            hwState.pots[i] = params[POT_L_PARAM + i].getValue();
+            float potValue = params[POT_L_PARAM + i].getValue();
+            hwState.pots[i] = potValue;
         }
         
         // Update button states
@@ -1220,6 +1328,14 @@ struct EmulatorModule : Module, IParameterObserver {
         // Encoder deltas are now set by the encoder widgets themselves via turnEncoder()
         
         emulatorCore.updateHardwareState(hwState);
+        
+        // Process hardware changes immediately after updating state
+        if (isPluginLoaded()) {
+            // Only process hardware changes for non-customUi plugins
+            if (!pluginManager->getFactory()->customUi) {
+                emulatorCore.processHardwareChanges(pluginManager->getFactory(), pluginManager->getAlgorithm());
+            }
+        }
     }
     
     void updateLights() {
@@ -1277,26 +1393,35 @@ struct EmulatorModule : Module, IParameterObserver {
     
     void onButtonPress(int button, bool pressed) {
         INFO("Button %d %s", button + 1, pressed ? "pressed" : "released");
-        if (pressed) {
-            // Button 1 always toggles menu
-            if (button == 0) {
-                INFO("Menu button pressed - toggling menu");
-                toggleMenuMode();
-            } else {
-                // Buttons 2-4 pass through to emulator when menu is not active
-                if (!menuSystem->isMenuActive()) {
-                    emulatorCore.pressButton(button);
-                }
-            }
+        
+        // If menu is active, don't send to plugin
+        if (menuSystem->isMenuActive()) {
+            return;
+        }
+        
+        // Check if plugin has customUi
+        if (isPluginLoaded() && pluginManager->getFactory() && pluginManager->getFactory()->customUi) {
+            // Send directly to customUi
+            sendCustomUiButtonEvent(button, pressed);
         } else {
-            if (!menuSystem->isMenuActive() && button != 0) {
+            // Use emulator core for non-customUi plugins
+            if (pressed) {
+                emulatorCore.pressButton(button);
+            } else {
                 emulatorCore.releaseButton(button);
             }
         }
     }
     
     void onEncoderChange(int encoder, int delta) {
-        emulatorCore.turnEncoder(encoder, delta);
+        // Check if plugin has customUi
+        if (isPluginLoaded() && pluginManager->getFactory() && pluginManager->getFactory()->customUi) {
+            // Send directly to customUi
+            sendCustomUiEncoderEvent(encoder, delta);
+        } else {
+            // Use emulator core for non-customUi plugins
+            emulatorCore.turnEncoder(encoder, delta);
+        }
         displayDirty = true;
     }
     
@@ -1453,6 +1578,173 @@ struct EmulatorModule : Module, IParameterObserver {
             pluginManager->getAlgorithm()->v = parameterSystem->getRoutingMatrix().data();
         }
         displayDirty = true;
+    }
+    
+    // Direct customUi event delivery for pot changes
+    void sendCustomUiPotEvent(int potIndex, float newValue) {
+        INFO("sendCustomUiPotEvent called: pot %d = %.3f", potIndex, newValue);
+        
+        if (!isPluginLoaded() || !pluginManager->getFactory() || !pluginManager->getAlgorithm()) {
+            INFO("sendCustomUiPotEvent: plugin not loaded or no factory/algorithm");
+            return;
+        }
+        
+        _NT_factory* factory = pluginManager->getFactory();
+        _NT_algorithm* algorithm = pluginManager->getAlgorithm();
+        
+        // Check if plugin supports customUi
+        if (!factory->customUi) {
+            return;
+        }
+        
+        // Get current pot values directly from VCV parameters
+        std::array<float, 3> potValues = {
+            params[POT_L_PARAM].getValue(),
+            params[POT_C_PARAM].getValue(),
+            params[POT_R_PARAM].getValue()
+        };
+        
+        // Build _NT_uiData structure
+        _NT_uiData uiData = {};
+        
+        // Set pot values
+        for (int i = 0; i < 3; i++) {
+            uiData.pots[i] = potValues[i];
+        }
+        
+        // Set control bitmask to indicate which pot changed
+        uint16_t controls = (kNT_potL << potIndex);
+        uiData.controls = controls;
+        
+        // Current button state (for completeness)
+        uint16_t currentButtons = 0;
+        for (int i = 0; i < 4; i++) {
+            if (params[BUTTON_1_PARAM + i].getValue() > 0.5f) {
+                currentButtons |= (kNT_button1 << i);
+            }
+        }
+        uiData.lastButtons = currentButtons;
+        
+        // Include current encoder states (from hardware state or direct reading)
+        // For now, encoders are handled separately, but we should include their current deltas
+        const auto& hwState = emulatorCore.getHardwareState();
+        uiData.encoders[0] = hwState.encoder_deltas[0];
+        uiData.encoders[1] = hwState.encoder_deltas[1];
+        
+        // Send customUi event
+        try {
+            INFO("Direct CustomUi pot event: pot %d = %.3f, controls=0x%04X", potIndex, newValue, controls);
+            factory->customUi(algorithm, uiData);
+        } catch (...) {
+            INFO("Plugin crashed during direct customUi call");
+        }
+    }
+    
+    // Direct customUi event for encoder changes
+    void sendCustomUiEncoderEvent(int encoderIndex, int delta) {
+        INFO("sendCustomUiEncoderEvent called: encoder %d, delta=%d", encoderIndex, delta);
+        
+        if (!isPluginLoaded() || !pluginManager->getFactory() || !pluginManager->getAlgorithm()) {
+            return;
+        }
+        
+        _NT_factory* factory = pluginManager->getFactory();
+        _NT_algorithm* algorithm = pluginManager->getAlgorithm();
+        
+        if (!factory->customUi) {
+            return;
+        }
+        
+        // Build _NT_uiData structure
+        _NT_uiData uiData = {};
+        
+        // Set current pot values
+        for (int i = 0; i < 3; i++) {
+            uiData.pots[i] = params[POT_L_PARAM + i].getValue();
+        }
+        
+        // Set encoder deltas
+        uiData.encoders[0] = (encoderIndex == 0) ? delta : 0;
+        uiData.encoders[1] = (encoderIndex == 1) ? delta : 0;
+        
+        // Set control bitmask
+        uint16_t controls = (kNT_encoderL << encoderIndex);
+        uiData.controls = controls;
+        
+        // Current button state
+        uint16_t currentButtons = 0;
+        for (int i = 0; i < 4; i++) {
+            if (params[BUTTON_1_PARAM + i].getValue() > 0.5f) {
+                currentButtons |= (kNT_button1 << i);
+            }
+        }
+        uiData.lastButtons = currentButtons;
+        
+        // Send customUi event
+        try {
+            INFO("Direct CustomUi encoder event: encoder %d, delta=%d, controls=0x%04X", 
+                 encoderIndex, delta, controls);
+            factory->customUi(algorithm, uiData);
+        } catch (...) {
+            INFO("Plugin crashed during customUi encoder event");
+        }
+    }
+    
+    // Direct customUi event for button changes
+    void sendCustomUiButtonEvent(int buttonIndex, bool pressed) {
+        INFO("sendCustomUiButtonEvent called: button %d %s", buttonIndex, pressed ? "pressed" : "released");
+        
+        if (!isPluginLoaded() || !pluginManager->getFactory() || !pluginManager->getAlgorithm()) {
+            return;
+        }
+        
+        _NT_factory* factory = pluginManager->getFactory();
+        _NT_algorithm* algorithm = pluginManager->getAlgorithm();
+        
+        if (!factory->customUi) {
+            return;
+        }
+        
+        // Build _NT_uiData structure
+        _NT_uiData uiData = {};
+        
+        // Set current pot values
+        for (int i = 0; i < 3; i++) {
+            uiData.pots[i] = params[POT_L_PARAM + i].getValue();
+        }
+        
+        // Clear encoder deltas
+        uiData.encoders[0] = 0;
+        uiData.encoders[1] = 0;
+        
+        // Build current button state
+        uint16_t currentButtons = 0;
+        for (int i = 0; i < 4; i++) {
+            if (params[BUTTON_1_PARAM + i].getValue() > 0.5f) {
+                currentButtons |= (kNT_button1 << i);
+            }
+        }
+        
+        // Update for the changing button
+        if (pressed) {
+            currentButtons |= (kNT_button1 << buttonIndex);
+        } else {
+            currentButtons &= ~(kNT_button1 << buttonIndex);
+        }
+        
+        // Set control to indicate button change (edge detection)
+        uint16_t controls = (kNT_button1 << buttonIndex);
+        uiData.controls = controls;
+        uiData.lastButtons = currentButtons;
+        
+        // Send customUi event
+        try {
+            INFO("Direct CustomUi button event: button %d %s, controls=0x%04X, buttons=0x%04X", 
+                 buttonIndex, pressed ? "pressed" : "released", controls, currentButtons);
+            factory->customUi(algorithm, uiData);
+        } catch (...) {
+            INFO("Plugin crashed during customUi button event");
+        }
     }
 };
 
@@ -2016,24 +2308,49 @@ struct EmulatorWidget : ModuleWidget {
 
         // 3 Pressable Pots (large knobs with press capability)
         auto* potL = createParamCentered<EmulatorPressablePot>(mm2px(Vec(17.78, 35.0)), module, EmulatorModule::POT_L_PARAM);
-        if (module) potL->setEmulatorCore(&module->emulatorCore, 0);
+        if (module) {
+            potL->setEmulatorCore(&module->emulatorCore, 0);
+            potL->setPotChangedCallback([module](int index, float value) {
+                module->sendCustomUiPotEvent(index, value);
+            });
+        }
         addParam(potL);
         
         auto* potC = createParamCentered<EmulatorPressablePot>(mm2px(Vec(35.56, 35.0)), module, EmulatorModule::POT_C_PARAM);
-        if (module) potC->setEmulatorCore(&module->emulatorCore, 1);
+        if (module) {
+            potC->setEmulatorCore(&module->emulatorCore, 1);
+            potC->setPotChangedCallback([module](int index, float value) {
+                module->sendCustomUiPotEvent(index, value);
+            });
+        }
         addParam(potC);
         
         auto* potR = createParamCentered<EmulatorPressablePot>(mm2px(Vec(53.34, 35.0)), module, EmulatorModule::POT_R_PARAM);
-        if (module) potR->setEmulatorCore(&module->emulatorCore, 2);
+        if (module) {
+            potR->setEmulatorCore(&module->emulatorCore, 2);
+            potR->setPotChangedCallback([module](int index, float value) {
+                module->sendCustomUiPotEvent(index, value);
+            });
+        }
         addParam(potR);
 
         // 2 Simple Encoders
         auto* encoderL = createParamCentered<SimpleEncoder>(mm2px(Vec(26.67, 52.0)), module, EmulatorModule::ENCODER_L_PARAM);
-        if (module) encoderL->setEmulatorCore(&module->emulatorCore, 0);
+        if (module) {
+            encoderL->setEmulatorCore(&module->emulatorCore, 0);
+            encoderL->setEncoderChangedCallback([module](int index, int delta) {
+                module->onEncoderChange(index, delta);
+            });
+        }
         addParam(encoderL);
         
         auto* encoderR = createParamCentered<SimpleEncoder>(mm2px(Vec(44.45, 52.0)), module, EmulatorModule::ENCODER_R_PARAM);
-        if (module) encoderR->setEmulatorCore(&module->emulatorCore, 1);
+        if (module) {
+            encoderR->setEmulatorCore(&module->emulatorCore, 1);
+            encoderR->setEncoderChangedCallback([module](int index, int delta) {
+                module->onEncoderChange(index, delta);
+            });
+        }
         addParam(encoderR);
 
         // 4 Buttons (vertical pairs - no LEDs)
