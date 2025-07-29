@@ -1,0 +1,22 @@
+# VCV Rack plugin build files
+/build/
+/dist/
+plugin.dylib
+
+# Test plugin build files
+*.dylib
+*.dylib.dSYM/
+*.d
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Backup files
+*~
+*.bak

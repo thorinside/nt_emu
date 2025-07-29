@@ -118,10 +118,16 @@ void customUi(_NT_algorithm* algorithm, const _NT_uiData& uiData)
 {
     TestCustomUiAlgorithm* alg = (TestCustomUiAlgorithm*)algorithm;
     
-    // Update pot values
-    alg->pots[0] = uiData.pots[0];
-    alg->pots[1] = uiData.pots[1];
-    alg->pots[2] = uiData.pots[2];
+    // Only update pot values when they actually changed
+    if (uiData.controls & kNT_potL) {
+        alg->pots[0] = uiData.pots[0];
+    }
+    if (uiData.controls & kNT_potC) {
+        alg->pots[1] = uiData.pots[1];
+    }
+    if (uiData.controls & kNT_potR) {
+        alg->pots[2] = uiData.pots[2];
+    }
     
     // Update encoder values
     alg->encoders[0] = uiData.encoders[0];
