@@ -78,20 +78,28 @@ static uint32_t api_parameterOffset(void) {
     return 0;
 }
 
+// Forward declarations of NT_* functions (implemented in NtEmu.cpp)
+extern "C" {
+    void NT_sendMidiByte(uint32_t destination, uint8_t b0);
+    void NT_sendMidi2ByteMessage(uint32_t destination, uint8_t b0, uint8_t b1);
+    void NT_sendMidi3ByteMessage(uint32_t destination, uint8_t b0, uint8_t b1, uint8_t b2);
+    void NT_sendMidiSysEx(uint32_t destination, const uint8_t* data, uint32_t count, bool end);
+}
+
 static void api_sendMidiByte(uint32_t destination, uint8_t b0) {
-    // TODO: Connect to VCV MIDI system
+    NT_sendMidiByte(destination, b0);
 }
 
 static void api_sendMidi2ByteMessage(uint32_t destination, uint8_t b0, uint8_t b1) {
-    // TODO: Connect to VCV MIDI system
+    NT_sendMidi2ByteMessage(destination, b0, b1);
 }
 
 static void api_sendMidi3ByteMessage(uint32_t destination, uint8_t b0, uint8_t b1, uint8_t b2) {
-    // TODO: Connect to VCV MIDI system
+    NT_sendMidi3ByteMessage(destination, b0, b1, b2);
 }
 
 static void api_sendMidiSysEx(uint32_t destination, const uint8_t* data, uint32_t count, bool end) {
-    // TODO: Connect to VCV MIDI system
+    NT_sendMidiSysEx(destination, data, count, end);
 }
 
 static uint32_t api_getCpuCycleCount(void) {

@@ -26,13 +26,27 @@ void MidiProcessor::processInputMessages(const Module::ProcessArgs& args) {
 
 void MidiProcessor::sendOutputMessage(const midi::Message& msg) {
     if (!isValidMidiMessage(msg)) {
+        INFO("MidiProcessor: Invalid MIDI message, size=%d", (int)msg.bytes.size());
         return;
+    }
+    
+    // Debug: Log MIDI output messages
+    if (msg.bytes.size() >= 3) {
+        INFO("MidiProcessor: Sending MIDI message: %02X %02X %02X", 
+             msg.bytes[0], msg.bytes[1], msg.bytes[2]);
+    } else if (msg.bytes.size() == 2) {
+        INFO("MidiProcessor: Sending MIDI message: %02X %02X", 
+             msg.bytes[0], msg.bytes[1]);
+    } else if (msg.bytes.size() == 1) {
+        INFO("MidiProcessor: Sending MIDI message: %02X", msg.bytes[0]);
     }
     
     midiOutput.sendMessage(msg);
     stats.messagesSent++;
     triggerOutputLight();
     notifyOutputSent(msg);
+    
+    INFO("MidiProcessor: MIDI message sent, total sent: %d, output light triggered", stats.messagesSent);
 }
 
 void MidiProcessor::updateActivityLights(float deltaTime) {

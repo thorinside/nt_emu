@@ -24,6 +24,10 @@
 #include <map>
 #include <cstring>
 
+// Forward declaration for C API access
+struct EmulatorModule;
+static EmulatorModule* g_currentModule = nullptr;
+
 // NT_screen buffer definition for the VCV plugin
 __attribute__((visibility("default"))) uint8_t NT_screen[128 * 64];
 
@@ -262,18 +266,7 @@ extern "C" {
         return snprintf(buffer, 32, format, value);
     }
     
-    // MIDI functions (stubs for now)
-    __attribute__((visibility("default"))) void NT_sendMidiByte(uint32_t destination, uint8_t b0) {
-    }
-    
-    __attribute__((visibility("default"))) void NT_sendMidi2ByteMessage(uint32_t destination, uint8_t b0, uint8_t b1) {
-    }
-    
-    __attribute__((visibility("default"))) void NT_sendMidi3ByteMessage(uint32_t destination, uint8_t b0, uint8_t b1, uint8_t b2) {
-    }
-    
-    __attribute__((visibility("default"))) void NT_sendMidiSysEx(uint32_t destination, const uint8_t* data, uint32_t count, bool end) {
-    }
+    // MIDI functions - implemented after EmulatorModule definition
 }
 
 // Include JSON serialization support
@@ -702,6 +695,9 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
     EmulatorModule() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
         
+        // Set global reference for C API access
+        g_currentModule = this;
+        
         // Configure parameters
         configParam(POT_L_PARAM, 0.f, 1.f, 0.5f, "Pot L");
         configParam(POT_C_PARAM, 0.f, 1.f, 0.5f, "Pot C");  
@@ -804,6 +800,11 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
     }
     
     ~EmulatorModule() {
+        // Clear global reference
+        if (g_currentModule == this) {
+            g_currentModule = nullptr;
+        }
+        
         // Clean up pending parameter values if any
         if (pendingParameterValues) {
             json_decref(pendingParameterValues);
@@ -935,45 +936,6 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
         return info;
     }
     
-    // MIDI input processing
-    void processMidiMessage(const midi::Message& msg) {
-        // Route to plugin if loaded
-        if (isPluginLoaded() && pluginManager && pluginManager->getAlgorithm() && pluginManager->getFactory() && msg.bytes.size() > 0) {
-            uint8_t status = msg.bytes[0] & 0xF0;
-            
-            // Route real-time messages (0xF0-0xFF)
-            if (status >= 0xF0) {
-                if (pluginManager->getFactory()->midiRealtime) {
-                    try {
-                        pluginManager->getFactory()->midiRealtime(pluginManager->getAlgorithm(), msg.bytes[0]);
-                    } catch (...) {
-                        WARN("Plugin crashed during midiRealtime - unloading");
-                        unloadPlugin();
-                        return;
-                    }
-                }
-            }
-            // Route channel messages (Note On/Off, CC, Program Change, etc.)
-            else if (msg.bytes.size() >= 2) {
-                if (pluginManager->getFactory()->midiMessage) {
-                    try {
-                        uint8_t byte0 = msg.bytes[0];
-                        uint8_t byte1 = msg.bytes[1];
-                        uint8_t byte2 = (msg.bytes.size() >= 3) ? msg.bytes[2] : 0;
-                        
-                        pluginManager->getFactory()->midiMessage(pluginManager->getAlgorithm(), byte0, byte1, byte2);
-                    } catch (...) {
-                        WARN("Plugin crashed during midiMessage - unloading");
-                        unloadPlugin();
-                        return;
-                    }
-                }
-            }
-        }
-        
-        // Note: Individual plugins handle their own channel filtering
-        // Module-level MIDI learn could be added here in the future if needed
-    }
     
     // Plugin loading methods
     bool loadPlugin(const std::string& path) {
@@ -2071,6 +2033,46 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
         }
     }
 };
+
+// MIDI API functions - now properly implemented after EmulatorModule definition
+extern "C" {
+    __attribute__((visibility("default"))) void NT_sendMidiByte(uint32_t destination, uint8_t b0) {
+        if (g_currentModule && g_currentModule->midiProcessor) {
+            g_currentModule->midiProcessor->sendMidiMessage(b0);
+        }
+    }
+    
+    __attribute__((visibility("default"))) void NT_sendMidi2ByteMessage(uint32_t destination, uint8_t b0, uint8_t b1) {
+        if (g_currentModule && g_currentModule->midiProcessor) {
+            g_currentModule->midiProcessor->sendMidiMessage(b0, b1);
+        }
+    }
+    
+    __attribute__((visibility("default"))) void NT_sendMidi3ByteMessage(uint32_t destination, uint8_t b0, uint8_t b1, uint8_t b2) {
+        INFO("NT_sendMidi3ByteMessage: %02X %02X %02X, destination=%08X", b0, b1, b2, destination);
+        if (g_currentModule && g_currentModule->midiProcessor) {
+            g_currentModule->midiProcessor->sendMidiMessage(b0, b1, b2);
+        } else {
+            INFO("NT_sendMidi3ByteMessage: No module or midiProcessor available");
+        }
+    }
+    
+    __attribute__((visibility("default"))) void NT_sendMidiSysEx(uint32_t destination, const uint8_t* data, uint32_t count, bool end) {
+        if (g_currentModule && g_currentModule->midiProcessor && data && count > 0) {
+            // Send SysEx messages byte by byte since VCV's MIDI system handles messages up to 3 bytes
+            // For SysEx, we send 0xF0 start, data bytes, and 0xF7 end
+            g_currentModule->midiProcessor->sendMidiMessage(0xF0); // SysEx start
+            
+            for (uint32_t i = 0; i < count; i++) {
+                g_currentModule->midiProcessor->sendMidiMessage(data[i]);
+            }
+            
+            if (end) {
+                g_currentModule->midiProcessor->sendMidiMessage(0xF7); // SysEx end
+            }
+        }
+    }
+}
 
 // Custom OLED Widget with access to NtEmu module
 struct ModuleOLEDWidget : FramebufferWidget {
