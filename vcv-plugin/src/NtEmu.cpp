@@ -1,7 +1,9 @@
+#define _DISTINGNT_SERIALISATION_INTERNAL
 #include "plugin.hpp"
 #include "algorithms/Algorithm.hpp"
 #include "dsp/BusSystem.hpp"
 #include "EmulatorCore.hpp"
+#include "json_bridge.h"
 #include "EncoderParamQuantity.hpp"
 #include "InfiniteEncoder.hpp"
 #include "widgets/PressablePot.hpp"
@@ -274,92 +276,234 @@ extern "C" {
     }
 }
 
-// Include the serialisation header to get class definitions
+// Include JSON serialization support
+#define _DISTINGNT_SERIALISATION_INTERNAL
 #include "../../emulator/include/distingnt/serialisation.h"
+#include "json_bridge.h"
 
-// Minimal stub implementations for JSON classes
-// These are needed by plugins that use serialisation but won't be called in VCV context
+// Thread-local storage for JSON bridge instances
+thread_local std::unique_ptr<JsonStreamBridge> g_currentStream;
+thread_local std::unique_ptr<JsonParseBridge> g_currentParse;
+
+// Thread-local storage management functions
+void setCurrentJsonParse(std::unique_ptr<JsonParseBridge> bridge) {
+    if (bridge) {
+        g_currentParse = std::move(bridge);
+        INFO("setCurrentJsonParse: Bridge set successfully, address: %p", g_currentParse.get());
+    } else {
+        WARN("setCurrentJsonParse: Attempted to set null bridge");
+    }
+}
+
+void clearCurrentJsonParse() {
+    if (g_currentParse) {
+        INFO("clearCurrentJsonParse: Clearing bridge at address: %p", g_currentParse.get());
+        g_currentParse.reset();
+    }
+}
+
+JsonParseBridge* getCurrentJsonParse() {
+    JsonParseBridge* bridge = g_currentParse.get();
+    if (!bridge) {
+        WARN("getCurrentJsonParse: Bridge is null!");
+    }
+    return bridge;
+}
+
+void setCurrentJsonStream(std::unique_ptr<JsonStreamBridge> bridge) {
+    g_currentStream = std::move(bridge);
+}
+
+void clearCurrentJsonStream() {
+    g_currentStream.reset();
+}
+
+JsonStreamBridge* getCurrentJsonStream() {
+    return g_currentStream.get();
+}
+
+// Constructor/destructor implementations for JSON classes
 extern "C" {
-    // _NT_jsonParse stub methods
-    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse10skipMemberEv() {
-        // _NT_jsonParse::skipMember() stub
+    // _NT_jsonStream constructor/destructor
+    __attribute__((visibility("default"))) void* _ZN14_NT_jsonStreamC1EPv(void* refCon) {
+        // Return a dummy pointer - the actual implementation uses thread_local g_currentStream
+        return reinterpret_cast<void*>(0x1);  // Non-null dummy pointer
     }
     
-    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse21numberOfArrayElementsERi() {
-        // _NT_jsonParse::numberOfArrayElements(int&) stub  
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStreamD1Ev(void* self) {
+        // Nothing to do - thread_local handles cleanup
     }
     
-    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse21numberOfObjectMembersERi() {
-        // _NT_jsonParse::numberOfObjectMembers(int&) stub
+    // _NT_jsonParse constructor/destructor  
+    __attribute__((visibility("default"))) void* _ZN13_NT_jsonParseC1EPvi(void* refCon, int idx) {
+        // Return a dummy pointer - the actual implementation uses thread_local g_currentParse
+        return reinterpret_cast<void*>(0x2);  // Non-null dummy pointer
     }
     
-    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse4nullEv() {
-        // _NT_jsonParse::null() stub
+    __attribute__((visibility("default"))) void _ZN13_NT_jsonParseD1Ev(void* self) {
+        // Nothing to do - thread_local handles cleanup
+    }
+}
+
+// Functional implementations for JSON classes using bridge pattern
+extern "C" {
+    // _NT_jsonParse method implementations
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse10skipMemberEv(void* self) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->skipMember();
+        }
+        return false;
     }
     
-    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse6numberERf() {
-        // _NT_jsonParse::number(float&) stub
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse21numberOfArrayElementsERi(void* self, int& num) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->numberOfArrayElements(num);
+        }
+        num = 0;
+        return false;
     }
     
-    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse6numberERi() {
-        // _NT_jsonParse::number(int&) stub
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse21numberOfObjectMembersERi(void* self, int& num) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        INFO("_ZN13_NT_jsonParse21numberOfObjectMembersERi - self: %p, bridge: %p", self, (void*)bridge);
+        if (bridge) {
+            return bridge->numberOfObjectMembers(num);
+        }
+        WARN("_ZN13_NT_jsonParse21numberOfObjectMembersERi - ERROR: bridge is NULL!");
+        num = 0;
+        return false;
     }
     
-    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse6stringERPKc() {
-        // _NT_jsonParse::string(const char*&) stub
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse4nullEv(void* self) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->null();
+        }
+        return false;
     }
     
-    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse7booleanERb() {
-        // _NT_jsonParse::boolean(bool&) stub
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse6numberERf(void* self, float& value) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->number(value);
+        }
+        value = 0.0f;
+        return false;
     }
     
-    __attribute__((visibility("default"))) void _ZN13_NT_jsonParse9matchNameEPKc() {
-        // _NT_jsonParse::matchName(const char*) stub
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse6numberERi(void* self, int& value) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->number(value);
+        }
+        value = 0;
+        return false;
     }
     
-    // _NT_jsonStream stub methods
-    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10addBooleanEb() {
-        // _NT_jsonStream::addBoolean(bool) stub
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse6stringERPKc(void* self, const char*& str) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->string(str);
+        }
+        str = "";
+        return false;
     }
     
-    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10closeArrayEv() {
-        // _NT_jsonStream::closeArray() stub
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse7booleanERb(void* self, bool& value) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->boolean(value);
+        }
+        value = false;
+        return false;
     }
     
-    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10openObjectEv() {
-        // _NT_jsonStream::openObject() stub
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse9matchNameEPKc(void* self, const char* name) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->matchName(name);
+        }
+        return false;
     }
     
-    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream11closeObjectEv() {
-        // _NT_jsonStream::closeObject() stub
+    // _NT_jsonStream method implementations
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10addBooleanEb(void* self, bool value) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->addBoolean(value);
+        }
     }
     
-    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream13addMemberNameEPKc() {
-        // _NT_jsonStream::addMemberName(const char*) stub
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10closeArrayEv(void* self) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->closeArray();
+        }
     }
     
-    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream7addNullEv() {
-        // _NT_jsonStream::addNull() stub
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10openObjectEv(void* self) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->openObject();
+        }
     }
     
-    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addFourCCEj() {
-        // _NT_jsonStream::addFourCC(uint32_t) stub
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream11closeObjectEv(void* self) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->closeObject();
+        }
     }
     
-    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addNumberEf() {
-        // _NT_jsonStream::addNumber(float) stub
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream13addMemberNameEPKc(void* self, const char* name) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->addMemberName(name);
+        }
     }
     
-    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addNumberEi() {
-        // _NT_jsonStream::addNumber(int) stub
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream7addNullEv(void* self) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->addNull();
+        }
     }
     
-    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addStringEPKc() {
-        // _NT_jsonStream::addString(const char*) stub
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addFourCCEj(void* self, uint32_t fourcc) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->addFourCC(fourcc);
+        }
     }
     
-    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9openArrayEv() {
-        // _NT_jsonStream::openArray() stub
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addNumberEf(void* self, float value) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->addNumber(value);
+        }
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addNumberEi(void* self, int value) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->addNumber(value);
+        }
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addStringEPKc(void* self, const char* str) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->addString(str);
+        }
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9openArrayEv(void* self) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->openArray();
+        }
     }
 }
 
@@ -408,7 +552,7 @@ struct TooltipOutputPort : PJ301MPort {
     void onHover(const HoverEvent& e) override;
 };
 
-struct EmulatorModule : Module, IParameterObserver {
+struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
     enum ParamIds {
         // Pots
         POT_L_PARAM, POT_C_PARAM, POT_R_PARAM,
@@ -482,6 +626,8 @@ struct EmulatorModule : Module, IParameterObserver {
     // Member variables for two-phase plugin loading with specifications
     // Plugin loading state
     std::string lastPluginFolder;
+    std::string pendingPluginState; // JSON string for plugin state to be restored after setupUi
+    json_t* pendingParameterValues = nullptr; // Parameter values to be restored after parameter extraction
     
     // Display state
     bool displayDirty = true;
@@ -622,6 +768,7 @@ struct EmulatorModule : Module, IParameterObserver {
         
         // Initialize new modular components (C++11 compatible)
         pluginManager.reset(new PluginManager());
+        pluginManager->addObserver(this);  // Register for plugin state notifications
         pluginExecutor.reset(new PluginExecutor(pluginManager.get()));
         parameterSystem.reset(new ParameterSystem(pluginManager.get()));
         menuSystem.reset(new MenuSystem(parameterSystem.get()));
@@ -647,9 +794,18 @@ struct EmulatorModule : Module, IParameterObserver {
     }
     
     ~EmulatorModule() {
-        // Unregister observer
+        // Clean up pending parameter values if any
+        if (pendingParameterValues) {
+            json_decref(pendingParameterValues);
+            pendingParameterValues = nullptr;
+        }
+        
+        // Unregister observers
         if (parameterSystem) {
             parameterSystem->removeObserver(this);
+        }
+        if (pluginManager) {
+            pluginManager->removeObserver(this);
         }
     }
     
@@ -695,20 +851,8 @@ struct EmulatorModule : Module, IParameterObserver {
             return;
         }
         
-        // Store current state
-        std::string currentPath = pluginManager->getPluginPath();
-        std::vector<int32_t> currentSpecs = pluginManager->getSpecifications();
-        
-        // Unload current plugin
-        unloadPlugin();
-        
-        // Reload from same path
-        if (!currentSpecs.empty()) {
-            pluginManager->loadPlugin(currentPath, currentSpecs);
-        } else {
-            pluginManager->loadPlugin(currentPath);
-        }
-        
+        // Use PluginManager's reload method which properly handles observer notifications
+        pluginManager->reloadPlugin();
         displayDirty = true;
     }
     
@@ -823,78 +967,74 @@ struct EmulatorModule : Module, IParameterObserver {
     
     // Plugin loading methods
     bool loadPlugin(const std::string& path) {
-        bool success = pluginManager->loadPlugin(path);
-        
-        if (success) {
-            // Extract parameter information from loaded plugin
-            parameterSystem->extractParameterData();
-            
-            // Call setupUi with current pot values instead of defaults
-            if (pluginManager->getFactory() && pluginManager->getFactory()->setupUi && pluginManager->getAlgorithm()) {
-                float potValues[3] = {
-                    params[POT_L_PARAM].getValue(),
-                    params[POT_C_PARAM].getValue(),
-                    params[POT_R_PARAM].getValue()
-                };
-                INFO("NtEmu::loadPlugin calling setupUi with current pot values: %.3f %.3f %.3f", 
-                     potValues[0], potValues[1], potValues[2]);
-                try {
-                    pluginManager->getFactory()->setupUi(pluginManager->getAlgorithm(), potValues);
-                    // Set VCV pot parameters to match what the plugin wants
-                    params[POT_L_PARAM].setValue(potValues[0]);
-                    params[POT_C_PARAM].setValue(potValues[1]);
-                    params[POT_R_PARAM].setValue(potValues[2]);
-                    INFO("NtEmu::loadPlugin set pot values to: %.3f %.3f %.3f", 
-                         potValues[0], potValues[1], potValues[2]);
-                } catch (...) {
-                    WARN("Plugin crashed during setupUi");
-                }
-            }
-            
-            displayDirty = true;
-        }
-        
-        return success;
+        // Observer will handle initialization automatically via onPluginLoaded()
+        return pluginManager->loadPlugin(path);
     }
     
-    // Overloaded loadPlugin that accepts custom specifications
+    // Overloaded loadPlugin that accepts custom specifications  
     bool loadPlugin(const std::string& path, const std::vector<int32_t>& customSpecifications) {
-        bool success = pluginManager->loadPlugin(path, customSpecifications);
-        
-        if (success) {
-            // Extract parameter information from loaded plugin
-            parameterSystem->extractParameterData();
-            
-            // Call setupUi with current pot values instead of defaults
-            if (pluginManager->getFactory() && pluginManager->getFactory()->setupUi && pluginManager->getAlgorithm()) {
-                float potValues[3] = {
-                    params[POT_L_PARAM].getValue(),
-                    params[POT_C_PARAM].getValue(),
-                    params[POT_R_PARAM].getValue()
-                };
-                INFO("NtEmu::loadPlugin (with specs) calling setupUi with current pot values: %.3f %.3f %.3f", 
-                     potValues[0], potValues[1], potValues[2]);
-                try {
-                    pluginManager->getFactory()->setupUi(pluginManager->getAlgorithm(), potValues);
-                    // Set VCV pot parameters to match what the plugin wants
-                    params[POT_L_PARAM].setValue(potValues[0]);
-                    params[POT_C_PARAM].setValue(potValues[1]);
-                    params[POT_R_PARAM].setValue(potValues[2]);
-                    INFO("NtEmu::loadPlugin (with specs) set pot values to: %.3f %.3f %.3f", 
-                         potValues[0], potValues[1], potValues[2]);
-                } catch (...) {
-                    WARN("Plugin crashed during setupUi");
-                }
-            }
-            
-            displayDirty = true;
-        }
-        
-        return success;
+        // Observer will handle initialization automatically via onPluginLoaded()
+        return pluginManager->loadPlugin(path, customSpecifications);
     }
     
     
     // extractParameterData now handled by ParameterSystem
+    
+    // Sync VCV pot positions to menu navigation state when entering menu
+    void syncPotsToMenuState() {
+        if (!parameterSystem->hasParameterPages() || !pluginManager->getAlgorithm()) {
+            return;
+        }
+        
+        // Get current navigation state
+        int currentPageIdx = parameterSystem->getCurrentPageIndex();
+        int currentParamIdx = parameterSystem->getCurrentParamIndex();
+        
+        if (currentPageIdx < 0 || currentPageIdx >= static_cast<int>(parameterSystem->getPageCount())) {
+            return;
+        }
+        
+        const auto& pages = parameterSystem->getParameterPages();
+        const auto& parameters = parameterSystem->getParameters();
+        
+        if (currentPageIdx >= static_cast<int>(pages.size())) {
+            return;
+        }
+        
+        const _NT_parameterPage& currentPage = pages[currentPageIdx];
+        
+        // POT_L: Page selection (normalized position showing which page is selected)
+        float pagePosition = 0.0f;
+        if (parameterSystem->getPageCount() > 1) {
+            pagePosition = static_cast<float>(currentPageIdx) / static_cast<float>(parameterSystem->getPageCount() - 1);
+        }
+        params[POT_L_PARAM].setValue(std::max(0.0f, std::min(1.0f, pagePosition)));
+        
+        // POT_C: Parameter selection (normalized position showing which parameter on page is selected)
+        float paramPosition = 0.0f;
+        if (currentPage.numParams > 1) {
+            paramPosition = static_cast<float>(currentParamIdx) / static_cast<float>(currentPage.numParams - 1);
+        }
+        params[POT_C_PARAM].setValue(std::max(0.0f, std::min(1.0f, paramPosition)));
+        
+        // POT_R: Parameter value (normalized position of actual parameter value)
+        float valuePosition = 0.5f; // Default to center
+        if (currentParamIdx >= 0 && currentParamIdx < static_cast<int>(currentPage.numParams)) {
+            int actualParamIdx = currentPage.params[currentParamIdx];
+            if (actualParamIdx >= 0 && actualParamIdx < static_cast<int>(parameters.size())) {
+                const _NT_parameter& param = parameters[actualParamIdx];
+                int16_t currentValue = parameterSystem->getParameterValue(actualParamIdx);
+                
+                if (param.max != param.min) {
+                    valuePosition = static_cast<float>(currentValue - param.min) / static_cast<float>(param.max - param.min);
+                }
+            }
+        }
+        params[POT_R_PARAM].setValue(std::max(0.0f, std::min(1.0f, valuePosition)));
+        
+        INFO("Synced pot positions to menu state: page %d/%zu, param %d/%d, value %.3f", 
+             currentPageIdx, parameterSystem->getPageCount(), currentParamIdx, currentPage.numParams, valuePosition);
+    }
     
     void toggleMenuMode() {
         // Delegate to the new MenuSystem
@@ -903,6 +1043,11 @@ struct EmulatorModule : Module, IParameterObserver {
         
         // Sync legacy menuMode with MenuSystem state for backward compatibility
         if (menuSystem->isMenuActive()) {
+            // If we just entered the menu (was not active before), sync pot positions to menu navigation state
+            if (!wasActive) {
+                syncPotsToMenuState();
+            }
+            
             switch (menuSystem->getCurrentState()) {
                 case MenuSystem::State::PAGE_SELECT:
                     menuMode = MENU_PAGE_SELECT;
@@ -1499,9 +1644,38 @@ struct EmulatorModule : Module, IParameterObserver {
         }
         json_object_set_new(rootJ, "routing", routingJ);
         
+        // Save plugin parameter values (separate from VCV pot params)
+        if (parameterSystem->hasParameters()) {
+            json_object_set_new(rootJ, "parameterValues", parameterSystem->saveParameterValues());
+            INFO("NtEmu: Saved plugin parameter values");
+        }
+        
         // Save MIDI settings
         json_object_set_new(rootJ, "midiInput", midiProcessor->getInputQueue().toJson());
         json_object_set_new(rootJ, "midiOutput", midiProcessor->getOutput().toJson());
+        
+        // Save plugin-specific state if plugin is loaded and supports serialization
+        if (pluginManager->getAlgorithm() && pluginManager->getFactory() && pluginManager->getFactory()->serialise) {
+            INFO("NtEmu: Saving plugin state via pluginManager serialization");
+            
+            // Use the same pattern as PluginExecutor - thread-local bridge
+            setCurrentJsonStream(std::unique_ptr<JsonStreamBridge>(new JsonStreamBridge()));
+            _NT_jsonStream dummy_stream(nullptr);
+            
+            pluginManager->getFactory()->serialise(pluginManager->getAlgorithm(), dummy_stream);
+            
+            nlohmann::json pluginJson = getCurrentJsonStream()->getJson();
+            std::string pluginJsonStr = pluginJson.dump();
+            INFO("NtEmu: Plugin state JSON: %s", pluginJsonStr.c_str());
+            json_object_set_new(rootJ, "pluginState", json_string(pluginJsonStr.c_str()));
+            
+            clearCurrentJsonStream();
+        } else {
+            INFO("NtEmu: No plugin serialization - algorithm: %p, factory: %p, serialise: %p", 
+                 pluginManager->getAlgorithm(), 
+                 pluginManager->getFactory(), 
+                 pluginManager->getFactory() ? pluginManager->getFactory()->serialise : nullptr);
+        }
         
         return rootJ;
     }
@@ -1523,6 +1697,16 @@ struct EmulatorModule : Module, IParameterObserver {
             if (!path.empty() && rack::system::exists(path)) {
                 loadPlugin(path);
             }
+        }
+        
+        // Store plugin state for later restoration (after setupUi is called)
+        json_t* pluginStateJ = json_object_get(rootJ, "pluginState");
+        if (pluginStateJ && json_is_string(pluginStateJ)) {
+            pendingPluginState = json_string_value(pluginStateJ);
+            INFO("NtEmu: Stored plugin state for later restoration: %s", pendingPluginState.c_str());
+        } else {
+            pendingPluginState.clear();
+            INFO("NtEmu: No plugin state found in JSON");
         }
         
         // Restore parameters
@@ -1563,6 +1747,60 @@ struct EmulatorModule : Module, IParameterObserver {
             updateBusRouting();
         }
         
+        // Handle parameter values restoration
+        json_t* parameterValuesJ = json_object_get(rootJ, "parameterValues");
+        if (parameterValuesJ && json_is_array(parameterValuesJ)) {
+            INFO("NtEmu: Found %zu parameter values to restore (plugin loaded: %s)", 
+                 json_array_size(parameterValuesJ),
+                 pluginManager->isLoaded() ? "YES" : "NO");
+            
+            if (pluginManager->isLoaded()) {
+                // Plugin is already loaded, restore immediately via PluginManager
+                INFO("NtEmu: Plugin already loaded, restoring immediately");
+                pluginManager->restoreParameterValues(parameterValuesJ, parameterSystem.get());
+                
+                // Also restore plugin state if available
+                if (!pendingPluginState.empty()) {
+                    pluginManager->restorePluginState(pendingPluginState);
+                    pendingPluginState.clear();
+                }
+                
+                // Call setupUi with current VCV pot values
+                float potValues[3] = {
+                    params[POT_L_PARAM].getValue(),
+                    params[POT_C_PARAM].getValue(),
+                    params[POT_R_PARAM].getValue()
+                };
+                pluginManager->callSetupUi(potValues);
+                
+                // Update VCV params with values returned by setupUi
+                params[POT_L_PARAM].setValue(potValues[0]);
+                params[POT_C_PARAM].setValue(potValues[1]);
+                params[POT_R_PARAM].setValue(potValues[2]);
+                
+                // Clean up any existing pending parameter values
+                if (pendingParameterValues) {
+                    json_decref(pendingParameterValues);
+                    pendingParameterValues = nullptr;
+                }
+            } else {
+                // Plugin not loaded yet, store for later restoration in onPluginLoaded
+                INFO("NtEmu: Plugin not loaded yet, storing for later restoration");
+                if (pendingParameterValues) {
+                    json_decref(pendingParameterValues);
+                }
+                pendingParameterValues = json_incref(parameterValuesJ);
+            }
+        } else {
+            // Clean up if no parameter values to restore
+            if (pendingParameterValues) {
+                json_decref(pendingParameterValues);
+                pendingParameterValues = nullptr;
+            }
+            INFO("NtEmu: No parameter values found in JSON (plugin loaded: %s)", 
+                 pluginManager->isLoaded() ? "YES" : "NO");
+        }
+        
         // Restore MIDI settings
         json_t* midiInputJ = json_object_get(rootJ, "midiInput");
         if (midiInputJ) {
@@ -1595,6 +1833,52 @@ struct EmulatorModule : Module, IParameterObserver {
         if (pluginManager->getAlgorithm()) {
             pluginManager->getAlgorithm()->v = parameterSystem->getRoutingMatrix().data();
         }
+        displayDirty = true;
+    }
+    
+    // IPluginStateObserver implementation
+    void onPluginLoaded(const std::string& path) override {
+        INFO("NtEmu: Plugin loaded: %s", path.c_str());
+        
+        // Always initialize parameter system FIRST when plugin loads
+        INFO("NtEmu: Initializing parameter system for plugin");
+        pluginManager->initializeParameterSystem(parameterSystem.get());
+        
+        // Let PluginManager handle the restoration sequence
+        if (pendingParameterValues) {
+            pluginManager->restoreParameterValues(pendingParameterValues, parameterSystem.get());
+            json_decref(pendingParameterValues);
+            pendingParameterValues = nullptr;
+        }
+        
+        if (!pendingPluginState.empty()) {
+            pluginManager->restorePluginState(pendingPluginState);
+            pendingPluginState.clear();
+        }
+        
+        // Call setupUi with current VCV pot values
+        float potValues[3] = {
+            params[POT_L_PARAM].getValue(),
+            params[POT_C_PARAM].getValue(),
+            params[POT_R_PARAM].getValue()
+        };
+        pluginManager->callSetupUi(potValues);
+        
+        // Update VCV params with values returned by setupUi
+        params[POT_L_PARAM].setValue(potValues[0]);
+        params[POT_C_PARAM].setValue(potValues[1]);
+        params[POT_R_PARAM].setValue(potValues[2]);
+        
+        displayDirty = true;
+    }
+    
+    void onPluginUnloaded() override {
+        // Plugin unloaded - could add any cleanup here if needed
+        displayDirty = true;
+    }
+    
+    void onPluginError(const std::string& error) override {
+        WARN("Plugin error: %s", error.c_str());
         displayDirty = true;
     }
     

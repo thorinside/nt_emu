@@ -1,10 +1,18 @@
+#define _DISTINGNT_SERIALISATION_INTERNAL
 #include "PluginManager.hpp"
+#include "../parameter/ParameterSystem.hpp"
+#include "../json_bridge.h"
 #include <rack.hpp>
+#include <thread>
+#include <chrono>
 
 using namespace rack;
 
 // External NT_screen buffer for symbol resolution
 extern uint8_t NT_screen[128 * 64];
+
+// Use proper interface to access thread-local storage (defined in json_bridge.h)
+#include "../json_bridge.h"
 
 PluginManager::PluginManager() {
     INFO("PluginManager initialized");
@@ -193,6 +201,9 @@ void PluginManager::reloadPlugin() {
     
     unloadPlugin();
     
+    // Small delay to allow system to fully unload the library
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    
     // Reload with same specifications if they exist
     if (!currentSpecs.empty()) {
         if (loadPlugin(currentPath, currentSpecs)) {
@@ -347,6 +358,105 @@ void PluginManager::notifyUnloaded() {
     for (auto* observer : observers) {
         observer->onPluginUnloaded();
     }
+}
+
+void PluginManager::restoreParameterValues(json_t* parameterValuesJ, ParameterSystem* parameterSystem) {
+    if (!parameterValuesJ || !parameterSystem || !isLoaded()) {
+        return;
+    }
+    
+    INFO("PluginManager: Loading parameter values");
+    // Note: extractParameterData() should already have been called during onPluginLoaded
+    parameterSystem->loadParameterValues(parameterValuesJ);
+}
+
+void PluginManager::restorePluginState(const std::string& pluginStateJson) {
+    if (pluginStateJson.empty() || !pluginAlgorithm || !pluginFactory || !pluginFactory->deserialise) {
+        INFO("PluginManager: Skipping plugin state restoration - empty state or missing components");
+        return;
+    }
+    
+    try {
+        INFO("PluginManager: Restoring plugin state: %s", pluginStateJson.c_str());
+        
+        // Parse JSON first to validate it
+        nlohmann::json pluginJson;
+        try {
+            pluginJson = nlohmann::json::parse(pluginStateJson);
+        } catch (const nlohmann::json::parse_error& e) {
+            WARN("PluginManager: Invalid JSON in plugin state: %s", e.what());
+            return;
+        }
+        
+        // Validate pointers before use
+        if (!pluginFactory || !pluginAlgorithm) {
+            WARN("PluginManager: Plugin factory or algorithm is null");
+            return;
+        }
+        
+        INFO("PluginManager: Setting up JSON parse bridge");
+        setCurrentJsonParse(std::unique_ptr<JsonParseBridge>(new JsonParseBridge(pluginJson)));
+        
+        // Verify the bridge was set correctly
+        if (!getCurrentJsonParse()) {
+            WARN("PluginManager: Failed to set JSON parse bridge");
+            return;
+        }
+        
+        _NT_jsonParse dummy_parse(nullptr, 0);
+        
+        INFO("PluginManager: Calling plugin deserialise method");
+        INFO("PluginManager: pluginFactory=%p, deserialise=%p, pluginAlgorithm=%p", 
+             (void*)pluginFactory, 
+             (void*)(pluginFactory ? pluginFactory->deserialise : nullptr), 
+             (void*)pluginAlgorithm);
+        bool success = pluginFactory->deserialise(pluginAlgorithm, dummy_parse);
+        INFO("PluginManager: Plugin state restored: %s", success ? "true" : "false");
+        
+        clearCurrentJsonParse();
+    } catch (const std::exception& e) {
+        WARN("PluginManager: Plugin state restoration failed: %s", e.what());
+        if (getCurrentJsonParse()) {
+            clearCurrentJsonParse();
+        }
+    }
+}
+
+void PluginManager::callSetupUi(float potValues[3]) {
+    if (!pluginFactory || !pluginFactory->setupUi || !pluginAlgorithm) {
+        INFO("PluginManager: callSetupUi skipped - missing components (factory=%p, setupUi=%p, algorithm=%p)", 
+             (void*)pluginFactory, (void*)(pluginFactory ? pluginFactory->setupUi : nullptr), (void*)pluginAlgorithm);
+        return;
+    }
+    
+    // Critical safety check: ensure algorithm->v is initialized before calling setupUi
+    if (!pluginAlgorithm->v) {
+        WARN("PluginManager: callSetupUi skipped - algorithm->v is null (parameter system not initialized)");
+        INFO("PluginManager: Algorithm address: %p, algorithm->v: %p", (void*)pluginAlgorithm, (void*)pluginAlgorithm->v);
+        return;
+    }
+    
+    try {
+        INFO("PluginManager: Calling setupUi with pot values: %.3f %.3f %.3f", 
+             potValues[0], potValues[1], potValues[2]);
+        INFO("PluginManager: Algorithm address: %p, algorithm->v: %p", (void*)pluginAlgorithm, (void*)pluginAlgorithm->v);
+        // Cast float array to _NT_float3 reference
+        pluginFactory->setupUi(pluginAlgorithm, *reinterpret_cast<_NT_float3*>(potValues));
+        INFO("PluginManager: setupUi returned pot values: %.3f %.3f %.3f", 
+             potValues[0], potValues[1], potValues[2]);
+    } catch (...) {
+        WARN("PluginManager: Plugin crashed during setupUi");
+    }
+}
+
+void PluginManager::initializeParameterSystem(ParameterSystem* parameterSystem) {
+    if (!parameterSystem || !pluginAlgorithm || !pluginFactory) {
+        INFO("PluginManager: initializeParameterSystem skipped - missing components");
+        return;
+    }
+    
+    INFO("PluginManager: Initializing parameter system");
+    parameterSystem->extractParameterData();
 }
 
 void PluginManager::notifyError(const std::string& error) {
