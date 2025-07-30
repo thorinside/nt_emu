@@ -8,6 +8,11 @@ plugin.dylib
 *.dylib.dSYM/
 *.d
 
+# Test executables in test_plugins/
+test_plugins/test_*
+!test_plugins/test_*.cpp
+!test_plugins/test_*.sh
+
 # IDE files
 .idea/
 .vscode/
