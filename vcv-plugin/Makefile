@@ -50,3 +50,23 @@ test-plugins: $(TEST_PLUGINS)
 .PHONY: clean-test-plugins
 clean-test-plugins:
 	rm -f $(TEST_PLUGINS)
+
+# JSON Bridge Unit Tests
+TEST_SOURCES = tests/test_json_bridge_standalone.cpp
+TEST_FLAGS = -I../emulator/include -std=c++11 -stdlib=libc++
+TEST_BINARY = tests/test_json_bridge_standalone
+
+$(TEST_BINARY): $(TEST_SOURCES)
+	$(CXX) $(TEST_FLAGS) -o $@ $(TEST_SOURCES)
+
+.PHONY: test
+test: $(TEST_BINARY)
+	@echo "Running JSON Bridge Unit Tests..."
+	@./$(TEST_BINARY)
+
+.PHONY: clean-tests
+clean-tests:
+	rm -f $(TEST_BINARY)
+
+# Add tests to main clean target
+clean: clean-tests

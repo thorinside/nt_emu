@@ -360,14 +360,34 @@ void PluginManager::notifyUnloaded() {
     }
 }
 
-void PluginManager::restoreParameterValues(json_t* parameterValuesJ, ParameterSystem* parameterSystem) {
-    if (!parameterValuesJ || !parameterSystem || !isLoaded()) {
-        return;
+
+
+
+
+void PluginManager::notifyError(const std::string& error) {
+    for (auto* observer : observers) {
+        observer->onPluginError(error);
     }
+}
+
+bool PluginManager::isValidPointer(void* ptr) const {
+    if (!ptr) return false;
     
-    INFO("PluginManager: Loading parameter values");
-    // Note: extractParameterData() should already have been called during onPluginLoaded
-    parameterSystem->loadParameterValues(parameterValuesJ);
+    // Basic pointer validation - check if it's in a reasonable address range
+    uintptr_t addr = reinterpret_cast<uintptr_t>(ptr);
+    
+    // Check for null and obviously invalid addresses
+    if (addr < 0x1000) return false;  // Below 4KB is likely invalid
+    
+#ifdef ARCH_WIN
+    // On Windows, user space is typically below 0x7FFFFFFFFFFF
+    if (addr > 0x7FFFFFFFFFFF) return false;
+#else
+    // On Unix-like systems, check for reasonable user space addresses
+    if (addr > 0x7FFFFFFFFFFF) return false;
+#endif
+    
+    return true;
 }
 
 void PluginManager::restorePluginState(const std::string& pluginStateJson) {
@@ -398,21 +418,52 @@ void PluginManager::restorePluginState(const std::string& pluginStateJson) {
         setCurrentJsonParse(std::unique_ptr<JsonParseBridge>(new JsonParseBridge(pluginJson)));
         
         // Verify the bridge was set correctly
-        if (!getCurrentJsonParse()) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (!bridge) {
             WARN("PluginManager: Failed to set JSON parse bridge");
             return;
         }
         
+        // Validate bridge contains expected data
+        int member_count = 0;
+        if (bridge->numberOfObjectMembers(member_count)) {
+            INFO("PluginManager: JSON bridge set up successfully with %d top-level members", member_count);
+        } else {
+            INFO("PluginManager: JSON bridge set up but root is not an object");
+        }
+        
         _NT_jsonParse dummy_parse(nullptr, 0);
         
-        INFO("PluginManager: Calling plugin deserialise method");
+        INFO("PluginManager: About to call plugin deserialise method");
         INFO("PluginManager: pluginFactory=%p, deserialise=%p, pluginAlgorithm=%p", 
              (void*)pluginFactory, 
              (void*)(pluginFactory ? pluginFactory->deserialise : nullptr), 
              (void*)pluginAlgorithm);
-        bool success = pluginFactory->deserialise(pluginAlgorithm, dummy_parse);
-        INFO("PluginManager: Plugin state restored: %s", success ? "true" : "false");
+        INFO("PluginManager: JSON bridge active: %s", getCurrentJsonParse() ? "YES" : "NO");
         
+        // Call the plugin's deserialize method
+        bool success = false;
+        try {
+            INFO("PluginManager: >>> STARTING plugin deserialise call <<<");
+            success = pluginFactory->deserialise(pluginAlgorithm, dummy_parse);
+            INFO("PluginManager: >>> FINISHED plugin deserialise call, returned: %s <<<", success ? "true" : "false");
+        } catch (const std::exception& e) {
+            WARN("PluginManager: Plugin deserialise threw exception: %s", e.what());
+            success = false;
+        } catch (...) {
+            WARN("PluginManager: Plugin deserialise threw unknown exception");
+            success = false;
+        }
+        
+        // Check if bridge was accessed during deserialization
+        JsonParseBridge* bridgeAfter = getCurrentJsonParse();
+        if (bridgeAfter) {
+            INFO("PluginManager: JSON bridge still active after deserialise call");
+        } else {
+            WARN("PluginManager: JSON bridge was cleared/nullified during deserialise call");
+        }
+        
+        INFO("PluginManager: Final plugin state restoration result: %s", success ? "SUCCESS" : "FAILURE");
         clearCurrentJsonParse();
     } catch (const std::exception& e) {
         WARN("PluginManager: Plugin state restoration failed: %s", e.what());
@@ -457,30 +508,4 @@ void PluginManager::initializeParameterSystem(ParameterSystem* parameterSystem) 
     
     INFO("PluginManager: Initializing parameter system");
     parameterSystem->extractParameterData();
-}
-
-void PluginManager::notifyError(const std::string& error) {
-    for (auto* observer : observers) {
-        observer->onPluginError(error);
-    }
-}
-
-bool PluginManager::isValidPointer(void* ptr) const {
-    if (!ptr) return false;
-    
-    // Basic pointer validation - check if it's in a reasonable address range
-    uintptr_t addr = reinterpret_cast<uintptr_t>(ptr);
-    
-    // Check for null and obviously invalid addresses
-    if (addr < 0x1000) return false;  // Below 4KB is likely invalid
-    
-#ifdef ARCH_WIN
-    // On Windows, user space is typically below 0x7FFFFFFFFFFF
-    if (addr > 0x7FFFFFFFFFFF) return false;
-#else
-    // On Unix-like systems, check for reasonable user space addresses
-    if (addr > 0x7FFFFFFFFFFF) return false;
-#endif
-    
-    return true;
 }

@@ -69,6 +69,11 @@ public:
         }
     }
     
+    // Plugin state restoration methods
+    void restorePluginState(const std::string& pluginStateJson);
+    void callSetupUi(float potValues[3]);
+    void initializeParameterSystem(class ParameterSystem* parameterSystem);
+    
 private:
     // Plugin state
     void* pluginHandle = nullptr;

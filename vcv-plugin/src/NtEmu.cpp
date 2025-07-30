@@ -775,8 +775,18 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
         midiProcessor.reset(new MidiProcessor(pluginExecutor.get()));
         
         // Initialize parameter system routing matrix with parameter defaults
-        for (size_t i = 0; i < parameterSystem->getParameterCount() && i < parameterSystem->getRoutingMatrix().size(); i++) {
-            parameterSystem->getRoutingMatrix()[i] = parameterSystem->getParameters()[i].def;
+        // NOTE: At construction time, no plugin is loaded yet, so parameterSystem will have no parameters
+        INFO("Initializing parameter system routing matrix: paramCount=%zu, routingSize=%zu", 
+             parameterSystem->getParameterCount(), parameterSystem->getRoutingMatrix().size());
+        
+        // Only initialize if we actually have parameters (which we won't at construction time)
+        if (parameterSystem->hasParameters()) {
+            for (size_t i = 0; i < parameterSystem->getParameterCount() && i < parameterSystem->getRoutingMatrix().size(); i++) {
+                INFO("Setting routing matrix[%zu] = %d", i, parameterSystem->getParameters()[i].def);
+                parameterSystem->getRoutingMatrix()[i] = parameterSystem->getParameters()[i].def;
+            }
+        } else {
+            INFO("No parameters to initialize - parameter system will be initialized when plugin is loaded");
         }
         
         // Sync algorithm's v[] array with the initialized parameter defaults
@@ -1646,7 +1656,7 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
         
         // Save plugin parameter values (separate from VCV pot params)
         if (parameterSystem->hasParameters()) {
-            json_object_set_new(rootJ, "parameterValues", parameterSystem->saveParameterValues());
+            json_object_set_new(rootJ, "parameterValues", parameterSystem->saveParameterState());
             INFO("NtEmu: Saved plugin parameter values");
         }
         
@@ -1683,7 +1693,21 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
     void dataFromJson(json_t* rootJ) override {
         emulatorCore.loadState(rootJ);
         
-        // Restore plugin if saved
+        // First, store plugin state for restoration BEFORE loading plugin
+        json_t* pluginStateJ = json_object_get(rootJ, "pluginState");
+        if (pluginStateJ && json_is_string(pluginStateJ)) {
+            pendingPluginState = json_string_value(pluginStateJ);
+            INFO("NtEmu: Found plugin state in JSON (%zu chars)", pendingPluginState.length());
+            INFO("NtEmu: Plugin state content: %s", pendingPluginState.c_str());
+            INFO("NtEmu: Stored plugin state for restoration BEFORE loading plugin");
+        } else {
+            pendingPluginState.clear();
+            INFO("NtEmu: No plugin state found in JSON (pluginStateJ=%p, is_string=%s)", 
+                 (void*)pluginStateJ, 
+                 pluginStateJ ? (json_is_string(pluginStateJ) ? "true" : "false") : "N/A");
+        }
+        
+        // Now restore plugin if saved - state will be restored in onPluginLoaded
         json_t* pluginPathJ = json_object_get(rootJ, "pluginPath");
         if (pluginPathJ) {
             std::string path = json_string_value(pluginPathJ);
@@ -1693,20 +1717,12 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
                 lastPluginFolder = json_string_value(folderJ);
             }
             
-            // Try to load plugin
+            // Try to load plugin - onPluginLoaded will handle state restoration
             if (!path.empty() && rack::system::exists(path)) {
+                INFO("NtEmu: Loading plugin from path: %s (pending state: %s)", 
+                     path.c_str(), pendingPluginState.empty() ? "NO" : "YES");
                 loadPlugin(path);
             }
-        }
-        
-        // Store plugin state for later restoration (after setupUi is called)
-        json_t* pluginStateJ = json_object_get(rootJ, "pluginState");
-        if (pluginStateJ && json_is_string(pluginStateJ)) {
-            pendingPluginState = json_string_value(pluginStateJ);
-            INFO("NtEmu: Stored plugin state for later restoration: %s", pendingPluginState.c_str());
-        } else {
-            pendingPluginState.clear();
-            INFO("NtEmu: No plugin state found in JSON");
         }
         
         // Restore parameters
@@ -1755,14 +1771,20 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
                  pluginManager->isLoaded() ? "YES" : "NO");
             
             if (pluginManager->isLoaded()) {
-                // Plugin is already loaded, restore immediately via PluginManager
-                INFO("NtEmu: Plugin already loaded, restoring immediately");
-                pluginManager->restoreParameterValues(parameterValuesJ, parameterSystem.get());
+                // Plugin is already loaded, restore immediately
+                INFO("NtEmu: Plugin already loaded, restoring parameters via ParameterSystem");
+                parameterSystem->loadParameterState(parameterValuesJ);
                 
-                // Also restore plugin state if available
+                // Note: Plugin state should have been restored in onPluginLoaded, but check anyway
                 if (!pendingPluginState.empty()) {
+                    WARN("NtEmu: Unexpected pending plugin state in already-loaded scenario - this should not happen");
+                    INFO("NtEmu: About to restore plugin state via PluginManager (%zu chars)", pendingPluginState.length());
+                    INFO("NtEmu: Plugin state being restored: %s", pendingPluginState.c_str());
                     pluginManager->restorePluginState(pendingPluginState);
+                    INFO("NtEmu: Plugin state restoration call completed, clearing pending state");
                     pendingPluginState.clear();
+                } else {
+                    INFO("NtEmu: No pending plugin state (already loaded scenario - this is expected)");
                 }
                 
                 // Call setupUi with current VCV pot values
@@ -1771,12 +1793,9 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
                     params[POT_C_PARAM].getValue(),
                     params[POT_R_PARAM].getValue()
                 };
+                INFO("NtEmu: Calling setupUi via PluginManager with pot values: %.3f %.3f %.3f", 
+                     potValues[0], potValues[1], potValues[2]);
                 pluginManager->callSetupUi(potValues);
-                
-                // Update VCV params with values returned by setupUi
-                params[POT_L_PARAM].setValue(potValues[0]);
-                params[POT_C_PARAM].setValue(potValues[1]);
-                params[POT_R_PARAM].setValue(potValues[2]);
                 
                 // Clean up any existing pending parameter values
                 if (pendingParameterValues) {
@@ -1840,20 +1859,26 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
     void onPluginLoaded(const std::string& path) override {
         INFO("NtEmu: Plugin loaded: %s", path.c_str());
         
-        // Always initialize parameter system FIRST when plugin loads
-        INFO("NtEmu: Initializing parameter system for plugin");
-        pluginManager->initializeParameterSystem(parameterSystem.get());
+        // Initialize parameter system when plugin loads
+        INFO("NtEmu: Extracting parameters from loaded plugin");
+        parameterSystem->extractParameterData();
         
-        // Let PluginManager handle the restoration sequence
+        // Handle pending parameter restoration
         if (pendingParameterValues) {
-            pluginManager->restoreParameterValues(pendingParameterValues, parameterSystem.get());
+            INFO("NtEmu: Restoring pending parameter values");
+            parameterSystem->loadParameterState(pendingParameterValues);
             json_decref(pendingParameterValues);
             pendingParameterValues = nullptr;
         }
         
         if (!pendingPluginState.empty()) {
+            INFO("NtEmu: About to restore plugin state via PluginManager in onPluginLoaded (%zu chars)", pendingPluginState.length());
+            INFO("NtEmu: Plugin state being restored: %s", pendingPluginState.c_str());
             pluginManager->restorePluginState(pendingPluginState);
+            INFO("NtEmu: Plugin state restoration call completed in onPluginLoaded, clearing pending state");
             pendingPluginState.clear();
+        } else {
+            INFO("NtEmu: No pending plugin state to restore in onPluginLoaded");
         }
         
         // Call setupUi with current VCV pot values
@@ -1862,12 +1887,9 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
             params[POT_C_PARAM].getValue(),
             params[POT_R_PARAM].getValue()
         };
+        INFO("NtEmu: Calling setupUi via PluginManager in onPluginLoaded with pot values: %.3f %.3f %.3f", 
+             potValues[0], potValues[1], potValues[2]);
         pluginManager->callSetupUi(potValues);
-        
-        // Update VCV params with values returned by setupUi
-        params[POT_L_PARAM].setValue(potValues[0]);
-        params[POT_C_PARAM].setValue(potValues[1]);
-        params[POT_R_PARAM].setValue(potValues[2]);
         
         displayDirty = true;
     }
