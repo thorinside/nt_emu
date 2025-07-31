@@ -19,6 +19,7 @@
 #include "parameter/ParameterSystem.hpp"
 #include "menu/MenuSystem.hpp"
 #include "midi/MidiProcessor.hpp"
+#include "EmulatorConstants.hpp"
 #include <componentlibrary.hpp>
 #include <osdialog.h>
 #include <map>
@@ -546,52 +547,81 @@ struct TooltipOutputPort : PJ301MPort {
 };
 
 struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
-    enum ParamIds {
-        // Pots
-        POT_L_PARAM, POT_C_PARAM, POT_R_PARAM,
-        
-        // Buttons 
-        BUTTON_1_PARAM, BUTTON_2_PARAM, BUTTON_3_PARAM, BUTTON_4_PARAM,
-        
-        // Encoders (simplified for widget placement)
-        ENCODER_L_PARAM, ENCODER_R_PARAM,
-        ENCODER_L_PRESS_PARAM, ENCODER_R_PRESS_PARAM,
-        
-        // Algorithm selection
-        ALGORITHM_PARAM,
-        
-        NUM_PARAMS
-    };
+    /* MOVED_TO_FILE: EmulatorConstants.hpp - START */
+    // All enum definitions moved to EmulatorConstants.hpp for better modularity
+    /* MOVED_TO_FILE: EmulatorConstants.hpp - END */
     
-    enum InputIds {
-        // 12 inputs (as per hardware specification)
-        AUDIO_INPUT_1, AUDIO_INPUT_2, AUDIO_INPUT_3, AUDIO_INPUT_4,
-        AUDIO_INPUT_5, AUDIO_INPUT_6, AUDIO_INPUT_7, AUDIO_INPUT_8,
-        AUDIO_INPUT_9, AUDIO_INPUT_10, AUDIO_INPUT_11, AUDIO_INPUT_12,
-        
-        NUM_INPUTS
-    };
+    // Static constants for easy access throughout the class
+    static constexpr int NUM_PARAMS = EmulatorConstants::NUM_PARAMS;
+    static constexpr int NUM_INPUTS = EmulatorConstants::NUM_INPUTS;
+    static constexpr int NUM_OUTPUTS = EmulatorConstants::NUM_OUTPUTS;
+    static constexpr int NUM_LIGHTS = EmulatorConstants::NUM_LIGHTS;
     
-    enum OutputIds {
-        // 8 outputs (as per hardware specification)
-        AUDIO_OUTPUT_1, AUDIO_OUTPUT_2, AUDIO_OUTPUT_3, 
-        AUDIO_OUTPUT_4, AUDIO_OUTPUT_5, AUDIO_OUTPUT_6,
-        AUDIO_OUTPUT_7, AUDIO_OUTPUT_8,
-        
-        NUM_OUTPUTS
-    };
+    // Parameter IDs
+    static constexpr int POT_L_PARAM = EmulatorConstants::POT_L_PARAM;
+    static constexpr int POT_C_PARAM = EmulatorConstants::POT_C_PARAM;
+    static constexpr int POT_R_PARAM = EmulatorConstants::POT_R_PARAM;
+    static constexpr int BUTTON_1_PARAM = EmulatorConstants::BUTTON_1_PARAM;
+    static constexpr int BUTTON_2_PARAM = EmulatorConstants::BUTTON_2_PARAM;
+    static constexpr int BUTTON_3_PARAM = EmulatorConstants::BUTTON_3_PARAM;
+    static constexpr int BUTTON_4_PARAM = EmulatorConstants::BUTTON_4_PARAM;
+    static constexpr int ENCODER_L_PARAM = EmulatorConstants::ENCODER_L_PARAM;
+    static constexpr int ENCODER_R_PARAM = EmulatorConstants::ENCODER_R_PARAM;
+    static constexpr int ENCODER_L_PRESS_PARAM = EmulatorConstants::ENCODER_L_PRESS_PARAM;
+    static constexpr int ENCODER_R_PRESS_PARAM = EmulatorConstants::ENCODER_R_PRESS_PARAM;
+    static constexpr int ALGORITHM_PARAM = EmulatorConstants::ALGORITHM_PARAM;
     
-    enum LightIds {
-        BUTTON_1_LIGHT, BUTTON_2_LIGHT, BUTTON_3_LIGHT, BUTTON_4_LIGHT,
-        INPUT_LIGHT_1, INPUT_LIGHT_2, INPUT_LIGHT_3, INPUT_LIGHT_4,
-        INPUT_LIGHT_5, INPUT_LIGHT_6, INPUT_LIGHT_7, INPUT_LIGHT_8,
-        INPUT_LIGHT_9, INPUT_LIGHT_10, INPUT_LIGHT_11, INPUT_LIGHT_12,
-        OUTPUT_LIGHT_1, OUTPUT_LIGHT_2, OUTPUT_LIGHT_3, 
-        OUTPUT_LIGHT_4, OUTPUT_LIGHT_5, OUTPUT_LIGHT_6,
-        OUTPUT_LIGHT_7, OUTPUT_LIGHT_8,
-        MIDI_INPUT_LIGHT, MIDI_OUTPUT_LIGHT,
-        NUM_LIGHTS
-    };
+    // Input IDs
+    static constexpr int AUDIO_INPUT_1 = EmulatorConstants::AUDIO_INPUT_1;
+    static constexpr int AUDIO_INPUT_2 = EmulatorConstants::AUDIO_INPUT_2;
+    static constexpr int AUDIO_INPUT_3 = EmulatorConstants::AUDIO_INPUT_3;
+    static constexpr int AUDIO_INPUT_4 = EmulatorConstants::AUDIO_INPUT_4;
+    static constexpr int AUDIO_INPUT_5 = EmulatorConstants::AUDIO_INPUT_5;
+    static constexpr int AUDIO_INPUT_6 = EmulatorConstants::AUDIO_INPUT_6;
+    static constexpr int AUDIO_INPUT_7 = EmulatorConstants::AUDIO_INPUT_7;
+    static constexpr int AUDIO_INPUT_8 = EmulatorConstants::AUDIO_INPUT_8;
+    static constexpr int AUDIO_INPUT_9 = EmulatorConstants::AUDIO_INPUT_9;
+    static constexpr int AUDIO_INPUT_10 = EmulatorConstants::AUDIO_INPUT_10;
+    static constexpr int AUDIO_INPUT_11 = EmulatorConstants::AUDIO_INPUT_11;
+    static constexpr int AUDIO_INPUT_12 = EmulatorConstants::AUDIO_INPUT_12;
+    
+    // Output IDs
+    static constexpr int AUDIO_OUTPUT_1 = EmulatorConstants::AUDIO_OUTPUT_1;
+    static constexpr int AUDIO_OUTPUT_2 = EmulatorConstants::AUDIO_OUTPUT_2;
+    static constexpr int AUDIO_OUTPUT_3 = EmulatorConstants::AUDIO_OUTPUT_3;
+    static constexpr int AUDIO_OUTPUT_4 = EmulatorConstants::AUDIO_OUTPUT_4;
+    static constexpr int AUDIO_OUTPUT_5 = EmulatorConstants::AUDIO_OUTPUT_5;
+    static constexpr int AUDIO_OUTPUT_6 = EmulatorConstants::AUDIO_OUTPUT_6;
+    static constexpr int AUDIO_OUTPUT_7 = EmulatorConstants::AUDIO_OUTPUT_7;
+    static constexpr int AUDIO_OUTPUT_8 = EmulatorConstants::AUDIO_OUTPUT_8;
+    
+    // Light IDs
+    static constexpr int BUTTON_1_LIGHT = EmulatorConstants::BUTTON_1_LIGHT;
+    static constexpr int BUTTON_2_LIGHT = EmulatorConstants::BUTTON_2_LIGHT;
+    static constexpr int BUTTON_3_LIGHT = EmulatorConstants::BUTTON_3_LIGHT;
+    static constexpr int BUTTON_4_LIGHT = EmulatorConstants::BUTTON_4_LIGHT;
+    static constexpr int INPUT_LIGHT_1 = EmulatorConstants::INPUT_LIGHT_1;
+    static constexpr int INPUT_LIGHT_2 = EmulatorConstants::INPUT_LIGHT_2;
+    static constexpr int INPUT_LIGHT_3 = EmulatorConstants::INPUT_LIGHT_3;
+    static constexpr int INPUT_LIGHT_4 = EmulatorConstants::INPUT_LIGHT_4;
+    static constexpr int INPUT_LIGHT_5 = EmulatorConstants::INPUT_LIGHT_5;
+    static constexpr int INPUT_LIGHT_6 = EmulatorConstants::INPUT_LIGHT_6;
+    static constexpr int INPUT_LIGHT_7 = EmulatorConstants::INPUT_LIGHT_7;
+    static constexpr int INPUT_LIGHT_8 = EmulatorConstants::INPUT_LIGHT_8;
+    static constexpr int INPUT_LIGHT_9 = EmulatorConstants::INPUT_LIGHT_9;
+    static constexpr int INPUT_LIGHT_10 = EmulatorConstants::INPUT_LIGHT_10;
+    static constexpr int INPUT_LIGHT_11 = EmulatorConstants::INPUT_LIGHT_11;
+    static constexpr int INPUT_LIGHT_12 = EmulatorConstants::INPUT_LIGHT_12;
+    static constexpr int OUTPUT_LIGHT_1 = EmulatorConstants::OUTPUT_LIGHT_1;
+    static constexpr int OUTPUT_LIGHT_2 = EmulatorConstants::OUTPUT_LIGHT_2;
+    static constexpr int OUTPUT_LIGHT_3 = EmulatorConstants::OUTPUT_LIGHT_3;
+    static constexpr int OUTPUT_LIGHT_4 = EmulatorConstants::OUTPUT_LIGHT_4;
+    static constexpr int OUTPUT_LIGHT_5 = EmulatorConstants::OUTPUT_LIGHT_5;
+    static constexpr int OUTPUT_LIGHT_6 = EmulatorConstants::OUTPUT_LIGHT_6;
+    static constexpr int OUTPUT_LIGHT_7 = EmulatorConstants::OUTPUT_LIGHT_7;
+    static constexpr int OUTPUT_LIGHT_8 = EmulatorConstants::OUTPUT_LIGHT_8;
+    static constexpr int MIDI_INPUT_LIGHT = EmulatorConstants::MIDI_INPUT_LIGHT;
+    static constexpr int MIDI_OUTPUT_LIGHT = EmulatorConstants::MIDI_OUTPUT_LIGHT;
 
     // Core components
     BusSystem busSystem;
