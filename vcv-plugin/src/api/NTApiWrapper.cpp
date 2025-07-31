@@ -8,7 +8,7 @@
 extern uint8_t NT_screen[128 * 64];
 
 // External VCV-specific drawText function
-extern void vcv_drawText(int x, int y, const char* text, NT::FontType font, int color);
+extern "C" void vcv_drawText(int x, int y, const char* text, NT::FontType font, int color);
 
 namespace NTApi {
     // Thread-local storage for JSON bridge instances
