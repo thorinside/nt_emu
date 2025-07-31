@@ -92,6 +92,31 @@ namespace NTApi {
     // Helper functions implementation stays in namespace
 }
 
+// Global wrapper functions for backward compatibility
+JsonParseBridge* getCurrentJsonParse() {
+    return NTApi::getCurrentJsonParse();
+}
+
+void setCurrentJsonParse(std::unique_ptr<JsonParseBridge> bridge) {
+    NTApi::setCurrentJsonParse(std::move(bridge));
+}
+
+void clearCurrentJsonParse() {
+    NTApi::clearCurrentJsonParse();
+}
+
+JsonStreamBridge* getCurrentJsonStream() {
+    return NTApi::getCurrentJsonStream();
+}
+
+void setCurrentJsonStream(std::unique_ptr<JsonStreamBridge> bridge) {
+    NTApi::setCurrentJsonStream(std::move(bridge));
+}
+
+void clearCurrentJsonStream() {
+    NTApi::clearCurrentJsonStream();
+}
+
 extern "C" {
     // C API functions with direct implementations
     __attribute__((visibility("default"))) void NT_drawText(int x, int y, const char* str, int colour, _NT_textAlignment align, _NT_textSize size) {

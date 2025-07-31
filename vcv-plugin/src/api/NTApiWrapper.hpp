@@ -19,6 +19,14 @@ namespace NTApi {
     JsonStreamBridge* getCurrentJsonStream();
 }
 
+// Global wrapper functions for backward compatibility
+JsonParseBridge* getCurrentJsonParse();
+void setCurrentJsonParse(std::unique_ptr<JsonParseBridge> bridge);
+void clearCurrentJsonParse();
+JsonStreamBridge* getCurrentJsonStream();
+void setCurrentJsonStream(std::unique_ptr<JsonStreamBridge> bridge);
+void clearCurrentJsonStream();
+
 // External C API functions (for plugin compatibility)
     extern "C" {
         // Drawing API
