@@ -21,6 +21,8 @@
 #include "midi/MidiProcessor.hpp"
 #include "EmulatorConstants.hpp"
 #include "api/NTApiWrapper.hpp"
+#include "display/IDisplayDataProvider.hpp"
+#include "display/DisplayRenderer.hpp"
 #include <componentlibrary.hpp>
 #include <osdialog.h>
 #include <map>
@@ -559,7 +561,7 @@ struct TooltipOutputPort : PJ301MPort {
     void onHover(const HoverEvent& e) override;
 };
 
-struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
+struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDisplayDataProvider {
     /* MOVED_TO_FILE: EmulatorConstants.hpp - START */
     // All enum definitions moved to EmulatorConstants.hpp for better modularity
     /* MOVED_TO_FILE: EmulatorConstants.hpp - END */
@@ -2075,7 +2077,32 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver {
             INFO("Plugin crashed during customUi button event");
         }
     }
+    
+    // IDisplayDataProvider interface implementation
+    bool isDisplayDirty() const override { return displayDirty; }
+    void setDisplayDirty(bool dirty) override { displayDirty = dirty; }
+    const VCVDisplayBuffer& getDisplayBuffer() const override { return emulatorCore.getDisplayBuffer(); }
+    void updateDisplay() override { emulatorCore.updateDisplay(); }
+    
+    int getMenuMode() const override { return static_cast<int>(menuMode); }
+    
+    bool hasLoadedPlugin() const override { 
+        return pluginManager && pluginManager->getFactory() != nullptr; 
+    }
+    PluginManager* getPluginManagerPtr() const override { 
+        return pluginManager.get(); 
+    }
+    
+    ParameterSystem* getParameterSystemPtr() const override { 
+        return parameterSystem.get(); 
+    }
+    
+    void safeExecutePlugin(std::function<void()> func, const std::string& operation) override {
+        // Delegate to the existing safeExecutePlugin method
+        this->safeExecutePlugin(func, operation.c_str());
+    }
 };
+
 
 // MIDI API functions - now properly implemented after EmulatorModule definition
 extern "C" {
@@ -2117,8 +2144,9 @@ extern "C" {
     }
 }
 
+// EXTRACTED TO display/DisplayRenderer.hpp/.cpp (490 lines) - ModuleOLEDWidget class
 // Custom OLED Widget with access to NtEmu module
-struct ModuleOLEDWidget : FramebufferWidget {
+/*struct ModuleOLEDWidget : FramebufferWidget {
     EmulatorModule* module = nullptr;
     
     // Display dimensions matching Disting NT OLED
@@ -2607,7 +2635,8 @@ struct ModuleOLEDWidget : FramebufferWidget {
                 break;
         }
     }
-};
+};*/
+// END EXTRACTED ModuleOLEDWidget
 
 // Implementation of ContextAwareEncoderQuantity
 std::string ContextAwareEncoderQuantity::getDisplayValueString() {
@@ -2667,11 +2696,11 @@ struct EmulatorWidget : ModuleWidget {
         addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
         // OLED Display (larger, centered at top)
-        ModuleOLEDWidget* display = new ModuleOLEDWidget();
+        DisplayRenderer::ModuleOLEDWidget* display = new DisplayRenderer::ModuleOLEDWidget();
         display->box.pos = mm2px(Vec(8.0, 8.0));
         display->box.size = mm2px(Vec(55.12, 15.0));
         if (module) {
-            display->module = module;
+            display->dataProvider = module;
         }
         addChild(display);
 
