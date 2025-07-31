@@ -1,0 +1,82 @@
+# Sample DistingNT Plugin Makefile
+# This shows a typical plugin Makefile before and after augmentation
+
+# Original ARM Cortex-M7 build configuration
+ifndef NT_API_PATH
+	NT_API_PATH := ..
+endif
+
+INCLUDE_PATH := $(NT_API_PATH)/include
+
+# Find all plugin source files
+inputs := $(wildcard *.cpp)
+outputs := $(patsubst %.cpp,plugins/%.o,$(inputs))
+
+# Default target builds for DistingNT hardware
+all: $(outputs)
+
+clean:
+	rm -f $(outputs)
+
+# ARM build rule for DistingNT hardware
+plugins/%.o: %.cpp
+	mkdir -p $(@D)
+	arm-none-eabi-c++ -std=c++11 -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -fno-rtti -fno-exceptions -Os -fPIC -Wall -I$(INCLUDE_PATH) -c -o $@ $^
+
+# === VCV Emulator Test Builds (added by makefile_augmenter.py) ===
+# Build plugins as host platform dynamic libraries for VCV Rack emulator testing
+
+# Host compiler settings
+HOST_CXX ?= clang++
+HOST_CXXFLAGS := -std=c++11 -fPIC -Wall -I$(INCLUDE_PATH)
+
+# Detect host platform
+HOST_OS := $(shell uname -s)
+
+ifeq ($(HOST_OS),Darwin)
+    HOST_SUFFIX := .dylib
+    HOST_LDFLAGS := -dynamiclib -undefined dynamic_lookup
+else ifeq ($(HOST_OS),Linux)
+    HOST_SUFFIX := .so
+    HOST_LDFLAGS := -shared
+else
+    # Windows/MinGW
+    HOST_SUFFIX := .dll
+    HOST_LDFLAGS := -shared
+endif
+
+# Use existing source file list
+host_plugins := $(patsubst %.cpp,%$(HOST_SUFFIX),$(basename $(inputs)))
+
+# Build rule for host plugins
+%$(HOST_SUFFIX): %.cpp
+	@echo "Building host plugin: $@"
+	$(HOST_CXX) $(HOST_CXXFLAGS) $(HOST_LDFLAGS) -o $@ $<
+
+# Convenience targets
+.PHONY: host-plugins clean-host install-host
+
+host-plugins: $(host_plugins)
+	@echo "Built $(words $(host_plugins)) host plugin(s)"
+
+clean-host:
+	rm -f *.dylib *.so *.dll
+
+# Install to a test directory (customize INSTALL_DIR as needed)
+INSTALL_DIR ?= ../test_plugins
+install-host: host-plugins
+	@mkdir -p $(INSTALL_DIR)
+	cp $(host_plugins) $(INSTALL_DIR)/
+	@echo "Installed to $(INSTALL_DIR)"
+
+# Help for host builds
+help-host:
+	@echo "Host build targets for VCV Rack emulator testing:"
+	@echo "  make host-plugins    - Build all plugins for host platform"
+	@echo "  make clean-host      - Remove host plugin builds"
+	@echo "  make install-host    - Copy plugins to test directory"
+	@echo ""
+	@echo "Individual plugin targets:"
+	@echo "  make <plugin>$(HOST_SUFFIX)"
+
+# === End VCV Emulator Test Builds ===

@@ -10,24 +10,37 @@ This is a **PRP (Product Requirement Prompt) Framework** repository, not a tradi
 
 ### VCV Plugin Modular Architecture (Latest)
 
-**DistingNT Plugin** is being refactored from a 3000-line monolith into a modular architecture (WORK IN PROGRESS):
+**NtEmu Plugin** currently has a large monolithic NtEmu.cpp file (2961 lines) that needs refactoring into a modular architecture:
 
 ```
 vcv-plugin/src/
-├── DistingNT.cpp           # Thin coordination layer (~500 lines target)
+├── NtEmu.cpp               # Large monolithic file (2961 lines) - TARGET FOR REFACTORING
 ├── plugin/
 │   ├── PluginManager.hpp   # Plugin loading/unloading (465 lines)
-│   └── PluginExecutor.hpp  # Safe plugin execution with error handling (190 lines)
+│   ├── PluginManager.cpp
+│   ├── PluginExecutor.hpp  # Safe plugin execution with error handling (190 lines)
+│   └── PluginExecutor.cpp
 ├── parameter/
-│   └── ParameterSystem.hpp # Parameter management & routing matrix (450 lines)
+│   ├── ParameterSystem.hpp # Parameter management & routing matrix (450 lines)
+│   └── ParameterSystem.cpp
 ├── menu/
-│   └── MenuSystem.hpp      # State machine for menu navigation (380 lines)
+│   ├── MenuSystem.hpp      # State machine for menu navigation (380 lines)
+│   └── MenuSystem.cpp
 ├── midi/
-│   └── MidiProcessor.hpp   # MIDI I/O with activity tracking (220 lines)
-└── [existing components]
-    ├── dsp/BusSystem.hpp   # Audio routing
+│   ├── MidiProcessor.hpp   # MIDI I/O with activity tracking (220 lines)
+│   └── MidiProcessor.cpp
+├── display/
+│   └── OLEDWidget.hpp      # Display rendering
+├── dsp/
+│   └── BusSystem.hpp       # Audio routing system
+├── widgets/
+│   ├── PressableEncoder.hpp
+│   ├── PressablePot.hpp
+│   └── [other widget components]
+└── [other components]
     ├── EmulatorCore.hpp    # Core emulator logic
-    └── display/OLEDWidget.hpp # Display handling
+    ├── plugin.hpp          # Plugin interface
+    └── json_bridge.cpp     # JSON serialization
 ```
 
 **Key Patterns Implemented:**
@@ -38,10 +51,10 @@ vcv-plugin/src/
 - **Real-time Safety**: Audio thread considerations maintained
 
 **Current Status:**
-- ✅ **Modular Components**: All 5 core modules created (individual .hpp/.cpp files)
-- ⚠️ **Build Status**: `make clean && make` FAILS - compilation errors in DistingNT.cpp
-- ❌ **Integration**: Legacy method calls reference removed variables (pluginHandle, pluginFactory, etc.)
-- 🔄 **Next Steps**: Systematic migration of ~200+ legacy references to use new modular components
+- ✅ **Modular Components**: 5 core modules implemented with .hpp/.cpp files (plugin/, parameter/, menu/, midi/, display/)
+- ✅ **Build Status**: `make clean && make` SUCCEEDS - modular architecture compiles successfully
+- ⚠️ **Refactoring Need**: NtEmu.cpp is 2961 lines and needs systematic extraction to separate components
+- 🔄 **Next Steps**: Extract code from monolithic NtEmu.cpp into focused, testable components while maintaining functionality
 
 ### Command-Driven System
 
@@ -108,12 +121,16 @@ uv run PRPs/scripts/prp_runner.py --prp [prp-name] --output-format stream-json
 ### Validation Gates (Must be Executable)
 
 ```bash
-# CURRENT BUILD STATUS: FAILS
+# CURRENT BUILD STATUS: SUCCEEDS
 make clean && make
-# ERROR: Multiple compilation errors in DistingNT.cpp
-# - Legacy references to removed variables (pluginHandle, pluginFactory, pluginAlgorithm)
-# - MIDI variable references (midiInputLight, midiOutputLight) 
-# - Parameter system integration incomplete
+# Build completes successfully with modular components
+
+# Target for refactoring: NtEmu.cpp is very large (2961 lines)
+# Need to extract components like:
+# - Display rendering logic (~300 lines)
+# - C API wrapper functions (~200 lines)
+# - Context menu logic (~200 lines)
+# - Parameter processing methods (~150 lines)
 
 # Individual component verification (when build is working):
 # make src/plugin/PluginManager.cpp.o
@@ -121,9 +138,12 @@ make clean && make
 # make src/menu/MenuSystem.cpp.o
 # make src/midi/MidiProcessor.cpp.o
 
-# Integration test (after successful build):
-# cp dist/DistingNT/plugin.dylib ~/.Rack2/plugins/DistingNT/
-# /Applications/VCV\ Rack\ 2.app/Contents/MacOS/Rack -d
+# Integration test (current build works):
+cp dist/DistingNT/plugin.dylib ~/.Rack2/plugins/DistingNT/
+/Applications/VCV\ Rack\ 2.app/Contents/MacOS/Rack -d
+
+# Unit testing (currently passing):
+make test  # 16/16 JSON bridge tests pass
 ```
 
 ### VCV Plugin Development Notes
