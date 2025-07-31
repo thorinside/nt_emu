@@ -60,11 +60,233 @@ extern "C" const NT_API_Interface* getNT_API(void);
 // thread_local std::unique_ptr<JsonStreamBridge> g_currentStream;
 // thread_local std::unique_ptr<JsonParseBridge> g_currentParse;
 
-// Moved code block - code moved to separate files
+// Thread-local storage management functions moved to api/NTApiWrapper.cpp
+/*
+void setCurrentJsonParse(std::unique_ptr<JsonParseBridge> bridge) {
+    if (bridge) {
+        g_currentParse = std::move(bridge);
+        INFO("setCurrentJsonParse: Bridge set successfully, address: %p", g_currentParse.get());
+    } else {
+        WARN("setCurrentJsonParse: Attempted to set null bridge");
+    }
+}
 
-// Moved code block - code moved to separate files
+void clearCurrentJsonParse() {
+    if (g_currentParse) {
+        INFO("clearCurrentJsonParse: Clearing bridge at address: %p", g_currentParse.get());
+        g_currentParse.reset();
+    }
+}
 
-// Moved code block - code moved to separate files
+JsonParseBridge* getCurrentJsonParse() {
+    JsonParseBridge* bridge = g_currentParse.get();
+    if (!bridge) {
+        WARN("getCurrentJsonParse: Bridge is null!");
+    }
+    return bridge;
+}
+
+void setCurrentJsonStream(std::unique_ptr<JsonStreamBridge> bridge) {
+    g_currentStream = std::move(bridge);
+}
+
+void clearCurrentJsonStream() {
+    g_currentStream.reset();
+}
+
+JsonStreamBridge* getCurrentJsonStream() {
+    return g_currentStream.get();
+}
+*/
+
+// Constructor/destructor implementations for JSON classes moved to api/NTApiWrapper.cpp
+/*
+extern "C" {
+    // _NT_jsonStream constructor/destructor
+    __attribute__((visibility("default"))) void* _ZN14_NT_jsonStreamC1EPv(void* refCon) {
+        // Return a dummy pointer - the actual implementation uses thread_local g_currentStream
+        return reinterpret_cast<void*>(0x1);  // Non-null dummy pointer
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStreamD1Ev(void* self) {
+        // Nothing to do - thread_local handles cleanup
+    }
+    
+    // _NT_jsonParse constructor/destructor  
+    __attribute__((visibility("default"))) void* _ZN13_NT_jsonParseC1EPvi(void* refCon, int idx) {
+        // Return a dummy pointer - the actual implementation uses thread_local g_currentParse
+        return reinterpret_cast<void*>(0x2);  // Non-null dummy pointer
+    }
+    
+    __attribute__((visibility("default"))) void _ZN13_NT_jsonParseD1Ev(void* self) {
+        // Nothing to do - thread_local handles cleanup
+    }
+}
+*/
+
+// Functional implementations for JSON classes using bridge pattern moved to api/NTApiWrapper.cpp
+/*
+extern "C" {
+    // _NT_jsonParse method implementations
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse10skipMemberEv(void* self) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->skipMember();
+        }
+        return false;
+    }
+    
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse21numberOfArrayElementsERi(void* self, int& num) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->numberOfArrayElements(num);
+        }
+        num = 0;
+        return false;
+    }
+    
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse21numberOfObjectMembersERi(void* self, int& num) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        INFO("_ZN13_NT_jsonParse21numberOfObjectMembersERi - self: %p, bridge: %p", self, (void*)bridge);
+        if (bridge) {
+            return bridge->numberOfObjectMembers(num);
+        }
+        WARN("_ZN13_NT_jsonParse21numberOfObjectMembersERi - ERROR: bridge is NULL!");
+        num = 0;
+        return false;
+    }
+    
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse4nullEv(void* self) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->null();
+        }
+        return false;
+    }
+    
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse6numberERf(void* self, float& value) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->number(value);
+        }
+        value = 0.0f;
+        return false;
+    }
+    
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse6numberERi(void* self, int& value) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->number(value);
+        }
+        value = 0;
+        return false;
+    }
+    
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse6stringERPKc(void* self, const char*& str) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->string(str);
+        }
+        str = "";
+        return false;
+    }
+    
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse7booleanERb(void* self, bool& value) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->boolean(value);
+        }
+        value = false;
+        return false;
+    }
+    
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse9matchNameEPKc(void* self, const char* name) {
+        JsonParseBridge* bridge = getCurrentJsonParse();
+        if (bridge) {
+            return bridge->matchName(name);
+        }
+        return false;
+    }
+    
+    // _NT_jsonStream method implementations
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10addBooleanEb(void* self, bool value) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->addBoolean(value);
+        }
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10closeArrayEv(void* self) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->closeArray();
+        }
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10openObjectEv(void* self) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->openObject();
+        }
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream11closeObjectEv(void* self) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->closeObject();
+        }
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream13addMemberNameEPKc(void* self, const char* name) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->addMemberName(name);
+        }
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream7addNullEv(void* self) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->addNull();
+        }
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addFourCCEj(void* self, uint32_t fourcc) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->addFourCC(fourcc);
+        }
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addNumberEf(void* self, float value) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->addNumber(value);
+        }
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addNumberEi(void* self, int value) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->addNumber(value);
+        }
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addStringEPKc(void* self, const char* str) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->addString(str);
+        }
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9openArrayEv(void* self) {
+        JsonStreamBridge* bridge = getCurrentJsonStream();
+        if (bridge) {
+            bridge->openArray();
+        }
+    }
+}
+*/
 
 // For plugin loading
 #ifdef ARCH_WIN

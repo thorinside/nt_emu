@@ -76,6 +76,51 @@ def find_commented_blocks(content: str) -> List[Tuple[int, int, str]]:
                     break
                 j += 1
         
+        # Pattern 4: Comments that mention "moved to" followed by large /* */ blocks
+        elif ('moved to' in line.lower() or 'implementations for' in line.lower()) and line.startswith('//'):
+            # Look ahead for a /* block that likely contains moved code
+            j = i + 1
+            while j < len(lines) and j < i + 3:  # Look within next 3 lines
+                if lines[j].strip() == '/*':
+                    # Found a comment block, find its end
+                    k = j + 1
+                    line_count = 0
+                    while k < len(lines):
+                        line_count += 1
+                        if lines[k].strip() == '*/':
+                            # If it's a substantial block (>10 lines), likely moved code
+                            if line_count > 10:
+                                blocks_to_remove.append((i, k, f"Moved code block (lines {i+1}-{k+1})"))
+                                i = k
+                            break
+                        k += 1
+                    break
+                j += 1
+        
+        # Pattern 5: Standalone large /* */ comment blocks that contain function implementations
+        elif line == '/*':
+            # Check if this looks like moved code (contains function definitions, extern "C", etc.)
+            j = i + 1
+            line_count = 0
+            contains_code = False
+            while j < len(lines):
+                line_count += 1
+                content_line = lines[j].strip()
+                if content_line == '*/':
+                    # If it's substantial and contains code patterns, mark for removal
+                    if line_count > 10 and contains_code:
+                        blocks_to_remove.append((i, j, f"Large commented code block (lines {i+1}-{j+1})"))
+                        i = j
+                    break
+                # Check for code patterns
+                if (content_line.startswith('void ') or 
+                    content_line.startswith('bool ') or 
+                    content_line.startswith('extern "C"') or
+                    'visibility("default")' in content_line or
+                    '__attribute__' in content_line):
+                    contains_code = True
+                j += 1
+        
         i += 1
     
     return blocks_to_remove
