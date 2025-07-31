@@ -20,6 +20,7 @@
 #include "menu/MenuSystem.hpp"
 #include "midi/MidiProcessor.hpp"
 #include "EmulatorConstants.hpp"
+#include "api/NTApiWrapper.hpp"
 #include <componentlibrary.hpp>
 #include <osdialog.h>
 #include <map>
@@ -46,6 +47,10 @@ __attribute__((visibility("default"))) const _NT_globals NT_globals = vcv_nt_glo
 // External API provider function
 extern "C" const NT_API_Interface* getNT_API(void);
 
+/* MOVED_TO_FILE: api/NTApiWrapper.hpp/.cpp - START */
+// All C API wrapper functions moved to api/NTApiWrapper for better modularity
+
+/*
 extern "C" {
 
     __attribute__((visibility("default"))) void NT_drawText(int x, int y, const char* str, int colour, _NT_textAlignment align, _NT_textSize size) {
@@ -269,17 +274,20 @@ extern "C" {
     
     // MIDI functions - implemented after EmulatorModule definition
 }
+*/
+/* MOVED_TO_FILE: api/NTApiWrapper.hpp/.cpp - END */
 
 // Include JSON serialization support
 #define _DISTINGNT_SERIALISATION_INTERNAL
 #include "../../emulator/include/distingnt/serialisation.h"
 #include "json_bridge.h"
 
-// Thread-local storage for JSON bridge instances
-thread_local std::unique_ptr<JsonStreamBridge> g_currentStream;
-thread_local std::unique_ptr<JsonParseBridge> g_currentParse;
+// Thread-local storage for JSON bridge instances moved to api/NTApiWrapper.cpp
+// thread_local std::unique_ptr<JsonStreamBridge> g_currentStream;
+// thread_local std::unique_ptr<JsonParseBridge> g_currentParse;
 
-// Thread-local storage management functions
+// Thread-local storage management functions moved to api/NTApiWrapper.cpp
+/*
 void setCurrentJsonParse(std::unique_ptr<JsonParseBridge> bridge) {
     if (bridge) {
         g_currentParse = std::move(bridge);
@@ -315,8 +323,10 @@ void clearCurrentJsonStream() {
 JsonStreamBridge* getCurrentJsonStream() {
     return g_currentStream.get();
 }
+*/
 
-// Constructor/destructor implementations for JSON classes
+// Constructor/destructor implementations for JSON classes moved to api/NTApiWrapper.cpp
+/*
 extern "C" {
     // _NT_jsonStream constructor/destructor
     __attribute__((visibility("default"))) void* _ZN14_NT_jsonStreamC1EPv(void* refCon) {
@@ -338,8 +348,10 @@ extern "C" {
         // Nothing to do - thread_local handles cleanup
     }
 }
+*/
 
-// Functional implementations for JSON classes using bridge pattern
+// Functional implementations for JSON classes using bridge pattern moved to api/NTApiWrapper.cpp
+/*
 extern "C" {
     // _NT_jsonParse method implementations
     __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse10skipMemberEv(void* self) {
@@ -500,6 +512,7 @@ extern "C" {
         }
     }
 }
+*/
 
 // For plugin loading
 #ifdef ARCH_WIN
