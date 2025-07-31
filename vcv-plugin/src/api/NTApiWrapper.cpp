@@ -118,6 +118,25 @@ void clearCurrentJsonStream() {
 }
 
 extern "C" {
+    // JSON bridge constructor/destructor implementations (dummy implementations for plugin compatibility)
+    __attribute__((visibility("default"))) void* _ZN14_NT_jsonStreamC1EPv(void* refCon) {
+        // Return a dummy pointer - the actual implementation uses thread_local g_currentStream
+        return reinterpret_cast<void*>(0x1);  // Non-null dummy pointer
+    }
+    
+    __attribute__((visibility("default"))) void _ZN14_NT_jsonStreamD1Ev(void* self) {
+        // Nothing to do - thread_local handles cleanup
+    }
+    
+    __attribute__((visibility("default"))) void* _ZN13_NT_jsonParseC1EPvi(void* refCon, int idx) {
+        // Return a dummy pointer - the actual implementation uses thread_local g_currentParse
+        return reinterpret_cast<void*>(0x2);  // Non-null dummy pointer
+    }
+    
+    __attribute__((visibility("default"))) void _ZN13_NT_jsonParseD1Ev(void* self) {
+        // Nothing to do - thread_local handles cleanup
+    }
+
     // C API functions with direct implementations
     __attribute__((visibility("default"))) void NT_drawText(int x, int y, const char* str, int colour, _NT_textAlignment align, _NT_textSize size) {
         static int callCount = 0;

@@ -25,6 +25,10 @@ CRITICAL_SYMBOLS=(
     "_NT_drawShapeF"
     "__Z19getCurrentJsonParsev"
     "__Z20getCurrentJsonStreamv"
+    "__ZN13_NT_jsonParseC1EPvi"
+    "__ZN13_NT_jsonParseD1Ev"
+    "__ZN14_NT_jsonStreamC1EPv"
+    "__ZN14_NT_jsonStreamD1Ev"
 )
 
 MISSING_SYMBOLS=()
