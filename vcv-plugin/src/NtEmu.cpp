@@ -28,7 +28,6 @@
 #include <map>
 #include <cstring>
 
-// Forward declaration for C API access
 struct EmulatorModule;
 static EmulatorModule* g_currentModule = nullptr;
 
@@ -288,7 +287,6 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
     EmulatorModule() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
         
-        // Set global reference for C API access
         g_currentModule = this;
         
         // Configure parameters
@@ -393,7 +391,6 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
     }
     
     ~EmulatorModule() {
-        // Clear global reference
         if (g_currentModule == this) {
             g_currentModule = nullptr;
         }
@@ -692,7 +689,40 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
             }
         }
         
+        // Update VCV pot positions to reflect parameter changes
+        if (pluginManager->isLoaded() && pluginManager->getFactory() && pluginManager->getFactory()->setupUi) {
+            try {
+                float potValues[3] = { 0.0f, 0.0f, 0.0f };
+                pluginManager->getFactory()->setupUi(pluginManager->getAlgorithm(), potValues);
+                params[POT_L_PARAM].setValue(potValues[0]);
+                params[POT_C_PARAM].setValue(potValues[1]);
+                params[POT_R_PARAM].setValue(potValues[2]);
+            } catch (...) {
+                WARN("NtEmu: Failed to update pot positions after parameter change");
+            }
+        }
+        
         displayDirty = true;
+    }
+    
+    void handleSetParameterFromUi(uint32_t parameter, int16_t value) {
+        // Called from plugin via NT_setParameterFromUi
+        INFO("NtEmu: handleSetParameterFromUi called: param=%d, value=%d", parameter, value);
+        
+        // Convert parameter index (parameter might have offset)
+        int paramIdx = (int)parameter;
+        
+        // Delegate to existing setParameterValue method
+        setParameterValue(paramIdx, value);
+        
+        // Also call parameterChanged to notify plugin
+        if (pluginManager->isLoaded() && pluginManager->getFactory() && pluginManager->getFactory()->parameterChanged) {
+            try {
+                pluginManager->getFactory()->parameterChanged(pluginManager->getAlgorithm(), paramIdx);
+            } catch (...) {
+                WARN("NtEmu: Plugin crashed during parameterChanged callback");
+            }
+        }
     }
     
     int getCurrentParameterIndex() {
@@ -1342,15 +1372,17 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
                     INFO("NtEmu: No pending plugin state (already loaded scenario - this is expected)");
                 }
                 
-                // Call setupUi with current VCV pot values
-                float potValues[3] = {
-                    params[POT_L_PARAM].getValue(),
-                    params[POT_C_PARAM].getValue(),
-                    params[POT_R_PARAM].getValue()
-                };
-                INFO("NtEmu: Calling setupUi via PluginManager with pot values: %.3f %.3f %.3f", 
-                     potValues[0], potValues[1], potValues[2]);
+                // Call setupUi to get pot positions from plugin parameters
+                float potValues[3] = { 0.0f, 0.0f, 0.0f };
+                INFO("NtEmu: Calling setupUi via PluginManager to get pot positions from plugin parameters");
                 pluginManager->callSetupUi(potValues);
+                
+                // Update VCV pot positions based on plugin parameters
+                params[POT_L_PARAM].setValue(potValues[0]);
+                params[POT_C_PARAM].setValue(potValues[1]);
+                params[POT_R_PARAM].setValue(potValues[2]);
+                INFO("NtEmu: Updated VCV pot positions to: %.3f %.3f %.3f", 
+                     potValues[0], potValues[1], potValues[2]);
                 
                 // Clean up any existing pending parameter values
                 if (pendingParameterValues) {
@@ -1436,15 +1468,17 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
             INFO("NtEmu: No pending plugin state to restore in onPluginLoaded");
         }
         
-        // Call setupUi with current VCV pot values
-        float potValues[3] = {
-            params[POT_L_PARAM].getValue(),
-            params[POT_C_PARAM].getValue(),
-            params[POT_R_PARAM].getValue()
-        };
-        INFO("NtEmu: Calling setupUi via PluginManager in onPluginLoaded with pot values: %.3f %.3f %.3f", 
-             potValues[0], potValues[1], potValues[2]);
+        // Call setupUi to get pot positions from plugin parameters
+        float potValues[3] = { 0.0f, 0.0f, 0.0f };
+        INFO("NtEmu: Calling setupUi via PluginManager in onPluginLoaded to get pot positions from plugin parameters");
         pluginManager->callSetupUi(potValues);
+        
+        // Update VCV pot positions based on plugin parameters
+        params[POT_L_PARAM].setValue(potValues[0]);
+        params[POT_C_PARAM].setValue(potValues[1]);
+        params[POT_R_PARAM].setValue(potValues[2]);
+        INFO("NtEmu: Updated VCV pot positions to: %.3f %.3f %.3f", 
+             potValues[0], potValues[1], potValues[2]);
         
         displayDirty = true;
     }
@@ -2086,4 +2120,10 @@ struct EmulatorWidget : ModuleWidget {
     }
 };
 
-Model* modelNtEmu = createModel<EmulatorModule, EmulatorWidget>("nt_emu");// EXTRACTED TO display/DisplayRenderer.hpp/.cpp (490 lines) - All display rendering logic moved
+Model* modelNtEmu = createModel<EmulatorModule, EmulatorWidget>("nt_emu");
+
+extern "C" void emulatorHandleSetParameterFromUi(uint32_t parameter, int16_t value) {
+    if (g_currentModule) {
+        g_currentModule->handleSetParameterFromUi(parameter, value);
+    }
+}

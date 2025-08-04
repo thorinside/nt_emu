@@ -311,10 +311,11 @@ bool PluginManager::initializePlugin() {
         
         // Construct algorithm with proper memory pointers structure
         _NT_algorithmMemoryPtrs memoryPtrs;
-        memoryPtrs.sram = (uint8_t*)pluginInstanceMemory;
-        memoryPtrs.dram = (uint8_t*)pluginInstanceMemory; // Simplified - same allocation
-        memoryPtrs.dtc = (uint8_t*)pluginInstanceMemory;  // Simplified - same allocation
-        memoryPtrs.itc = (uint8_t*)pluginInstanceMemory;  // Simplified - same allocation
+        uint8_t* basePtr = (uint8_t*)pluginInstanceMemory;
+        memoryPtrs.sram = basePtr;
+        memoryPtrs.dram = basePtr + algorithmReqs.sram;
+        memoryPtrs.dtc = basePtr + algorithmReqs.sram + algorithmReqs.dram; 
+        memoryPtrs.itc = basePtr + algorithmReqs.sram + algorithmReqs.dram + algorithmReqs.dtc;
         
         pluginAlgorithm = pluginFactory->construct(memoryPtrs, algorithmReqs, specifications);
         if (!pluginAlgorithm || !isValidPointer(pluginAlgorithm)) {

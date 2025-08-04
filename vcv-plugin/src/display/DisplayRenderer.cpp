@@ -444,7 +444,37 @@ namespace DisplayRenderer {
                 break;
                 
             case kNT_unitAudioInput:
-                if (value == 0) strcpy(str, "Direct");
+            case kNT_unitCvInput:
+                if (value == 0) {
+                    strcpy(str, "None");
+                } else if (value >= 1 && value <= 12) {
+                    snprintf(str, 32, "Input %d", value);
+                } else if (value >= 13 && value <= 20) {
+                    snprintf(str, 32, "Output %d", value - 12);
+                } else if (value >= 21 && value <= 28) {
+                    snprintf(str, 32, "Aux %d", value - 20);
+                } else {
+                    snprintf(str, 32, "Bus %d", value);
+                }
+                break;
+                
+            case kNT_unitAudioOutput:
+            case kNT_unitCvOutput:
+                if (value == 0) {
+                    strcpy(str, "None");
+                } else if (value >= 1 && value <= 12) {
+                    snprintf(str, 32, "Input %d", value);
+                } else if (value >= 13 && value <= 20) {
+                    snprintf(str, 32, "Output %d", value - 12);
+                } else if (value >= 21 && value <= 28) {
+                    snprintf(str, 32, "Aux %d", value - 20);
+                } else {
+                    snprintf(str, 32, "Bus %d", value);
+                }
+                break;
+                
+            case kNT_unitOutputMode:
+                if (value == 0) strcpy(str, "Replace");
                 else if (value == 1) strcpy(str, "Add");
                 else snprintf(str, 32, "Mode %d", value);
                 break;

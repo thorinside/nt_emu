@@ -56,24 +56,111 @@ namespace NTApi {
         return g_currentStream.get();
     }
     
-    // Helper function to set a single pixel in NT_screen buffer
-    void setNTPixel(int x, int y, int colour) {
-        if (x >= 0 && x < 256 && y >= 0 && y < 64) {
-            int byte_idx = y * 128 + x / 2;
-            colour = colour & 0x0F;  // Ensure 4-bit value
-            
-            if (x & 1) {
-                // Odd x: low nibble (bits 0-3)
-                NT_screen[byte_idx] = (NT_screen[byte_idx] & 0xF0) | colour;
+    // Coordinate clipping constants
+    static constexpr int SCREEN_WIDTH = 256;
+    static constexpr int SCREEN_HEIGHT = 64;
+    
+    // Clip coordinates to screen bounds
+    void clipPoint(int& x, int& y) {
+        x = std::max(0, std::min(SCREEN_WIDTH - 1, x));
+        y = std::max(0, std::min(SCREEN_HEIGHT - 1, y));
+    }
+    
+    // Cohen-Sutherland line clipping outcodes
+    enum OutCode {
+        INSIDE = 0,  // 0000
+        LEFT = 1,    // 0001
+        RIGHT = 2,   // 0010
+        BOTTOM = 4,  // 0100
+        TOP = 8      // 1000
+    };
+    
+    // Compute outcode for point (x, y)
+    int computeOutCode(int x, int y) {
+        int code = INSIDE;
+        if (x < 0) code |= LEFT;
+        else if (x >= SCREEN_WIDTH) code |= RIGHT;
+        if (y < 0) code |= BOTTOM;
+        else if (y >= SCREEN_HEIGHT) code |= TOP;
+        return code;
+    }
+    
+    // Cohen-Sutherland line clipping algorithm
+    bool clipLine(int& x0, int& y0, int& x1, int& y1) {
+        int outcode0 = computeOutCode(x0, y0);
+        int outcode1 = computeOutCode(x1, y1);
+        bool accept = false;
+        
+        while (true) {
+            if (!(outcode0 | outcode1)) {
+                // Both endpoints inside - trivially accept
+                accept = true;
+                break;
+            } else if (outcode0 & outcode1) {
+                // Both endpoints outside same region - trivially reject
+                break;
             } else {
-                // Even x: high nibble (bits 4-7)
-                NT_screen[byte_idx] = (NT_screen[byte_idx] & 0x0F) | (colour << 4);
+                // Failed both tests, so calculate the line segment to clip
+                int outcodeOut = outcode1 > outcode0 ? outcode1 : outcode0;
+                
+                // Find intersection point
+                int x, y;
+                if (outcodeOut & TOP) {
+                    x = x0 + (x1 - x0) * (SCREEN_HEIGHT - 1 - y0) / (y1 - y0);
+                    y = SCREEN_HEIGHT - 1;
+                } else if (outcodeOut & BOTTOM) {
+                    x = x0 + (x1 - x0) * (0 - y0) / (y1 - y0);
+                    y = 0;
+                } else if (outcodeOut & RIGHT) {
+                    y = y0 + (y1 - y0) * (SCREEN_WIDTH - 1 - x0) / (x1 - x0);
+                    x = SCREEN_WIDTH - 1;
+                } else if (outcodeOut & LEFT) {
+                    y = y0 + (y1 - y0) * (0 - x0) / (x1 - x0);
+                    x = 0;
+                }
+                
+                // Update endpoint and outcode
+                if (outcodeOut == outcode0) {
+                    x0 = x;
+                    y0 = y;
+                    outcode0 = computeOutCode(x0, y0);
+                } else {
+                    x1 = x;
+                    y1 = y;
+                    outcode1 = computeOutCode(x1, y1);
+                }
             }
+        }
+        
+        return accept;
+    }
+    
+    // Helper function to set a single pixel in NT_screen buffer with clipping
+    void setNTPixel(int x, int y, int colour) {
+        // Clip coordinates to screen bounds
+        if (x < 0 || x >= SCREEN_WIDTH || y < 0 || y >= SCREEN_HEIGHT) {
+            return; // Out of bounds - just return without drawing
+        }
+        
+        int byte_idx = y * 128 + x / 2;
+        colour = colour & 0x0F;  // Ensure 4-bit value
+        
+        if (x & 1) {
+            // Odd x: low nibble (bits 0-3)
+            NT_screen[byte_idx] = (NT_screen[byte_idx] & 0xF0) | colour;
+        } else {
+            // Even x: high nibble (bits 4-7)
+            NT_screen[byte_idx] = (NT_screen[byte_idx] & 0x0F) | (colour << 4);
         }
     }
     
-    // Bresenham's line algorithm
+    // Bresenham's line algorithm with clipping
     void drawNTLine(int x0, int y0, int x1, int y1, int colour) {
+        // First clip the line to screen bounds
+        if (!clipLine(x0, y0, x1, y1)) {
+            return; // Line is completely outside screen bounds
+        }
+        
         int dx = abs(x1 - x0);
         int dy = abs(y1 - y0);
         int sx = x0 < x1 ? 1 : -1;
@@ -203,9 +290,16 @@ extern "C" {
             }
             
             case kNT_rectangle: {
-                // Filled rectangle
-                for (int y = y0; y <= y1; y++) {
-                    NTApi::drawNTLine(x0, y, x1, y, colour);
+                // Filled rectangle with clipping
+                // Clip rectangle bounds to screen
+                int clipX0 = std::max(0, std::min(x0, x1));
+                int clipY0 = std::max(0, std::min(y0, y1));
+                int clipX1 = std::min(NTApi::SCREEN_WIDTH - 1, std::max(x0, x1));
+                int clipY1 = std::min(NTApi::SCREEN_HEIGHT - 1, std::max(y0, y1));
+                
+                // Draw horizontal lines for filled rectangle
+                for (int y = clipY0; y <= clipY1; y++) {
+                    NTApi::drawNTLine(clipX0, y, clipX1, y, colour);
                 }
                 break;
             }
@@ -231,9 +325,12 @@ extern "C" {
         return 0;
     }
     
+    // Forward declaration
+    extern "C" void emulatorHandleSetParameterFromUi(uint32_t parameter, int16_t value);
+    
     __attribute__((visibility("default"))) void NT_setParameterFromUi(uint32_t algorithmIndex, uint32_t parameter, int16_t value) {
-        // This should update VCV module parameters when plugins call this function
         INFO("NT_setParameterFromUi called: alg=%d, param=%d, value=%d", algorithmIndex, parameter, value);
+        emulatorHandleSetParameterFromUi(parameter, value);
     }
     
     __attribute__((visibility("default"))) void NT_setParameterFromAudio(uint32_t algorithmIndex, uint32_t parameter, int16_t value) {

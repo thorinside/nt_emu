@@ -354,6 +354,20 @@ void ParameterSystem::loadParameterState(json_t* rootJ) {
                 routingMatrix[i] = (int16_t)json_integer_value(valueJ);
             }
         }
+        
+        // Notify plugin about parameter changes after loading saved values
+        if (pluginManager && pluginManager->getFactory() && pluginManager->getFactory()->parameterChanged && pluginManager->getAlgorithm()) {
+            _NT_factory* factory = pluginManager->getFactory();
+            _NT_algorithm* algorithm = pluginManager->getAlgorithm();
+            
+            for (size_t i = 0; i < arraySize && i < routingMatrix.size(); i++) {
+                try {
+                    factory->parameterChanged(algorithm, i);
+                } catch (...) {
+                    WARN("ParameterSystem: Failed to notify plugin of parameter %zu change during state load", i);
+                }
+            }
+        }
     }
 }
 

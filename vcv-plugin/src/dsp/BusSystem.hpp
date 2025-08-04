@@ -34,11 +34,11 @@ public:
         
         int currentSample = getCurrentSampleIndex();
         
-        // Route 12 inputs to buses 0-11 (matches hardware specification)
+        // Route 12 inputs to buses 0-11 (0-based indexing)
         for (int i = 0; i < 12; i++) {
             if (module->inputs[ModuleType::AUDIO_INPUT_1 + i].isConnected()) {
                 float voltage = module->inputs[ModuleType::AUDIO_INPUT_1 + i].getVoltage();
-                setBus(i, currentSample, voltage);
+                setBus(i, currentSample, voltage);  // Use 0-based bus indexing
             } else {
                 setBus(i, currentSample, 0.0f);
             }
@@ -54,8 +54,8 @@ public:
         
         int currentSample = getCurrentSampleIndex();
         
-        // Route buses 12-17 to 6 outputs (matches AudioEngine and custom routing)
-        for (int i = 0; i < 6; i++) {
+        // Route buses 12-19 to 8 outputs
+        for (int i = 0; i < 8; i++) {
             float busValue = getBus(12 + i, currentSample);
             module->outputs[ModuleType::AUDIO_OUTPUT_1 + i].setVoltage(busValue);
         }

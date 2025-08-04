@@ -18,6 +18,10 @@ static _NT_globals g_nt_globals = {
 // Thread-safe access flag for display buffer
 static std::atomic<bool> displayDirty{false};
 
+// External reference to current module (forward declared)
+struct EmulatorModule;
+extern EmulatorModule* g_currentModule;
+
 // Forward declarations of API implementation functions
 extern "C" {
     // These are already implemented in DistingNT.cpp
@@ -69,8 +73,11 @@ static void api_setParameterFromAudio(uint32_t algorithmIndex, uint32_t paramete
     // TODO: Connect to VCV parameter system
 }
 
+// Forward declaration
+extern "C" void emulatorHandleSetParameterFromUi(uint32_t parameter, int16_t value);
+
 static void api_setParameterFromUi(uint32_t algorithmIndex, uint32_t parameter, int16_t value) {
-    // TODO: Connect to VCV parameter system
+    emulatorHandleSetParameterFromUi(parameter, value);
 }
 
 static uint32_t api_parameterOffset(void) {
@@ -180,3 +187,5 @@ extern "C" void NT_updateGlobals(uint32_t sampleRate, uint32_t maxFrames, float*
     g_nt_globals.workBuffer = workBuffer;
     g_nt_globals.workBufferSizeBytes = workBufferSize;
 }
+
+// No module registry needed - using simple global approach
