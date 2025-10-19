@@ -106,6 +106,7 @@ Load these test plugins through the NT Emulator module menu to verify your setup
 ## Module Features
 
 ### Plugin Management
+- **Single Algorithm** - One algorithm plugin runs at a time
 - **Hot Loading** - Load/unload plugins without restarting VCV Rack
 - **Exception Safety** - Plugin crashes don't crash VCV Rack
 - **Plugin Switching** - Load different algorithm plugins via menu navigation
