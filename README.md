@@ -85,20 +85,22 @@ Load these test plugins through the NT Emulator module menu to verify your setup
 
 ### Controls
 
-- **Rotary Encoder** - Navigate menus and adjust parameters
-- **4 Potentiometers (Z, X, Y, I)** - Parameter controls with CV inputs
+- **2 Rotary Encoders (L, R)** - Navigate menus and adjust parameters (continuous rotation)
+- **3 Potentiometers (L, C, R)** - Parameter controls with CV inputs (0.0-1.0)
 - **4 Buttons** - Function buttons with CV triggers
+- **Button Presses** - Encoders and pots are also pressable
 
 ### Inputs/Outputs
 
-- **4 Audio Inputs** - Stereo pairs (L1/R1, L2/R2)
-- **4 Audio Outputs** - Stereo pairs (L1/R1, L2/R2)
-- **8 CV Inputs** - For modulating pots and buttons
-- **MIDI In/Out** - Full MIDI support
+- **12 Inputs** - Full NT hardware complement (can carry audio or CV)
+- **8 Outputs** - Full NT hardware complement (can carry audio or CV)
+- **MIDI In/Out** - Full bidirectional MIDI support
+- **28-Bus Internal Routing** - Flexible signal routing between inputs, outputs, and algorithms
 
 ### Display
 
-- **128x64 OLED Emulation** - Real-time rendering of plugin graphics
+- **256x64 Pixel OLED Emulation** - Real-time rendering of plugin graphics
+- 128x64 byte framebuffer with 4-bit grayscale (2 pixels per byte)
 - Shows menu system, parameter values, and custom plugin UIs
 
 ## Module Features
@@ -109,8 +111,9 @@ Load these test plugins through the NT Emulator module menu to verify your setup
 - **Multiple Plugins** - Switch between different algorithms on the fly
 
 ### Parameter System
-- **16x16 Routing Matrix** - Flexible parameter to control mapping
-- **CV Modulation** - All parameters can be CV-controlled
+- **Algorithm Parameters** - Each algorithm defines its own parameter count
+- **3 Physical Pots** - Control algorithm parameters via menu navigation
+- **CV Modulation** - All pots can be CV-controlled
 - **Preset Management** - Save/load plugin states via VCV Rack
 
 ### MIDI Integration
@@ -119,8 +122,10 @@ Load these test plugins through the NT Emulator module menu to verify your setup
 - **Activity Indicators** - Visual feedback for MIDI traffic
 
 ### Audio Processing
-- **4-Bus System** - Matches Disting NT hardware topology
+- **28-Bus System** - Matches Disting NT hardware topology (12 inputs, 8 outputs, 8 auxiliary)
+- **Flexible Routing** - Any bus can carry audio, CV, or modulation signals
 - **Real-time Processing** - Low-latency audio with VCV Rack integration
+- **4-Sample Block Processing** - Hardware-accurate processing at variable sample rates (44.1-96kHz)
 - **Sample-accurate** - Precise timing for all operations
 
 ## Developing NT Plugins
@@ -160,14 +165,14 @@ cl /LD /std:c++11 my_plugin.cpp /I..\emulator\include
 
 The NT API provides:
 
-- **Parameter Management** - Define and control plugin parameters
-- **Audio Processing** - Access to 4-bus audio system
-- **Display System** - Graphics drawing primitives (pixels, text, shapes)
+- **Parameter Management** - Define and control algorithm parameters (variable count per algorithm)
+- **Audio Processing** - Access to 28-bus audio system with flexible routing
+- **Display System** - 256x64 pixel graphics drawing primitives (pixels, text, shapes)
 - **MIDI Handling** - Send and receive MIDI messages
-- **Control Input** - Read encoder, buttons, and pots
+- **Control Input** - Read 2 encoders, 3 pots, and 9 buttons (4 discrete + 3 pot-press + 2 encoder-press)
 - **Menu Integration** - Custom menu items and settings
 
-See `emulator/include/nt_api.h` for the complete API documentation.
+See `emulator/include/distingnt/api.h` for the complete API documentation.
 
 ### Example Plugin
 
@@ -223,7 +228,7 @@ The emulator provides extensive logging:
 
 **Display not updating:**
 - `draw()` must return `true` when content changes
-- Check that graphics calls are within bounds (0-127, 0-63)
+- Check that graphics calls are within bounds (x: 0-255, y: 0-63)
 
 ## Project Structure
 
@@ -288,10 +293,21 @@ Each component is independently testable and uses dependency injection for clean
 
 ## Documentation
 
+### Architecture & Specifications
+- **[Solution Architecture](docs/solution-architecture.md)** - Complete system architecture
+- **[Hardware Controls Spec](docs/HARDWARE-CONTROLS-SPEC.md)** - All physical controls reference
+- **[Bus Architecture](docs/bus-architecture-correction.md)** - 28-bus routing explained
+- **[Architecture Decisions](docs/architecture-decisions.md)** - Key technical decisions
+
+### Development Guides
 - **[Project Overview](docs/project-overview.md)** - High-level project structure
-- **[VCV Module Architecture](docs/architecture-vcv-plugin.md)** - Module design details
-- **[Emulator Architecture](docs/architecture-emulator.md)** - API emulation layer
 - **[Development Guide](docs/development-guide.md)** - Setup and workflow
+- **[PRD](docs/prd.md)** - Product requirements
+- **[Epics](docs/epics.md)** - Implementation roadmap
+
+### Reference
+- **[Documentation Corrections](docs/DOCUMENTATION-CORRECTIONS-2025-10-19.md)** - Verified specifications
+- **[VCV Module Architecture](docs/architecture-vcv-plugin.md)** - Module design details
 - **[Source Tree Analysis](docs/source-tree-analysis.md)** - Complete codebase map
 
 ## Requirements
