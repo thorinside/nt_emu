@@ -3,6 +3,9 @@
 /dist/
 plugin.dylib
 
+# VCV Rack SDK (fetched by fetch-sdk.sh script)
+/Rack-SDK/
+
 # Test plugin build files
 *.dylib
 *.dylib.dSYM/
