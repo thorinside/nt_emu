@@ -21,9 +21,14 @@ public:
     
     void clear() {
         memset(buses, 0, sizeof(buses));
-        sampleIndex = 0;
     }
-    
+
+    void clearOutputBuses() {
+        // Clear only buses 12-27 (internal processing and outputs)
+        // Keep buses 0-11 (inputs) intact
+        memset(buses + 12 * 4, 0, 16 * 4 * sizeof(float));
+    }
+
     float* getBuses() {
         return buses;
     }

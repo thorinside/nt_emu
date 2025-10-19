@@ -940,31 +940,29 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
         //     }
         // }
         
-        // Clear buses at the start of a new block
-        if (sampleCounter == 0) {
-            busSystem.clear();
-        }
-        
         // Route inputs to buses for current sample
         busSystem.routeInputs(this);
-        
+
         // Check if we've accumulated a full block (after routing input)
         if (sampleCounter == BLOCK_SIZE - 1) {
+            // Clear output buses before plugin processes (plugins use += for Add mode)
+            busSystem.clearOutputBuses();
+
             // Process algorithm with 4-sample blocks
             printf("Audio block complete, isPluginLoaded()=%s\n", isPluginLoaded() ? "true" : "false");
             if (isPluginLoaded()) {
                 // Process hardware changes for loaded plugins
                 printf("Processing hardware changes for loaded plugin\n");
                 emulatorCore.processHardwareChanges(pluginManager->getFactory(), pluginManager->getAlgorithm());
-                
+
                 // Use plugin for audio processing
                 safeExecutePlugin([&]() {
                     // Add comprehensive null checks for plugin reload safety
                     if (pluginManager && pluginManager->getFactory() && pluginManager->getAlgorithm() && pluginManager->getFactory()->step) {
                         // Debug logging disabled for performance
-                        
+
                         pluginManager->getFactory()->step(pluginManager->getAlgorithm(), busSystem.getBuses(), 1);
-                        
+
                         // Debug logging disabled for performance
                     }
                 }, "step");
@@ -972,16 +970,16 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
                 // Use built-in emulator
                 emulatorCore.processAudio(busSystem.getBuses(), 1); // 1 = numFramesBy4
             }
-            
+
             // Don't reset - we'll output samples in sequence
         }
-        
+
         // Route outputs for current sample
         busSystem.routeOutputs(this);
-        
+
         // Increment sample counter and wrap at block size
         sampleCounter = (sampleCounter + 1) % BLOCK_SIZE;
-        
+
         // Update lights
         updateLights();
         
