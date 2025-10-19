@@ -129,32 +129,33 @@ private:
 **Decision**: Implement a fixed 28-bus architecture matching Disting NT hardware capabilities.
 
 **Context**:
-- Disting NT hardware has specific bus layout
-- Need to match hardware routing capabilities
-- Plugin compatibility requires exact behavior
+- Disting NT hardware provides 28 buses for flexible signal routing
+- Buses are voltage carriers (-12V to +12V), not signal-type specific
+- Algorithms determine how buses are used - no fixed assignments
 
-**Bus Allocation**:
+**Bus Allocation (Hardware Specification)**:
 ```
-Buses 0-3:    Audio Inputs (from VCV jacks)
-Buses 4-11:   CV Modulation Inputs
-Buses 12-19:  Reserved for future expansion
-Buses 20-23:  Audio Outputs (to VCV jacks)
-Buses 24-27:  CV Outputs
+Buses 0-11  (NT 1-12):   Hardware inputs (from VCV jacks)
+Buses 12-19 (NT 13-20):  Hardware outputs (to VCV jacks)
+Buses 20-27 (NT 21-28):  Auxiliary buses (inter-algorithm communication)
+
+All buses carry identical voltage signals - any can be audio, CV, or modulation
+Signal type is determined by algorithm usage, not bus number
 ```
 
 **Rationale**:
-- Hardware-matched routing ensures plugin compatibility
-- Fixed architecture enables optimization
-- Predictable performance characteristics
-- Simple implementation without complex routing matrices
+- Matches NT hardware specification exactly
+- Flexible routing enables complex algorithm interactions
+- No artificial restrictions on signal types per bus
+- Auxiliary buses allow algorithms to pass signals between each other
 
 **Trade-offs**:
 - ✅ Gained: Perfect hardware compatibility
-- ✅ Gained: Predictable audio routing
-- ⚠️ Limited: Cannot add arbitrary number of inputs/outputs
-- ⚠️ Design: Hardware constraints reflected in architecture
+- ✅ Gained: Maximum routing flexibility for algorithms
+- ✅ Gained: Inter-algorithm communication capability
+- ⚠️ Responsibility: Algorithms must manage their own routing
 
-**Validation**: All routing scenarios tested ✅
+**Validation**: All routing scenarios tested, matches NT hardware behavior ✅
 
 ---
 

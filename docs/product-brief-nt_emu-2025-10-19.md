@@ -105,9 +105,9 @@ Complete C++ implementation of the Disting NT hardware API running within VCV Ra
 ## MVP Scope
 
 ### Core Features (Shipped in v2.0.0) ✅
-- **Display System**: 128x64 OLED emulation with full graphics API
+- **Display System**: 256x64 pixel OLED emulation with full graphics API
 - **Controls**: 3 potentiometers, 2 rotary encoders, 4 buttons
-- **Audio I/O**: 4 input/output channels + 28-bus internal routing
+- **Audio I/O**: 12 input + 8 output channels + 28-bus internal routing
 - **Parameter System**: Full parameter automation with CV modulation
 - **Plugin Loading**: Dynamic .dylib/.so/.dll loading
 - **MIDI Support**: Full MIDI input/output with clock sync

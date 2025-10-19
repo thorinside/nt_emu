@@ -41,10 +41,10 @@ This PRD defines the final push to ecosystem readiness, combining feature comple
 - FR003: Maintain 100% API compatibility with Disting NT C++ interface ✅
 - FR004: Support hot-reload of plugins without host restart ✅
 - FR005: Preserve and restore plugin state via preset system ✅
-- FR006: Provide 128x64 monochrome OLED emulation with full graphics API ✅
-- FR007: Support 8 automatable parameters with CV modulation ✅
+- FR006: Provide 256x64 monochrome OLED emulation with full graphics API ✅
+- FR007: Support 3 physical pots controlling algorithm parameters (parameter count varies by algorithm) with CV modulation ✅
 - FR008: Implement hierarchical menu system for algorithm navigation ✅
-- FR009: Support 4 audio inputs + 4 audio outputs with 28-bus internal routing ✅
+- FR009: Support 12 audio inputs + 8 audio outputs with 28-bus internal routing ✅
 - FR010: **NEW**: Synchronize parameter changes to audio routing in real-time (< 1 sample block latency)
 
 **Distribution & Ecosystem**
@@ -123,7 +123,7 @@ This PRD defines the final push to ecosystem readiness, combining feature comple
 
 1. **256x64 OLED Emulation**: Faithful reproduction of hardware display including fonts, contrast, refresh
 2. **Rotary Encoder Metaphor**: Three-mode menu navigation matches hardware exactly
-3. **Parameter Controls**: 8 parameter knobs with smooth CV modulation
+3. **Parameter Controls**: 3 physical pots (L, C, R) controlling algorithm parameters via menu navigation with smooth CV modulation
 4. **Algorithm Browser**: Hierarchical menu showing available algorithms with one-encoder selection
 5. **Real-Time Feedback**: Display updates instantly on all user interactions
 6. **Visual Consistency**: All UI elements scale and render identically on macOS, Linux, Windows

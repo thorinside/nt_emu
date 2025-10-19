@@ -65,7 +65,7 @@ So that I experience zero lag between menu adjustment and audio effect.
 - No thread contention expected (parameter system uses lock-free reads)
 
 **Acceptance Criteria:**
-1. Parameter routing updates apply within 1 sample block of menu encoder change (< 0.02ms @ 96kHz)
+1. Parameter routing updates apply within 1 sample block of menu encoder change (< 1 sample block @ variable rate)
 2. Display feedback reflects parameter change instantly (already works)
 3. Audio output applies new routing within 1 sample block
 4. All 16 unit tests still pass
@@ -147,11 +147,11 @@ So that I can make informed decisions when extending the system without reading 
    - Validation: Successful cross-platform builds, zero language feature issues
 
 3. **28-Bus Audio Architecture**
-   - Decision: Fixed hardware-matched bus allocation (0-3 inputs, 4-11 CV, 20-23 outputs, 24-27 output CV)
-   - Rationale: 100% compatibility with hardware, predictable SIMD alignment, no allocation in audio thread
-   - Trade-offs: No runtime bus reconfiguration vs guaranteed performance and correctness
+   - Decision: Fixed 28-bus buffer (0-11 inputs, 12-19 outputs, 20-27 auxiliary) with flexible signal routing
+   - Rationale: 100% compatibility with NT hardware specification, buses are voltage carriers (algorithms decide usage), no allocation in audio thread
+   - Trade-offs: Fixed bus count (28) vs flexible signal types per bus (any bus can carry audio/CV/modulation)
    - Code references: BusSystem.hpp, audio routing system
-   - Validation: Supports all routing scenarios, zero audio artifacts
+   - Validation: Supports all routing scenarios, matches NT hardware behavior exactly
 
 4. **Three-Mode Parameter Menu**
    - Decision: State machine: OFF → PAGE_SELECT → PARAM_SELECT → VALUE_EDIT

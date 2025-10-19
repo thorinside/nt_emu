@@ -16,7 +16,7 @@ NT_EMU is a production-ready VCV Rack module emulating the Expert Sleepers Disti
 - **Modular**: 5 independent systems, <500 lines each
 - **Safe**: Exception-safe plugin execution, graceful error recovery
 - **Real-time**: <1ms audio latency overhead, <5% CPU
-- **Complete**: 256x64 OLED display, 28-bus routing, MIDI bidirectional, parameter menus
+- **Complete**: 256x64 pixel OLED display, 28-bus routing, MIDI bidirectional, parameter menus (3 physical pots)
 - **Tested**: 16/16 unit tests passing, production-ready
 
 ---
@@ -134,14 +134,15 @@ VCV Audio Inputs (±5V)
     ↓
 [Level Scaling to ±1.0]
     ↓
-BusSystem (28-bus internal routing)
-    ├─ Buses 0-3: Audio inputs
-    ├─ Buses 4-11: CV modulation
-    ├─ Buses 12-19: Reserved
-    ├─ Buses 20-23: Audio outputs
-    └─ Buses 24-27: CV outputs
+BusSystem (28-bus flexible routing)
+    ├─ Buses 0-11:  NT hardware inputs (mapped from VCV inputs)
+    ├─ Buses 12-19: NT hardware outputs (mapped to VCV outputs)
+    └─ Buses 20-27: Auxiliary buses for inter-algorithm communication
+
+    Note: All buses carry identical voltage signals (-12V to +12V)
+    Any bus can carry audio, CV, or modulation - algorithms decide usage
     ↓
-NT Plugin (Process Block - 4 samples @ 96kHz)
+NT Plugin (Process Block - 4 samples @ variable rate: 44.1-96kHz)
     ↓
 [Level Scaling to ±5V]
     ↓
@@ -182,7 +183,7 @@ MENU_OFF
 ```
 Plugin Drawing Commands
     ↓
-DisplayRenderer Frame Buffer (256x64 pixels, 4-bit grayscale)
+DisplayRenderer Frame Buffer (256x64 pixels, 128x64 bytes, 4-bit grayscale, 2 pixels/byte)
     ↓
 [Dirty Region Tracking - only changed areas updated]
     ↓
@@ -208,8 +209,8 @@ extern "C" {
 }
 
 // Core API Functions
-void nt_set_parameter(uint8_t index, float value);     // 0-7 parameters
-float nt_get_parameter(uint8_t index);
+void nt_set_parameter(uint8_t index, float value);     // index = algorithm parameter (count varies)
+float nt_get_parameter(uint8_t index);                  // 3 physical pots (L,C,R) control parameters via menu
 void nt_draw_pixel(int16_t x, int16_t y, uint16_t color);
 void nt_draw_text(int16_t x, int16_t y, const char* text);
 void nt_send_midi_3byte(uint8_t status, uint8_t data1, uint8_t data2);
@@ -243,7 +244,7 @@ class SystemObserver {
 | **Dependency Injection** | Decouples components, enables testing, supports runtime configuration | NtEmu coordinates component lifecycle |
 | **Interface-Based Design** | Enables substitution, supports testing mocks, future extensions | IDisplayDataProvider pattern established |
 | **C++11 Only** | VCV Rack requirement, real-time safety, no modern features | Constrains language usage, proven stable |
-| **28-Bus Fixed Architecture** | Hardware-matched routing, simple implementation, sufficient flexibility | Audio routing is predictable and fast |
+| **28-Bus Flexible Architecture** | Hardware-matched NT specification, buses are voltage carriers (algorithms decide signal usage), auxiliary buses enable inter-algorithm communication | Fixed buffer size (28 buses), flexible signal routing determined by algorithms |
 | **Exception-Safe Plugin Execution** | System stability, ecosystem health, graceful degradation | Plugin crashes don't crash host |
 | **Three-Mode Menu System** | Hardware familiarity, progressive disclosure, reduced cognitive load | Users navigate: OFF → PAGE_SELECT → PARAM_SELECT → VALUE_EDIT |
 | **Dirty Region Display Optimization** | Reduces rendering overhead, improves performance on lower-end systems | Display only updates changed regions |

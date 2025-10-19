@@ -14,9 +14,9 @@ The nt_emu project has **successfully moved past prototype phase into production
 | Component | Status | Notes |
 |-----------|--------|-------|
 | **Plugin Loading** | ✅ Done | Full dynamic loading with error handling |
-| **Display System** | ✅ Done | 128x64 OLED emulation with graphics API |
-| **Parameter System** | ✅ Done | 8+ parameters with CV modulation |
-| **Audio I/O** | ✅ Done | 4 input/output channels + 28-bus routing |
+| **Display System** | ✅ Done | 256x64 pixel OLED emulation with graphics API |
+| **Parameter System** | ✅ Done | 3 physical pots controlling algorithm parameters with CV modulation |
+| **Audio I/O** | ✅ Done | 12 input + 8 output channels + 28-bus routing |
 | **MIDI Support** | ✅ Done | Full bidirectional MIDI + clock sync |
 | **Menu System** | ✅ Done | State-machine based hierarchical menu |
 | **Preset System** | ✅ Done | Save/load with JSON persistence |
@@ -50,12 +50,12 @@ The core plugin system is fully operational:
 **7/7 Stories Done** (Story 2.6 has 1ms delay issue, acceptable)
 
 Display and parameter control fully implemented:
-- ✅ Display rendering (490 lines) - 128x64 OLED with 4-bit grayscale
+- ✅ Display rendering (490 lines) - 256x64 pixel OLED with 4-bit grayscale (128x64 byte buffer, 2 pixels/byte)
 - ✅ Graphics API - pixels, lines, rectangles, circles with antialiasing
 - ✅ Text rendering - multiple fonts (Tom Thumb, PixelMix, Selawik)
 - ✅ Dirty region tracking - efficient rendering
-- ✅ VCV knobs - 8 parameters with standard VCV integration
-- ✅ CV modulation - all 8 parameters with CV inputs (1ms acceptable delay)
+- ✅ VCV knobs - 3 physical pots (L, C, R) with standard VCV integration
+- ✅ CV modulation - all 3 pots with CV inputs (1ms acceptable delay)
 - ✅ Parameter smoothing - prevents zipper noise
 
 ---
@@ -65,8 +65,8 @@ Display and parameter control fully implemented:
 
 Audio and MIDI systems fully operational:
 - ✅ Audio processing pipeline - block-based processing at 44.1k/48k/96kHz
-- ✅ 4 audio inputs - properly scaled and routed
-- ✅ 4 audio outputs - clean artifact-free output
+- ✅ 12 audio inputs - properly scaled and routed
+- ✅ 8 audio outputs - clean artifact-free output
 - ✅ 28-bus routing system - hardware-matched routing matrix
 - ✅ MIDI input - note/CC/clock processing
 - ✅ MIDI output - sends messages back to VCV

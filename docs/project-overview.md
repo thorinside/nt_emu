@@ -54,7 +54,7 @@ Combines:
 - Full parameter control with CV modulation
 - OLED display emulation
 - MIDI input/output support
-- 4 audio inputs/outputs
+- 12 audio inputs + 8 audio outputs
 
 ### For Developers
 - Complete Disting NT C++ API implementation

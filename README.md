@@ -29,6 +29,9 @@ For musicians, this module brings the power of custom Disting NT algorithms into
 git clone https://github.com/thorinside/nt_emu.git
 cd nt_emu/vcv-plugin
 
+# Fetch the VCV Rack SDK for your platform
+./fetch-sdk.sh
+
 # Build the module
 make clean && make
 

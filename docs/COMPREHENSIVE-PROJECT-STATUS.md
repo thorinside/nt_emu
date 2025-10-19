@@ -59,7 +59,7 @@ NT_EMU is a **production-ready VCV Rack plugin** emulating the Disting NT synthe
   - PRP: `midi-input-output-integration.md`
 
 - **Display Renderer** (490 lines)
-  - `DisplayRenderer.hpp`: 256x64 OLED, graphics API
+  - `DisplayRenderer.hpp`: 256x64 pixel OLED, graphics API
   - Font support: Tom Thumb, PixelMix, Selawik
   - PRP: `display-drawing-api.md`
 
@@ -117,7 +117,7 @@ src/
 - `vcv-panel-update-task.md` - Panel layout
 
 **What Works**:
-- ✅ 256x64 monochrome OLED emulation
+- ✅ 256x64 pixel monochrome OLED emulation (128x64 byte buffer, 2 pixels/byte)
 - ✅ Graphics API (pixels, lines, shapes, circles, antialiasing)
 - ✅ Text rendering (3 font sizes)
 - ✅ Dirty region optimization
@@ -149,7 +149,7 @@ src/
 - `real-time-parameter-sync.md` - Immediate updates
 
 **What Works**:
-- ✅ 8 parameter knobs with CV modulation
+- ✅ 3 physical pots (L, C, R) controlling algorithm parameters with CV modulation
 - ✅ Parameter smoothing prevents zipper noise
 - ✅ Encoder-based menu navigation
 - ✅ Fine-tuning via parameter edit mode
@@ -179,15 +179,16 @@ src/
 - Audio processing pipeline design
 
 **What Works**:
-- ✅ 4 audio inputs + 4 audio outputs
+- ✅ 12 audio inputs + 8 audio outputs
 - ✅ 28-bus internal routing (hardware-matched architecture)
-- ✅ 4-sample block processing at 96kHz (0.0417ms blocks)
+- ✅ 4-sample block processing at variable sample rate (44.1k/48k/96kHz supported)
 - ✅ Real-time audio without dropouts
 - ✅ Sample rate detection (44.1k, 48k, 96k)
 - ✅ CV I/O for modulation
 
 **Technical Highlights**:
-- Bus allocation: 0-3 inputs, 4-11 CV, 12-19 reserved, 20-23 outputs, 24-27 CV
+- Bus allocation: 0-11 inputs, 12-19 outputs, 20-27 auxiliary (flexible signal routing)
+- All buses carry voltage signals (-12V to +12V) - algorithms determine usage
 - 16-byte alignment for SIMD optimization
 - Audio thread safe: no locks, no allocations
 - Level scaling: ±5V VCV → ±1.0 internal → ±5V out
