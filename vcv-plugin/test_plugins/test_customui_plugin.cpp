@@ -167,8 +167,7 @@ void customUi(_NT_algorithm* algorithm, const _NT_uiData& uiData)
     
     // Check for button changes
     uint16_t currentButtons = uiData.lastButtons;
-    uint16_t buttonChanges = currentButtons ^ alg->lastButtons;
-    
+
     for (int i = 0; i < 4; i++) {
         uint16_t buttonMask = kNT_button1 << i;
         if (uiData.controls & buttonMask) {
@@ -255,15 +254,17 @@ bool draw(_NT_algorithm* algorithm)
 }
 
 // Process audio (minimal implementation)
-void step(_NT_algorithm* algorithm, float* buses, int frames)
+void step(_NT_algorithm* algorithm, float* buses, int numFramesBy4)
 {
     TestCustomUiAlgorithm* alg = (TestCustomUiAlgorithm*)algorithm;
-    
+
     // Simple passthrough
-    int numFrames = frames * 4;
+    // Note: numFramesBy4 = frames / 4 (for optimization)
+    // Each bus has 'frames' samples, so bus stride = numFramesBy4 * 4
+    int numFrames = numFramesBy4 * 4;
     const float* in = buses + (alg->v[kParamInput] - 1) * numFrames;
     float* out = buses + (alg->v[kParamOutput] - 1) * numFrames;
-    
+
     if (alg->v[kParamOutputMode]) {
         // Replace mode
         memcpy(out, in, numFrames * sizeof(float));
