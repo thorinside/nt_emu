@@ -108,7 +108,7 @@ Load these test plugins through the NT Emulator module menu to verify your setup
 ### Plugin Management
 - **Hot Loading** - Load/unload plugins without restarting VCV Rack
 - **Exception Safety** - Plugin crashes don't crash VCV Rack
-- **Multiple Plugins** - Switch between different algorithms on the fly
+- **Plugin Switching** - Load different algorithm plugins via menu navigation
 
 ### Parameter System
 - **Algorithm Parameters** - Each algorithm defines its own parameter count
