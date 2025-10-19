@@ -1,370 +1,343 @@
-# PRP (Product Requirement prompts)
+# NT Emulator (nt_emu)
 
-- A collection of prompts i use in my every day work
+A VCV Rack module that emulates the Expert Sleepers Disting NT hardware, enabling desktop development and testing of NT algorithm plugins without requiring the physical device.
 
-## Video Walkthrough
+## What is This?
 
-👉 https://www.youtube.com/watch?v=KVOZ9s1S9Gk&lc=UgzfwxvFjo6pKEyPo1R4AaABAg
+The NT Emulator provides a faithful software implementation of the Disting NT hardware API inside VCV Rack. This allows developers to:
 
-### ☕ Support This Work
+- Write and debug NT algorithm plugins on their desktop
+- Test plugins in a full modular synthesis environment
+- Iterate rapidly without hardware deployment
+- Use standard C++ debugging tools
 
-**Found value in these resources?**
+For musicians, this module brings the power of custom Disting NT algorithms into the VCV Rack ecosystem.
 
-👉 **Buy me a coffee:** https://coff.ee/wirasm
+## Quick Start
 
-I spent a considerable amount of time creating these resources and prompts. If you find value in this project, please consider buying me a coffee to support my work.
+### Prerequisites
 
-That will help me maintain and improve the resources available for free
+- **VCV Rack 2.0+** - Download from [vcvrack.com](https://vcvrack.com/)
+- **VCV Rack SDK 2.0** - Required for building
+- **C++ Compiler** - Xcode (macOS), GCC/Clang (Linux), or MSVC (Windows)
+- **GNU Make** - Build system
 
----
-
-### 🎯 Transform Your Team with AI Engineering Workshops
-
-**Ready to move beyond toy demos to production-ready AI systems?**
-
-👉 **Book a workshop:** https://www.rasmuswiding.com/
-
-✅ **What you'll get:**
-
-- Put your team on a path to become AI power users
-- Learn the exact PRP methodology used by top engineering teams
-- Hands-on training with Claude Code, PRPs, and real codebases
-- From beginner to advanced AI engineering workshops for teams and individuals
-
-💡 **Perfect for:** Engineering teams, Product teams, and developers who want AI that actually works in production
-
-Let's talk!
-Contact me directly at rasmus@widinglabs.com
-
-# AI Engineering Resources for Claude Code
-
-A comprehensive library of assets and context engineering for Agentic Engineering, optimized for Claude Code. This repository provides the Product Requirement Prompt (PRP) methodology, pre-configured commands, and extensive documentation to enable AI-assisted development that delivers production-ready code on the first pass.
-
-## What is PRP?
-
-Product Requirement Prompt (PRP)
-
-## In short
-
-A PRP is PRD + curated codebase intelligence + agent/runbook—the minimum viable packet an AI needs to plausibly ship production-ready code on the first pass.
-
-Product Requirement Prompt (PRP) is a structured prompt methodology first established in summer 2024 with context engineering at heart. A PRP supplies an AI coding agent with everything it needs to deliver a vertical slice of working software—no more, no less.
-
-### How PRP Differs from Traditional PRD
-
-A traditional PRD clarifies what the product must do and why customers need it, but deliberately avoids how it will be built.
-
-A PRP keeps the goal and justification sections of a PRD yet adds three AI-critical layers:
-
-### Context
-
-Precise file paths and content, library versions and library context, code snippets examples. LLMs generate higher-quality code when given direct, in-prompt references instead of broad descriptions. Usage of a ai_docs/ directory to pipe in library and other docs.
-
-## Getting Started
-
-### Option 1: Copy Resources to Your Existing Project
-
-1. **Copy the Claude commands** to your project:
-
-   ```bash
-   # From your project root
-   cp -r /path/to/PRPs-agentic-eng/.claude/commands .claude/
-   ```
-
-2. **Copy the PRP templates and runner**:
-
-   ```bash
-   cp -r /path/to/PRPs-agentic-eng/PRPs/templates PRPs/
-   cp -r /path/to/PRPs-agentic-eng/PRPs/scripts PRPs/
-   cp /path/to/PRPs-agentic-eng/PRPs/README.md PRPs/
-   ```
-
-3. **Copy AI documentation** (optional but recommended):
-   ```bash
-   cp -r /path/to/PRPs-agentic-eng/PRPs/ai_docs PRPs/
-   ```
-
-### Option 2: Clone and Start a New Project
-
-1. **Clone this repository**:
-
-   ```bash
-   git clone https://github.com/Wirasm/PRPs-agentic-eng.git
-   cd PRPs-agentic-eng
-   ```
-
-2. **Create your project structure**:
-
-   ```bash
-   # Example for a Python project
-   mkdir -p src/tests
-   touch src/__init__.py
-   touch pyproject.toml
-   touch CLAUDE.md
-   ```
-
-3. **Initialize with UV** (for Python projects):
-   ```bash
-   uv venv
-   uv sync
-   ```
-
-## Using Claude Commands
-
-The `.claude/commands/` directory contains 12 pre-configured commands that appear as slash commands in Claude Code.
-
-### Available Commands
-
-1. **PRP Creation & Execution**:
-   - `/create-base-prp` - Generate comprehensive PRPs with research
-   - `/execute-base-prp` - Execute PRPs against codebase
-   - `/planning-create` - Create planning documents with diagrams
-   - `/spec-create-adv` - Advanced specification creation
-   - `/spec-execute` - Execute specifications
-
-2. **Code Review & Refactoring**:
-   - `/review-general` - General code review
-   - `/review-staged-unstaged` - Review git changes
-   - `/refactor-simple` - Simple refactoring tasks
-
-3. **Git & GitHub**:
-   - `/create-pr` - Create pull requests
-
-4. **Utilities**:
-   - `/prime-core` - Prime Claude with project context
-   - `/onboarding` - Onboarding process for new team members
-   - `/debug` - Debugging workflow
-
-### How to Use Commands
-
-1. **In Claude Code**, type `/` to see available commands
-2. **Select a command** and provide arguments when prompted
-3. **Example usage**:
-   ```
-   /create-base-prp user authentication system with OAuth2
-   ```
-
-## Using PRPs
-
-### Creating a PRP
-
-1. **Use the template** as a starting point:
-
-   ```bash
-   cp PRPs/templates/prp_base.md PRPs/my-feature.md
-   ```
-
-2. **Fill in the sections**:
-   - Goal: What needs to be built
-   - Why: Business value and user impact
-   - Context: Documentation, code examples, gotchas
-   - Implementation Blueprint: Tasks and pseudocode
-   - Validation Loop: Executable tests
-
-3. **Or use Claude to generate one**:
-   ```
-   /create-base-prp implement user authentication with JWT tokens
-   ```
-
-### Executing a PRP
-
-1. **Using the runner script**:
-
-   ```bash
-   # Interactive mode (recommended for development)
-   uv run PRPs/scripts/prp_runner.py --prp my-feature --interactive
-
-   # Headless mode (for CI/CD)
-   uv run PRPs/scripts/prp_runner.py --prp my-feature --output-format json
-
-   # Streaming JSON (for real-time monitoring)
-   uv run PRPs/scripts/prp_runner.py --prp my-feature --output-format stream-json
-   ```
-
-2. **Using Claude commands**:
-   ```
-   /execute-base-prp PRPs/my-feature.md
-   ```
-
-### PRP Best Practices
-
-1. **Context is King**: Include ALL necessary documentation, examples, and caveats
-2. **Validation Loops**: Provide executable tests/lints the AI can run and fix
-3. **Information Dense**: Use keywords and patterns from the codebase
-4. **Progressive Success**: Start simple, validate, then enhance
-
-### Example PRP Structure
-
-```markdown
-## Goal
-
-Implement user authentication with JWT tokens
-
-## Why
-
-- Enable secure user sessions
-- Support API authentication
-- Replace basic auth with industry standard
-
-## What
-
-JWT-based authentication system with login, logout, and token refresh
-
-### Success Criteria
-
-- [ ] Users can login with email/password
-- [ ] JWT tokens expire after 24 hours
-- [ ] Refresh tokens work correctly
-- [ ] All endpoints properly secured
-
-## All Needed Context
-
-### Documentation & References
-
-- url: https://jwt.io/introduction/
-  why: JWT structure and best practices
-
-- file: src/auth/basic_auth.py
-  why: Current auth pattern to replace
-
-- doc: https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/
-  section: OAuth2 with Password and JWT
-
-### Known Gotchas
-
-# CRITICAL: Use RS256 algorithm for production
-
-# CRITICAL: Store refresh tokens in httpOnly cookies
-
-# CRITICAL: Implement token blacklist for logout
-
-## Implementation Blueprint
-
-[... detailed implementation plan ...]
-
-## Validation Loop
-
-### Level 1: Syntax & Style
-
-ruff check src/ --fix
-mypy src/
-
-### Level 2: Unit Tests
-
-uv run pytest tests/test_auth.py -v
-
-### Level 3: Integration Test
-
-curl -X POST http://localhost:8000/auth/login \
- -H "Content-Type: application/json" \
- -d '{"email": "test@example.com", "password": "testpass"}'
-```
-
-## Project Structure Recommendations
-
-```
-your-project/
-|-- .claude/
-|   |-- commands/          # Claude Code commands
-|   `-- settings.json      # Tool permissions
-|-- PRPs/
-|   |-- templates/         # PRP templates
-|   |-- scrips/           # PRP runner
-|   |-- ai_docs/          # Library documentation
-|   |-- completed/        # Finished PRPs
-|   `-- *.md              # Active PRPs
-|-- CLAUDE.md             # Project-specific guidelines
-|-- src/                  # Your source code
-`-- tests/                # Your tests
-```
-
-## Setting Up CLAUDE.md
-
-Create a `CLAUDE.md` file in your project root with:
-
-1. **Core Principles**: KISS, YAGNI, etc.
-2. **Code Structure**: File size limits, function length
-3. **Architecture**: How your project is organized
-4. **Testing**: Test patterns and requirements
-5. **Style Conventions**: Language-specific guidelines
-6. **Development Commands**: How to run tests, lint, etc.
-
-See the example CLAUDE.md in this repository for a comprehensive template.
-
-## Advanced Usage
-
-### Running Multiple Claude Sessions
-
-Use Git worktrees for parallel development:
+### Building the Module
 
 ```bash
-git worktree add -b feature-auth ../project-auth
-git worktree add -b feature-api ../project-api
+# Clone the repository
+git clone https://github.com/thorinside/nt_emu.git
+cd nt_emu/vcv-plugin
 
-# Run Claude in each worktree
-cd ../project-auth && claude
-cd ../project-api && claude
+# Build the module
+make clean && make
+
+# Install to your VCV Rack plugins directory
+make install
 ```
 
-### CI/CD Integration
+The `make install` command copies the built plugin to:
+- **macOS**: `~/Library/Application Support/Rack2/plugins/DistingNT/`
+- **Linux**: `~/.Rack2/plugins/DistingNT/`
+- **Windows**: `%USERPROFILE%/Documents/Rack2/plugins/DistingNT/`
 
-Use the PRP runner in headless mode:
+### Running in VCV Rack
 
-```yaml
-# GitHub Actions example
-- name: Execute PRP
-  run: |
-    uv run PRPs/scripts/prp_runner.py \
-      --prp implement-feature \
-      --output-format json > result.json
+1. **Launch VCV Rack**:
+   ```bash
+   # macOS
+   /Applications/VCV\ Rack\ 2.app/Contents/MacOS/Rack
+
+   # Or with debug output
+   /Applications/VCV\ Rack\ 2.app/Contents/MacOS/Rack -d
+   ```
+
+2. **Add the module**:
+   - Right-click in VCV Rack
+   - Search for "Disting NT"
+   - Select "NT Emulator"
+
+3. **Load a plugin**:
+   - Click the display or use the encoder
+   - Navigate to "Load Plugin"
+   - Select your `.dylib` (macOS), `.so` (Linux), or `.dll` (Windows) file
+
+### Building Test Plugins
+
+```bash
+cd vcv-plugin
+
+# Build example plugins
+make test-plugins
+
+# This creates:
+# - test_customui_plugin.dylib
+# - drawtest_plugin.dylib
+# - fonttest_plugin.dylib
 ```
 
-### Custom Commands
+Load these test plugins through the NT Emulator module menu to verify your setup.
 
-Create your own commands in `.claude/commands/`:
+## Module Interface
 
-```markdown
-# .claude/commands/my-command.md
+### Controls
 
-# My Custom Command
+- **Rotary Encoder** - Navigate menus and adjust parameters
+- **4 Potentiometers (Z, X, Y, I)** - Parameter controls with CV inputs
+- **4 Buttons** - Function buttons with CV triggers
 
-Do something specific to my project.
+### Inputs/Outputs
 
-## Arguments: $ARGUMENTS
+- **4 Audio Inputs** - Stereo pairs (L1/R1, L2/R2)
+- **4 Audio Outputs** - Stereo pairs (L1/R1, L2/R2)
+- **8 CV Inputs** - For modulating pots and buttons
+- **MIDI In/Out** - Full MIDI support
 
-[Your command implementation]
+### Display
+
+- **128x64 OLED Emulation** - Real-time rendering of plugin graphics
+- Shows menu system, parameter values, and custom plugin UIs
+
+## Module Features
+
+### Plugin Management
+- **Hot Loading** - Load/unload plugins without restarting VCV Rack
+- **Exception Safety** - Plugin crashes don't crash VCV Rack
+- **Multiple Plugins** - Switch between different algorithms on the fly
+
+### Parameter System
+- **16x16 Routing Matrix** - Flexible parameter to control mapping
+- **CV Modulation** - All parameters can be CV-controlled
+- **Preset Management** - Save/load plugin states via VCV Rack
+
+### MIDI Integration
+- **MIDI Input** - Route MIDI from any device to your plugin
+- **MIDI Output** - Plugins can generate MIDI
+- **Activity Indicators** - Visual feedback for MIDI traffic
+
+### Audio Processing
+- **4-Bus System** - Matches Disting NT hardware topology
+- **Real-time Processing** - Low-latency audio with VCV Rack integration
+- **Sample-accurate** - Precise timing for all operations
+
+## Developing NT Plugins
+
+### Plugin Structure
+
+NT plugins are shared libraries that implement the NT API:
+
+```cpp
+#include "nt_api.h"
+
+extern "C" {
+    // Required plugin interface
+    void init(_NT_algorithm* algorithm) { /* ... */ }
+    void step(_NT_algorithm* algorithm, float* buses, int numFramesBy4) { /* ... */ }
+    void customUi(_NT_algorithm* algorithm, const _NT_uiData& uiData) { /* ... */ }
+    bool draw(_NT_algorithm* algorithm) { /* ... */ }
+}
 ```
 
-## Resources Included
+### Building Your Plugin
 
-### Documentation (PRPs/ai_docs/)
+```bash
+# Example build command (macOS)
+clang++ -std=c++11 -shared -o my_plugin.dylib my_plugin.cpp \
+    -I../emulator/include
 
-- `cc_base.md` - Core Claude Code documentation
-- `cc_actions_sdk.md` - GitHub Actions and SDK integration
-- `cc_best_practices.md` - Best practices guide
-- `cc_settings.md` - Configuration and security
-- `cc_tutorials.md` - Step-by-step tutorials
+# Linux
+g++ -std=c++11 -shared -fPIC -o my_plugin.so my_plugin.cpp \
+    -I../emulator/include
 
-### Templates (PRPs/templates/)
+# Windows
+cl /LD /std:c++11 my_plugin.cpp /I..\emulator\include
+```
 
-- `prp_base.md` - Comprehensive PRP template with validation
-- `prp_spec.md` - Specification template
-- `prp_planning_base.md` - Planning template with diagrams
+### API Reference
 
-### Example PRP
+The NT API provides:
 
-- `example-from-workshop-mcp-crawl4ai-refactor-1.md` - Real-world refactoring example
+- **Parameter Management** - Define and control plugin parameters
+- **Audio Processing** - Access to 4-bus audio system
+- **Display System** - Graphics drawing primitives (pixels, text, shapes)
+- **MIDI Handling** - Send and receive MIDI messages
+- **Control Input** - Read encoder, buttons, and pots
+- **Menu Integration** - Custom menu items and settings
+
+See `emulator/include/nt_api.h` for the complete API documentation.
+
+### Example Plugin
+
+Check out `vcv-plugin/test_plugins/test_customui_plugin.cpp` for a complete working example demonstrating:
+
+- Parameter definition and mapping
+- Audio I/O
+- Custom UI drawing
+- Button and encoder handling
+- Menu system integration
+
+## Debugging Plugins
+
+### Using LLDB (macOS/Linux)
+
+```bash
+# Start VCV Rack under debugger
+lldb /Applications/VCV\ Rack\ 2.app/Contents/MacOS/Rack
+
+# Set breakpoints in your plugin
+(lldb) breakpoint set --file my_plugin.cpp --line 42
+
+# Run
+(lldb) run -d
+```
+
+### Debug Output
+
+The emulator provides extensive logging:
+
+```bash
+# Enable debug output
+/Applications/VCV\ Rack\ 2.app/Contents/MacOS/Rack -d
+
+# Shows:
+# - Plugin load/unload events
+# - Parameter changes
+# - MIDI activity
+# - Error conditions
+```
+
+### Common Issues
+
+**Plugin won't load:**
+- Check that it exports the required C functions (`init`, `step`, etc.)
+- Verify C++11 compatibility
+- Ensure no unresolved symbols
+
+**Audio glitches:**
+- Verify `step()` function processes correct number of samples
+- Check for buffer overruns
+- Ensure thread-safety in audio callback
+
+**Display not updating:**
+- `draw()` must return `true` when content changes
+- Check that graphics calls are within bounds (0-127, 0-63)
+
+## Project Structure
+
+```
+nt_emu/
+├── vcv-plugin/              # VCV Rack module source
+│   ├── src/                 # Module implementation
+│   │   ├── NtEmu.cpp        # Main module
+│   │   ├── plugin/          # Plugin management system
+│   │   ├── parameter/       # Parameter routing system
+│   │   ├── menu/            # Menu navigation system
+│   │   ├── midi/            # MIDI processing
+│   │   ├── display/         # Display rendering
+│   │   └── dsp/             # Audio processing
+│   ├── test_plugins/        # Example plugins
+│   └── Makefile            # Build system
+├── emulator/               # NT API emulation core
+│   ├── include/            # API headers
+│   └── src/                # Core implementation
+└── docs/                   # Documentation
+```
+
+## Testing
+
+### Unit Tests
+
+```bash
+cd vcv-plugin
+make test
+
+# Runs JSON serialization tests
+# Output: 16/16 tests passing
+```
+
+### Integration Tests
+
+```bash
+# Build and install
+make clean && make && make install
+
+# Launch VCV Rack
+/Applications/VCV\ Rack\ 2.app/Contents/MacOS/Rack -d
+
+# Load a test plugin and verify:
+# - Audio passes through
+# - Display updates
+# - Parameters respond to controls
+# - MIDI functions correctly
+```
+
+## Architecture
+
+The module uses a **modular component architecture**:
+
+- **Plugin Manager** (465 lines) - Safe plugin loading with exception handling
+- **Parameter System** (450 lines) - Flexible 16x16 routing matrix
+- **Menu System** (380 lines) - State machine for navigation
+- **MIDI Processor** (220 lines) - MIDI I/O with activity tracking
+- **Display Renderer** (490 lines) - OLED graphics emulation
+
+Each component is independently testable and uses dependency injection for clean separation of concerns.
+
+## Documentation
+
+- **[Project Overview](docs/project-overview.md)** - High-level project structure
+- **[VCV Module Architecture](docs/architecture-vcv-plugin.md)** - Module design details
+- **[Emulator Architecture](docs/architecture-emulator.md)** - API emulation layer
+- **[Development Guide](docs/development-guide.md)** - Setup and workflow
+- **[Source Tree Analysis](docs/source-tree-analysis.md)** - Complete codebase map
+
+## Requirements
+
+### Runtime
+- VCV Rack 2.0 or later
+- macOS 10.13+, Linux (Ubuntu 20.04+), or Windows 10+
+
+### Development
+- C++11 compatible compiler
+- VCV Rack SDK 2.0
+- GNU Make or compatible build system
+- Python 3.12+ (for PRP tooling, optional)
+
+## Contributing
+
+This project demonstrates AI-assisted development using the PRP (Product Requirement Prompt) methodology. See the `docs/` directory for extensive documentation about the development process.
+
+### Development Workflow
+
+1. Review existing architecture documentation
+2. Create or modify PRPs in `docs/stories/`
+3. Use Claude Code commands from `.claude/commands/`
+4. Follow the modular architecture patterns
+5. Ensure tests pass before committing
 
 ## License
 
-MIT License
+MIT License - See LICENSE file for details
+
+## Author
+
+Neal Sanche (No Such Device)
+- Website: [nosuch.dev](https://nosuch.dev)
+- Email: thorinside@gmail.com
+- GitHub: [@thorinside](https://github.com/thorinside)
+
+## Acknowledgments
+
+- Expert Sleepers for the Disting NT hardware and API
+- VCV Rack community for the excellent SDK
+- PRP methodology pioneers for AI-assisted development patterns
 
 ## Support
 
-I spent a considerable amount of time creating these resources and prompts. If you find value in this project, please consider buying me a coffee to support my work.
-
-👉 **Buy me a coffee:** https://coff.ee/wirasm
+- **Issues**: [GitHub Issues](https://github.com/thorinside/nt_emu/issues)
+- **Discussions**: Use GitHub Discussions for questions
+- **Documentation**: Check `docs/` for detailed guides
 
 ---
 
-Remember: The goal is one-pass implementation success through comprehensive context. Happy coding with Claude Code!
+**Ready to start developing?** Build the module, load a test plugin, and start experimenting. The NT API gives you complete control over audio, MIDI, and graphics in the VCV Rack environment.
