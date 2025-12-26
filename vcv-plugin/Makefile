@@ -99,11 +99,3 @@ list-example-plugins:
 	@echo "Available example plugins:"
 	@for src in $(EXAMPLE_SOURCES); do echo "  - $$(basename $$src .cpp)"; done
 
-# Install example plugins to VCV Rack plugin directory
-RACK_PLUGIN_DIR = $(HOME)/Library/Application Support/Rack2/plugins-mac-arm64/nt_emu
-
-.PHONY: install-example-plugins
-install-example-plugins: example-plugins
-	@mkdir -p "$(RACK_PLUGIN_DIR)"
-	cp $(EXAMPLE_PLUGINS) "$(RACK_PLUGIN_DIR)/"
-	@echo "Installed example plugins to $(RACK_PLUGIN_DIR)/"
