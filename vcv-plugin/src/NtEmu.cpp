@@ -1506,9 +1506,21 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
     }
     
     void onPluginError(const std::string& error) override {
+        // Log to VCV Rack log file
         WARN("Plugin error: %s", error.c_str());
+
+        // Store error for display
+        lastPluginError = error;
+        lastPluginErrorTime = 10.0f; // Show for 10 seconds
         displayDirty = true;
+
+        // Show dialog box so user can copy the error message
+        std::string dialogMessage = "Plugin Error:\n\n" + error;
+        osdialog_message(OSDIALOG_ERROR, OSDIALOG_OK, dialogMessage.c_str());
     }
+
+    std::string lastPluginError;
+    float lastPluginErrorTime = 0.0f;
     
     // Direct customUi event delivery for pot changes
     void sendCustomUiPotEvent(int potIndex, float newValue) {

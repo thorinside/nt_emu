@@ -61,7 +61,7 @@ bool PluginManager::loadPlugin(const std::string& path) {
             WARN("Failed to load plugin from path '%s': %s", path.c_str(), error.c_str());
             loadingMessage = "Error: Failed to load plugin - " + error;
             loadingMessageTimer = 4.0f;
-            notifyError(error);
+            notifyError("Failed to load '" + path + "': " + error);
             return false;
         }
         
@@ -89,7 +89,7 @@ bool PluginManager::loadPlugin(const std::string& path) {
                 loadingMessage = "Error: Plugin missing required functions";
                 loadingMessageTimer = 4.0f;
                 unloadPlugin();
-                notifyError("Plugin missing required functions");
+                notifyError("Plugin '" + path + "' does not export pluginEntry or NT_factory function");
                 return false;
             }
             
@@ -125,14 +125,14 @@ bool PluginManager::loadPlugin(const std::string& path) {
         loadingMessage = "Error: Exception loading plugin - " + std::string(e.what());
         loadingMessageTimer = 4.0f;
         unloadPlugin();
-        notifyError(e.what());
+        notifyError("Exception loading '" + path + "': " + std::string(e.what()));
         return false;
     } catch (...) {
         WARN("Unknown exception loading plugin '%s'", path.c_str());
         loadingMessage = "Error: Unknown exception loading plugin";
         loadingMessageTimer = 4.0f;
         unloadPlugin();
-        notifyError("Unknown exception loading plugin");
+        notifyError("Unknown exception loading '" + path + "'");
         return false;
     }
 }
@@ -242,21 +242,21 @@ void PluginManager::updateLoadingTimer(float deltaTime) {
 
 bool PluginManager::validatePlugin() {
     if (!pluginFactory) {
-        WARN("Plugin factory is null");
+        WARN("Plugin factory is null - pluginEntry returned NULL");
         loadingMessage = "Error: Invalid plugin factory";
         loadingMessageTimer = 4.0f;
-        notifyError("Invalid plugin factory");
+        notifyError("Invalid plugin factory - pluginEntry() returned NULL");
         return false;
     }
-    
+
     if (!pluginFactory->construct) {
-        WARN("Plugin factory missing construct function");
+        WARN("Plugin factory missing construct function pointer");
         loadingMessage = "Error: Plugin missing construct function";
         loadingMessageTimer = 4.0f;
-        notifyError("Plugin missing construct function");
+        notifyError("Plugin factory missing construct function pointer");
         return false;
     }
-    
+
     return true;
 }
 
@@ -330,11 +330,13 @@ bool PluginManager::initializePlugin() {
     } catch (const std::exception& e) {
         loadingMessage = "Error: Exception during plugin initialization - " + std::string(e.what());
         loadingMessageTimer = 4.0f;
-        notifyError(e.what());
+        WARN("Exception during plugin initialization: %s", e.what());
+        notifyError("Exception during plugin initialization: " + std::string(e.what()));
         return false;
     } catch (...) {
         loadingMessage = "Error: Unknown exception during plugin initialization";
         loadingMessageTimer = 4.0f;
+        WARN("Unknown exception during plugin initialization");
         notifyError("Unknown exception during plugin initialization");
         return false;
     }
