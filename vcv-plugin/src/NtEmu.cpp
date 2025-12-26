@@ -1803,10 +1803,11 @@ struct EmulatorWidget : ModuleWidget {
         addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
         addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-        // OLED Display (larger, centered at top)
+        // OLED Display (larger, centered at top - below logo)
+        // Display is 256x64 pixels = 4:1 aspect ratio
         DisplayRenderer::ModuleOLEDWidget* display = new DisplayRenderer::ModuleOLEDWidget();
-        display->box.pos = mm2px(Vec(8.0, 4.6));
-        display->box.size = mm2px(Vec(55.12, 15.0));
+        display->box.pos = mm2px(Vec(8.0, 8.0));  // Moved down to avoid overlapping logo
+        display->box.size = mm2px(Vec(55.12, 13.78));  // 55.12/4 = 13.78 for exact 4:1 ratio
         if (module) {
             display->dataProvider = module;
         }
