@@ -1784,7 +1784,7 @@ struct EmulatorWidget : ModuleWidget {
 
         // OLED Display (larger, centered at top)
         DisplayRenderer::ModuleOLEDWidget* display = new DisplayRenderer::ModuleOLEDWidget();
-        display->box.pos = mm2px(Vec(8.0, 8.0));
+        display->box.pos = mm2px(Vec(8.0, 4.6));
         display->box.size = mm2px(Vec(55.12, 15.0));
         if (module) {
             display->dataProvider = module;
