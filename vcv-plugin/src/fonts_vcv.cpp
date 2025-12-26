@@ -3,7 +3,7 @@
 #include "../../emulator/src/core/fonts.h"
 #include "../../fonts/tom_thumb_4x6.h"
 #include "../../fonts/pixelmix_baseline.h"
-#include "../../fonts/selawik_baseline.h"
+#include "../../fonts/selawik_aa.h"  // Anti-aliased Selawik with 4-bit grayscale
 
 // VCV plugin specific implementation that uses NT_screen directly
 extern "C" uint8_t NT_screen[128 * 64];
@@ -24,6 +24,7 @@ FontMetrics getFontMetrics(FontType type) {
             nullptr, // fixed width
             4, // Tom Thumb fixed width (actual character width)
             6, // Tom Thumb height
+            5, // ascent (pixels above baseline) - capital letter height
             0, // no additional spacing
             32, // first char
             126 // last char
@@ -34,23 +35,25 @@ FontMetrics getFontMetrics(FontType type) {
             fonts::pixelmix_baselineWidths, // use actual character widths
             0, // width will come from widths array
             fonts::PIXELMIX_BASELINE_HEIGHT,
+            8, // ascent (pixels above baseline)
             0, // no additional spacing
             fonts::PIXELMIX_BASELINE_FIRST_CHAR,
             fonts::PIXELMIX_BASELINE_LAST_CHAR
         };
     case FontType::LARGE:
         return {
-            reinterpret_cast<const unsigned char*>(fonts::selawik_baselineFont),
-            fonts::selawik_baselineWidths, // use actual character widths
+            reinterpret_cast<const unsigned char*>(fonts::selawik_aaFont),
+            fonts::selawik_aaWidths, // use actual character widths
             0, // width will come from widths array
-            fonts::SELAWIK_BASELINE_HEIGHT,
+            fonts::SELAWIK_AA_HEIGHT,
+            fonts::SELAWIK_AA_ASCENT, // ascent (pixels above baseline)
             0, // no additional spacing
-            fonts::SELAWIK_BASELINE_FIRST_CHAR,
-            fonts::SELAWIK_BASELINE_LAST_CHAR
+            fonts::SELAWIK_AA_FIRST_CHAR,
+            fonts::SELAWIK_AA_LAST_CHAR
         };
     }
     // Default fallback
-    return {nullptr, nullptr, 0, 0, 0, 0, 0};
+    return {nullptr, nullptr, 0, 0, 0, 0, 0, 0};
 }
 
 void setPixel(int x, int y, int color) {
@@ -74,24 +77,28 @@ void drawChar(int x, int y, char c, FontType font, int color = 15) {
     // Safety checks
     if (x < -20 || x > 300 || y < -20 || y > 100) return;  // Reasonable bounds
     if (color < 0 || color > 15) color = 15;  // Clamp color
-    
+
     FontMetrics metrics = getFontMetrics(font);
     if (!metrics.data) return;
     if (metrics.height <= 0 || metrics.height > 50) return;  // Sanity check
-    
+
     int char_index = c - metrics.first_char;
     if (char_index < 0 || char_index > (metrics.last_char - metrics.first_char)) return;
-    
+
+    // Convert baseline y to top-left y (y is baseline, subtract ascent to get top)
+    int top_y = y - metrics.ascent;
+
     // Character width is handled by the caller (drawText)
-    
+
     if (font == FontType::TINY) {
         // Tom Thumb 4x6: uses MSB ordering, render full bitmap but advance by character width
+        // Add 2px left offset to match other fonts' left bearing
         const uint8_t (*font_data)[6] = reinterpret_cast<const uint8_t (*)[6]>(metrics.data);
         for (int row = 0; row < metrics.height; row++) {
             uint8_t bitmap_row = font_data[char_index][row];
             for (int col = 0; col < 4; col++) {  // Full 4-pixel bitmap
                 if (bitmap_row & (0x80 >> col)) {  // MSB: Start from bit 7, move right
-                    setPixel(x + col, y + row, color);
+                    setPixel(x + col + 2, top_y + row, color);  // +2 for left bearing
                 }
             }
         }
@@ -102,19 +109,22 @@ void drawChar(int x, int y, char c, FontType font, int color = 15) {
             uint8_t bitmap_row = font_data[char_index][row];
             for (int col = 0; col < 8; col++) {  // Full 8-bit bitmap data
                 if (bitmap_row & (0x80 >> col)) {  // MSB: Start from bit 7, move right
-                    setPixel(x + col, y + row, color);
+                    setPixel(x + col, top_y + row, color);
                 }
             }
         }
     } else {
-        // Selawik baseline: uses MSB ordering with multi-byte rows, render full bitmap but advance by character width
-        const uint8_t (*font_data)[30] = reinterpret_cast<const uint8_t (*)[30]>(metrics.data); // 15 rows * 2 bytes per row
+        // Selawik AA: anti-aliased with 1 byte per pixel (grayscale 0-15)
+        constexpr int SELAWIK_AA_BITMAP_WIDTH = fonts::SELAWIK_AA_WIDTH;
+        const uint8_t (*font_data)[SELAWIK_AA_BITMAP_WIDTH * fonts::SELAWIK_AA_HEIGHT] =
+            reinterpret_cast<const uint8_t (*)[SELAWIK_AA_BITMAP_WIDTH * fonts::SELAWIK_AA_HEIGHT]>(metrics.data);
         for (int row = 0; row < metrics.height; row++) {
-            for (int col = 0; col < 14; col++) {  // Full 14-pixel bitmap
-                int byte_idx = row * 2 + (col / 8);  // 2 bytes per row
-                int bit_idx = 7 - (col % 8);         // MSB first within each byte
-                if (font_data[char_index][byte_idx] & (1 << bit_idx)) {
-                    setPixel(x + col, y + row, color);
+            for (int col = 0; col < SELAWIK_AA_BITMAP_WIDTH; col++) {
+                int grayscale = font_data[char_index][row * SELAWIK_AA_BITMAP_WIDTH + col];
+                if (grayscale > 0) {
+                    // Scale grayscale by the requested color intensity
+                    int pixel_color = (grayscale * color + 7) / 15;  // Round to nearest
+                    setPixel(x + col, top_y + row, pixel_color);
                 }
             }
         }
@@ -123,13 +133,13 @@ void drawChar(int x, int y, char c, FontType font, int color = 15) {
 
 void drawText(int x, int y, const char* text, FontType font, int color = 15) {
     if (!text) return;
-    
+
     FontMetrics metrics = getFontMetrics(font);
     int current_x = x;
-    
+
     while (*text) {
         drawChar(current_x, y, *text, font, color);
-        
+
         int char_width = metrics.width;
         if (metrics.widths) {
             int char_index = *text - metrics.first_char;
@@ -137,7 +147,7 @@ void drawText(int x, int y, const char* text, FontType font, int color = 15) {
                 char_width = metrics.widths[char_index];
             }
         }
-        
+
         current_x += char_width + metrics.spacing;
         text++;
     }
@@ -145,10 +155,10 @@ void drawText(int x, int y, const char* text, FontType font, int color = 15) {
 
 int getTextWidth(const char* text, FontType font) {
     if (!text) return 0;
-    
+
     FontMetrics metrics = getFontMetrics(font);
     int width = 0;
-    
+
     while (*text) {
         int char_width = metrics.width;
         if (metrics.widths) {
@@ -157,7 +167,7 @@ int getTextWidth(const char* text, FontType font) {
                 char_width = metrics.widths[char_index];
             }
         }
-        
+
         width += char_width + metrics.spacing;
         text++;
     }

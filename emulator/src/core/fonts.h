@@ -17,6 +17,7 @@ struct FontMetrics {
     const unsigned char* widths; // for proportional fonts (null for fixed-width)
     int width;   // character width (0 for variable width fonts)
     int height;  // character height
+    int ascent;  // pixels above baseline (y coordinate is baseline)
     int spacing; // spacing between characters
     int first_char; // first character code
     int last_char;  // last character code

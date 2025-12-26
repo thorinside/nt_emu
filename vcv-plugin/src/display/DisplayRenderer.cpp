@@ -22,14 +22,22 @@ namespace DisplayRenderer {
             drawPlaceholder(args);
             return;
         }
-        
+
         // Set up coordinate system for 256x64 display
         nvgSave(args.vg);
-        nvgScale(args.vg, box.size.x / DISPLAY_WIDTH, box.size.y / DISPLAY_HEIGHT);
-        
-        // Clear display background (black)
+
+        // Reset scissor to allow drawing full content (VCV may have clipped to widget bounds)
+        nvgResetScissor(args.vg);
+
+        // Scale coordinate system: 256x64 pixel display maps to widget size
+        // Use 64.0 (not 64) to ensure pixel row 63 (which spans y=63 to y=64) fits fully
+        float scaleX = box.size.x / (float)DISPLAY_WIDTH;
+        float scaleY = box.size.y / 64.0f;
+        nvgScale(args.vg, scaleX, scaleY);
+
+        // Clear display background (black) - draw full 0-64 range
         nvgBeginPath(args.vg);
-        nvgRect(args.vg, 0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+        nvgRect(args.vg, 0, 0, DISPLAY_WIDTH, 64);
         nvgFillColor(args.vg, nvgRGB(0, 0, 0));
         nvgFill(args.vg);
         

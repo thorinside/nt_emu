@@ -232,7 +232,8 @@ extern "C" {
             INFO("VCV NT_drawText called: '%s' at (%d,%d), colour=%d, call %d", str ? str : "NULL", x, y, colour, callCount);
         }
         
-        if (!str || x < 0 || x >= 256 || y < 0 || y >= 64) return;
+        // y is baseline coordinate - allow values beyond 64 since text extends above baseline
+        if (!str || x < 0 || x >= 256 || y < -20 || y > 80) return;
         
         // Convert NT text size to FontType
         NT::FontType fontType;
