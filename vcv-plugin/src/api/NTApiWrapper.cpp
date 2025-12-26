@@ -1,4 +1,5 @@
 #include "NTApiWrapper.hpp"
+#include "VirtualSdCard.hpp"
 #include <logger.hpp>
 #include <cstdio>
 #include <cstring>
@@ -513,5 +514,26 @@ extern "C" {
         if (bridge) {
             bridge->openArray();
         }
+    }
+
+    // WAV API functions
+    __attribute__((visibility("default"))) bool NT_isSdCardMounted(void) {
+        return VirtualSdCard::getInstance().isMounted();
+    }
+
+    __attribute__((visibility("default"))) uint32_t NT_getNumSampleFolders(void) {
+        return VirtualSdCard::getInstance().getNumSampleFolders();
+    }
+
+    __attribute__((visibility("default"))) void NT_getSampleFolderInfo(uint32_t folder, _NT_wavFolderInfo& info) {
+        VirtualSdCard::getInstance().getSampleFolderInfo(folder, info);
+    }
+
+    __attribute__((visibility("default"))) void NT_getSampleFileInfo(uint32_t folder, uint32_t sample, _NT_wavInfo& info) {
+        VirtualSdCard::getInstance().getSampleFileInfo(folder, sample, info);
+    }
+
+    __attribute__((visibility("default"))) bool NT_readSampleFrames(const _NT_wavRequest& request) {
+        return VirtualSdCard::getInstance().readSampleFrames(request);
     }
 }

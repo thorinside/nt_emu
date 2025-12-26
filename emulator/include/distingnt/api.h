@@ -40,8 +40,10 @@ enum _NT_version
 	kNT_apiVersion6, // Add custom UI support. Compatible with v4-5.
 	kNT_apiVersion7, // Add serialisation. Compatible with v4-6.
 	kNT_apiVersion8, // Change hasCustomUi() to return uint32_t; remove _NT_pots; rename _NT_uiData.buttons; remove  _NT_uiData.potChange. Compatible with v4-7.
+	kNT_apiVersion9, // Add WAV file API. Compatible with v4-8.
+	kNT_apiVersion10, // Current version with full WAV support. Compatible with v4-9.
 
-	kNT_apiVersionCurrent = kNT_apiVersion8
+	kNT_apiVersionCurrent = kNT_apiVersion10
 };
 
 /*
@@ -521,5 +523,8 @@ extern "C"
 	// Set 'end' to true for the final call. You do not need to include the 0xF7 byte to end the SysEx message.
 	void NT_sendMidiSysEx(uint32_t destination, const uint8_t *data, uint32_t count, bool end);
 }
+
+// WAV file API (requires kNT_apiVersion9 or later)
+#include "wav.h"
 
 #endif // _DISTINGNT_API_H

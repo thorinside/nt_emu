@@ -65,4 +65,11 @@ void clearCurrentJsonStream();
         __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addNumberEi(void* self, int value);
         __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9addStringEPKc(void* self, const char* str);
         __attribute__((visibility("default"))) void _ZN14_NT_jsonStream9openArrayEv(void* self);
+
+        // WAV API
+        __attribute__((visibility("default"))) bool NT_isSdCardMounted(void);
+        __attribute__((visibility("default"))) uint32_t NT_getNumSampleFolders(void);
+        __attribute__((visibility("default"))) void NT_getSampleFolderInfo(uint32_t folder, struct _NT_wavFolderInfo& info);
+        __attribute__((visibility("default"))) void NT_getSampleFileInfo(uint32_t folder, uint32_t sample, struct _NT_wavInfo& info);
+        __attribute__((visibility("default"))) bool NT_readSampleFrames(const struct _NT_wavRequest& request);
     }

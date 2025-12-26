@@ -21,6 +21,7 @@
 #include "midi/MidiProcessor.hpp"
 #include "EmulatorConstants.hpp"
 #include "api/NTApiWrapper.hpp"
+#include "api/VirtualSdCard.hpp"
 #include "display/IDisplayDataProvider.hpp"
 #include "display/DisplayRenderer.hpp"
 #include <componentlibrary.hpp>
@@ -213,6 +214,9 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
     std::string lastPluginFolder;
     std::string pendingPluginState; // JSON string for plugin state to be restored after setupUi
     json_t* pendingParameterValues = nullptr; // Parameter values to be restored after parameter extraction
+
+    // Virtual SD card path for WAV API
+    std::string virtualSdCardPath;
     
     // Display state
     bool displayDirty = true;
@@ -1246,6 +1250,11 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
         // Save MIDI settings
         json_object_set_new(rootJ, "midiInput", midiProcessor->getInputQueue().toJson());
         json_object_set_new(rootJ, "midiOutput", midiProcessor->getOutput().toJson());
+
+        // Save virtual SD card path
+        if (!virtualSdCardPath.empty()) {
+            json_object_set_new(rootJ, "virtualSdCardPath", json_string(virtualSdCardPath.c_str()));
+        }
         
         // Save plugin-specific state if plugin is loaded and supports serialization
         if (pluginManager->getAlgorithm() && pluginManager->getFactory() && pluginManager->getFactory()->serialise) {
@@ -1410,12 +1419,22 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
         if (midiInputJ) {
             midiProcessor->getInputQueue().fromJson(midiInputJ);
         }
-        
+
         json_t* midiOutputJ = json_object_get(rootJ, "midiOutput");
         if (midiOutputJ) {
             midiProcessor->getOutput().fromJson(midiOutputJ);
         }
-        
+
+        // Restore virtual SD card path
+        json_t* sdCardPathJ = json_object_get(rootJ, "virtualSdCardPath");
+        if (sdCardPathJ && json_is_string(sdCardPathJ)) {
+            virtualSdCardPath = json_string_value(sdCardPathJ);
+            if (!virtualSdCardPath.empty() && rack::system::isDirectory(virtualSdCardPath)) {
+                VirtualSdCard::getInstance().setRootPath(virtualSdCardPath);
+                INFO("NtEmu: Restored virtual SD card path: %s", virtualSdCardPath.c_str());
+            }
+        }
+
         displayDirty = true;
     }
     
@@ -1917,9 +1936,40 @@ struct EmulatorWidget : ModuleWidget {
                 menu->addChild(createMenuLabel(string::f("Current: %s", filename.c_str())));
             }
         }));
-        
+
+        // Virtual SD Card submenu
+        menu->addChild(createSubmenuItem("Virtual SD Card", "", [=](Menu* menu) {
+            // Select folder option
+            menu->addChild(createMenuItem("Select Folder...", "", [=]() {
+                selectVirtualSdCardFolder(module);
+            }));
+
+            // Show current path if set
+            if (!module->virtualSdCardPath.empty()) {
+                menu->addChild(new MenuSeparator);
+
+                // Clear option
+                menu->addChild(createMenuItem("Clear Path", "", [=]() {
+                    module->virtualSdCardPath.clear();
+                    VirtualSdCard::getInstance().setRootPath("");
+                }));
+
+                // Show current folder
+                std::string folderName = rack::system::getFilename(module->virtualSdCardPath);
+                menu->addChild(createMenuLabel(string::f("Current: %s", folderName.c_str())));
+
+                // Show mount status
+                auto& sdCard = VirtualSdCard::getInstance();
+                if (sdCard.isMounted()) {
+                    menu->addChild(createMenuLabel(string::f("Folders: %d", sdCard.getNumSampleFolders())));
+                } else {
+                    menu->addChild(createMenuLabel("Not mounted (no samples/ folder?)"));
+                }
+            }
+        }));
+
         menu->addChild(new MenuSeparator);
-        
+
         // MIDI Input submenu
         menu->addChild(createSubmenuItem("MIDI Input", "", [=](Menu* menu) {
             appendMidiMenu(menu, &module->midiProcessor->getInputQueue());
@@ -1938,25 +1988,25 @@ struct EmulatorWidget : ModuleWidget {
     
     void loadPluginDialog(EmulatorModule* module, std::string startPath = "") {
         if (startPath.empty()) {
-            startPath = module->lastPluginFolder.empty() ? 
+            startPath = module->lastPluginFolder.empty() ?
                 asset::user("") : module->lastPluginFolder;
         }
-        
+
         osdialog_filters* filters = osdialog_filters_parse(
             "Disting NT Plugin:dylib,so,dll"
         );
-        
+
         char* pathC = osdialog_file(OSDIALOG_OPEN, startPath.c_str(), NULL, filters);
         if (pathC) {
             std::string path = pathC;
             free(pathC);
-            
+
             // Remember folder
             module->lastPluginFolder = rack::system::getDirectory(path);
-            
+
             // Phase 1: Discover plugin specifications
             auto specInfo = module->discoverPluginSpecifications(path);
-            
+
             if (specInfo.hasSpecifications()) {
                 // Show specification dialog
                 showSpecificationDialog(module, specInfo);
@@ -1965,8 +2015,23 @@ struct EmulatorWidget : ModuleWidget {
                 module->loadPlugin(path);
             }
         }
-        
+
         osdialog_filters_free(filters);
+    }
+
+    void selectVirtualSdCardFolder(EmulatorModule* module) {
+        std::string startPath = module->virtualSdCardPath.empty() ?
+            asset::user("") : module->virtualSdCardPath;
+
+        char* pathC = osdialog_file(OSDIALOG_OPEN_DIR, startPath.c_str(), NULL, NULL);
+        if (pathC) {
+            std::string path = pathC;
+            free(pathC);
+
+            module->virtualSdCardPath = path;
+            VirtualSdCard::getInstance().setRootPath(path);
+            INFO("NtEmu: Set virtual SD card path: %s", path.c_str());
+        }
     }
     
     // Simplified specification dialog - using default values for now
