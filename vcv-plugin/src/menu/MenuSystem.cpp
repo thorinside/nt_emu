@@ -373,11 +373,12 @@ bool MenuSystem::hasEncoderPressChanged(int encoderIndex, bool pressed) {
 
 int MenuSystem::calculatePageFromPot(float potValue) const {
     if (!parameterSystem) return 0;
-    
+
     int pageCount = parameterSystem->getPageCount();
     if (pageCount <= 1) return 0;
-    
-    int pageIndex = (int)(potValue * (pageCount - 1));
+
+    // Use rounding for consistent behavior with param/value selection
+    int pageIndex = (int)std::round(potValue * (pageCount - 1));
     return clamp(pageIndex, 0, pageCount - 1);
 }
 
