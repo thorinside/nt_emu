@@ -170,6 +170,7 @@ void ParameterSystem::clearParameters() {
     parameterPages.clear();
     currentPageIndex = 0;
     currentParamIndex = 0;
+    grayedOut.fill(false);
 }
 
 void ParameterSystem::setCurrentPage(int pageIndex) {
@@ -247,27 +248,101 @@ bool ParameterSystem::canNavigateToPrevParam() const {
 }
 
 void ParameterSystem::navigateToNextPage() {
-    if (canNavigateToNextPage()) {
-        setCurrentPage(currentPageIndex + 1);
+    // Find next page that has at least one non-grayed parameter
+    for (int nextPage = currentPageIndex + 1; nextPage < (int)parameterPages.size(); nextPage++) {
+        if (hasNonGrayedParamOnPage(nextPage)) {
+            setCurrentPage(nextPage);
+            // Find first non-grayed param on new page
+            const auto& page = parameterPages[nextPage];
+            for (int i = 0; i < page.numParams; i++) {
+                int paramIdx = page.params ? page.params[i] : i;
+                if (!isParameterGrayedOut(paramIdx)) {
+                    currentParamIndex = i;
+                    break;
+                }
+            }
+            return;
+        }
     }
 }
 
 void ParameterSystem::navigateToPrevPage() {
-    if (canNavigateToPrevPage()) {
-        setCurrentPage(currentPageIndex - 1);
+    // Find previous page that has at least one non-grayed parameter
+    for (int prevPage = currentPageIndex - 1; prevPage >= 0; prevPage--) {
+        if (hasNonGrayedParamOnPage(prevPage)) {
+            setCurrentPage(prevPage);
+            // Find first non-grayed param on new page
+            const auto& page = parameterPages[prevPage];
+            for (int i = 0; i < page.numParams; i++) {
+                int paramIdx = page.params ? page.params[i] : i;
+                if (!isParameterGrayedOut(paramIdx)) {
+                    currentParamIndex = i;
+                    break;
+                }
+            }
+            return;
+        }
     }
 }
 
 void ParameterSystem::navigateToNextParam() {
-    if (canNavigateToNextParam()) {
-        setCurrentParam(currentParamIndex + 1);
+    if (parameterPages.empty() || !isValidPageIndex(currentPageIndex)) {
+        // No pages - use simple param navigation
+        if (canNavigateToNextParam()) {
+            for (int i = currentParamIndex + 1; i < (int)parameters.size(); i++) {
+                if (!isParameterGrayedOut(i)) {
+                    setCurrentParam(i);
+                    return;
+                }
+            }
+        }
+        return;
     }
+
+    const auto& page = parameterPages[currentPageIndex];
+
+    // Try to find next non-grayed param on current page
+    for (int i = currentParamIndex + 1; i < page.numParams; i++) {
+        int paramIdx = page.params ? page.params[i] : i;
+        if (!isParameterGrayedOut(paramIdx)) {
+            currentParamIndex = i;
+            notifyPageChanged(currentPageIndex);
+            return;
+        }
+    }
+
+    // All remaining params on page are grayed - skip to next page
+    navigateToNextPage();
 }
 
 void ParameterSystem::navigateToPrevParam() {
-    if (canNavigateToPrevParam()) {
-        setCurrentParam(currentParamIndex - 1);
+    if (parameterPages.empty() || !isValidPageIndex(currentPageIndex)) {
+        // No pages - use simple param navigation
+        if (canNavigateToPrevParam()) {
+            for (int i = currentParamIndex - 1; i >= 0; i--) {
+                if (!isParameterGrayedOut(i)) {
+                    setCurrentParam(i);
+                    return;
+                }
+            }
+        }
+        return;
     }
+
+    const auto& page = parameterPages[currentPageIndex];
+
+    // Try to find previous non-grayed param on current page
+    for (int i = currentParamIndex - 1; i >= 0; i--) {
+        int paramIdx = page.params ? page.params[i] : i;
+        if (!isParameterGrayedOut(paramIdx)) {
+            currentParamIndex = i;
+            notifyPageChanged(currentPageIndex);
+            return;
+        }
+    }
+
+    // All previous params on page are grayed - skip to previous page
+    navigateToPrevPage();
 }
 
 bool ParameterSystem::isValidParameterIndex(int index) const {
@@ -280,9 +355,35 @@ bool ParameterSystem::isValidPageIndex(int index) const {
 
 bool ParameterSystem::isValidParameterValue(int paramIdx, int16_t value) const {
     if (!isValidParameterIndex(paramIdx)) return false;
-    
+
     const _NT_parameter& param = parameters[paramIdx];
     return value >= param.min && value <= param.max;
+}
+
+void ParameterSystem::setParameterGrayedOut(int paramIdx, bool gray) {
+    if (paramIdx >= 0 && paramIdx < (int)grayedOut.size()) {
+        grayedOut[paramIdx] = gray;
+    }
+}
+
+bool ParameterSystem::isParameterGrayedOut(int paramIdx) const {
+    if (paramIdx >= 0 && paramIdx < (int)grayedOut.size()) {
+        return grayedOut[paramIdx];
+    }
+    return false;
+}
+
+bool ParameterSystem::hasNonGrayedParamOnPage(int pageIdx) const {
+    if (!isValidPageIndex(pageIdx)) return false;
+
+    const auto& page = parameterPages[pageIdx];
+    for (int i = 0; i < page.numParams; i++) {
+        int paramIdx = page.params ? page.params[i] : i;
+        if (!isParameterGrayedOut(paramIdx)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 const _NT_parameter* ParameterSystem::getParameterInfo(int index) const {

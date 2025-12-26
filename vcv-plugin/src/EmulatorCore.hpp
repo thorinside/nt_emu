@@ -7,7 +7,7 @@
 #include <cmath>
 
 // Import Disting NT API types
-#include "../../emulator/include/distingnt/api.h"
+#include <distingnt/api.h>
 
 // Forward declaration for PluginManager
 class PluginManager;

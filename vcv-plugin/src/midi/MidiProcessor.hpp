@@ -39,7 +39,8 @@ public:
     void sendMidiMessage(uint8_t byte0, uint8_t byte1, uint8_t byte2);
     void sendMidiMessage(uint8_t byte0, uint8_t byte1);
     void sendMidiMessage(uint8_t byte0);
-    
+    void sendSysEx(const uint8_t* data, uint32_t count, bool end);
+
     // Observer pattern
     void addObserver(IMidiObserver* observer);
     void removeObserver(IMidiObserver* observer);

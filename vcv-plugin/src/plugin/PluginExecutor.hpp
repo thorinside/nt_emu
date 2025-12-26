@@ -20,7 +20,8 @@ public:
     // MIDI handling
     void safeMidiMessage(uint8_t byte0, uint8_t byte1, uint8_t byte2);
     void safeMidiRealtime(uint8_t byte);
-    
+    void safeMidiSysEx(const uint8_t* data, uint32_t count);
+
     // Parameter handling
     void safeParameterChanged(int paramIndex);
     

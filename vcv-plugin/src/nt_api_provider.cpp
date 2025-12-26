@@ -1,5 +1,5 @@
 #include "nt_api_interface.h"
-#include "../../emulator/include/distingnt/api.h"
+#include <distingnt/api.h>
 #include <cstring>
 #include <cstdio>
 #include <atomic>

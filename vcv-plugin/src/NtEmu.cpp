@@ -53,7 +53,7 @@ extern "C" const NT_API_Interface* getNT_API(void);
 
 // Include JSON serialization support
 #define _DISTINGNT_SERIALISATION_INTERNAL
-#include "../../emulator/include/distingnt/serialisation.h"
+#include <distingnt/serialisation.h>
 #include "json_bridge.h"
 
 // Thread-local storage for JSON bridge instances moved to api/NTApiWrapper.cpp
@@ -1728,17 +1728,7 @@ extern "C" {
     
     __attribute__((visibility("default"))) void NT_sendMidiSysEx(uint32_t destination, const uint8_t* data, uint32_t count, bool end) {
         if (g_currentModule && g_currentModule->midiProcessor && data && count > 0) {
-            // Send SysEx messages byte by byte since VCV's MIDI system handles messages up to 3 bytes
-            // For SysEx, we send 0xF0 start, data bytes, and 0xF7 end
-            g_currentModule->midiProcessor->sendMidiMessage(0xF0); // SysEx start
-            
-            for (uint32_t i = 0; i < count; i++) {
-                g_currentModule->midiProcessor->sendMidiMessage(data[i]);
-            }
-            
-            if (end) {
-                g_currentModule->midiProcessor->sendMidiMessage(0xF7); // SysEx end
-            }
+            g_currentModule->midiProcessor->sendSysEx(data, count, end);
         }
     }
 }
@@ -2188,5 +2178,12 @@ Model* modelNtEmu = createModel<EmulatorModule, EmulatorWidget>("nt_emu");
 extern "C" void emulatorHandleSetParameterFromUi(uint32_t parameter, int16_t value) {
     if (g_currentModule) {
         g_currentModule->handleSetParameterFromUi(parameter, value);
+    }
+}
+
+extern "C" void emulatorHandleSetParameterGrayedOut(uint32_t parameter, bool gray) {
+    if (g_currentModule && g_currentModule->parameterSystem) {
+        g_currentModule->parameterSystem->setParameterGrayedOut(parameter, gray);
+        g_currentModule->displayDirty = true;
     }
 }

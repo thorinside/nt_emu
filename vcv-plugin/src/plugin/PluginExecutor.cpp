@@ -48,6 +48,18 @@ void PluginExecutor::safeMidiRealtime(uint8_t byte) {
     });
 }
 
+void PluginExecutor::safeMidiSysEx(const uint8_t* data, uint32_t count) {
+    if (!checkPluginPointers() || !data || count == 0) return;
+
+    _NT_factory* factory = pluginManager->getFactory();
+
+    if (!factory->midiSysEx) return;
+
+    safeExecute("midiSysEx", [&]() {
+        factory->midiSysEx(data, count);
+    });
+}
+
 void PluginExecutor::safeParameterChanged(int paramIndex) {
     if (!checkPluginPointers()) return;
     

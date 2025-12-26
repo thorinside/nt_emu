@@ -335,11 +335,19 @@ extern "C" {
     }
     
     __attribute__((visibility("default"))) void NT_setParameterFromAudio(uint32_t algorithmIndex, uint32_t parameter, int16_t value) {
-        // TODO: Connect to VCV parameter system  
+        // TODO: Connect to VCV parameter system
         // This should update VCV module parameters from audio thread
         INFO("NT_setParameterFromAudio called: alg=%d, param=%d, value=%d", algorithmIndex, parameter, value);
     }
-    
+
+    // Forward declaration for grayed out handler
+    extern "C" void emulatorHandleSetParameterGrayedOut(uint32_t parameter, bool gray);
+
+    __attribute__((visibility("default"))) void NT_setParameterGrayedOut(uint32_t algorithmIndex, uint32_t parameter, bool gray) {
+        INFO("NT_setParameterGrayedOut called: alg=%d, param=%d, gray=%d", algorithmIndex, parameter, gray ? 1 : 0);
+        emulatorHandleSetParameterGrayedOut(parameter, gray);
+    }
+
     __attribute__((visibility("default"))) uint32_t NT_getCpuCycleCount(void) {
         // Simple implementation for profiling - could use mach_absolute_time() on macOS
         return 0;

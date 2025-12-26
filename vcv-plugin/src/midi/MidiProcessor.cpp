@@ -103,6 +103,24 @@ void MidiProcessor::sendMidiMessage(uint8_t byte0) {
     sendOutputMessage(msg);
 }
 
+void MidiProcessor::sendSysEx(const uint8_t* data, uint32_t count, bool end) {
+    if (!data || count == 0) return;
+
+    // Build complete SysEx message
+    midi::Message msg;
+    msg.bytes.push_back(0xF0); // SysEx start
+
+    for (uint32_t i = 0; i < count; i++) {
+        msg.bytes.push_back(data[i]);
+    }
+
+    if (end) {
+        msg.bytes.push_back(0xF7); // SysEx end
+    }
+
+    sendOutputMessage(msg);
+}
+
 void MidiProcessor::addObserver(IMidiObserver* observer) {
     if (observer) {
         observers.push_back(observer);
@@ -134,19 +152,36 @@ void MidiProcessor::routeToPlugin(const midi::Message& msg) {
     if (!pluginExecutor || !pluginExecutor->isPluginValid() || msg.bytes.empty()) {
         return;
     }
-    
-    uint8_t status = msg.bytes[0] & 0xF0;
-    
-    // Route real-time messages (0xF0-0xFF)
-    if (isRealtimeMessage(msg.bytes[0])) {
-        pluginExecutor->safeMidiRealtime(msg.bytes[0]);
+
+    uint8_t status = msg.bytes[0];
+
+    // Route SysEx messages (0xF0 start, 0xF7 end)
+    if (status == 0xF0 && msg.bytes.size() >= 2) {
+        // Extract SysEx data (exclude 0xF0 start and 0xF7 end)
+        size_t dataStart = 1;
+        size_t dataEnd = msg.bytes.size();
+        if (msg.bytes.back() == 0xF7) {
+            dataEnd--; // Exclude end marker
+        }
+        if (dataEnd > dataStart) {
+            pluginExecutor->safeMidiSysEx(&msg.bytes[dataStart], dataEnd - dataStart);
+        }
+        return;
     }
+
+    // Route real-time messages (0xF8-0xFF)
+    if (isRealtimeMessage(status)) {
+        pluginExecutor->safeMidiRealtime(status);
+        return;
+    }
+
     // Route channel messages (Note On/Off, CC, Program Change, etc.)
-    else if (isChannelMessage(status) && msg.bytes.size() >= 2) {
+    uint8_t statusNibble = status & 0xF0;
+    if (isChannelMessage(statusNibble) && msg.bytes.size() >= 2) {
         uint8_t byte0 = msg.bytes[0];
         uint8_t byte1 = msg.bytes[1];
         uint8_t byte2 = (msg.bytes.size() >= 3) ? msg.bytes[2] : 0;
-        
+
         pluginExecutor->safeMidiMessage(byte0, byte1, byte2);
     }
 }
@@ -164,17 +199,27 @@ void MidiProcessor::notifyOutputSent(const midi::Message& msg) {
 }
 
 bool MidiProcessor::isValidMidiMessage(const midi::Message& msg) const {
-    if (msg.bytes.empty() || msg.bytes.size() > 3) {
+    if (msg.bytes.empty()) {
         return false;
     }
-    
+
     uint8_t status = msg.bytes[0];
-    
+
     // Check if first byte is a valid status byte
     if (status < 0x80) {
         return false;
     }
-    
+
+    // SysEx messages can be any length
+    if (status == 0xF0) {
+        return true; // SysEx start, any length valid
+    }
+
+    // Non-SysEx messages should be 1-3 bytes
+    if (msg.bytes.size() > 3) {
+        return false;
+    }
+
     // Validate message length based on status
     uint8_t statusNibble = status & 0xF0;
     switch (statusNibble) {
@@ -184,11 +229,11 @@ bool MidiProcessor::isValidMidiMessage(const midi::Message& msg) const {
         case 0xB0: // Control Change
         case 0xE0: // Pitch Bend
             return msg.bytes.size() == 3;
-            
+
         case 0xC0: // Program Change
         case 0xD0: // Channel Pressure
             return msg.bytes.size() == 2;
-            
+
         case 0xF0: // System messages
             if (status >= 0xF8) {
                 // Real-time messages are single byte
@@ -197,7 +242,7 @@ bool MidiProcessor::isValidMidiMessage(const midi::Message& msg) const {
                 // Other system messages vary
                 return msg.bytes.size() >= 1;
             }
-            
+
         default:
             return false;
     }

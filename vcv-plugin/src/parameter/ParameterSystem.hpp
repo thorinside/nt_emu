@@ -70,7 +70,12 @@ public:
     bool isValidParameterIndex(int index) const;
     bool isValidPageIndex(int index) const;
     bool isValidParameterValue(int paramIdx, int16_t value) const;
-    
+
+    // Grayed out state (API v10)
+    void setParameterGrayedOut(int paramIdx, bool gray);
+    bool isParameterGrayedOut(int paramIdx) const;
+    bool hasNonGrayedParamOnPage(int pageIdx) const;
+
     // Get parameter info
     const _NT_parameter* getParameterInfo(int index) const;
     const _NT_parameterPage* getPageInfo(int index) const;
@@ -101,7 +106,10 @@ private:
     
     // Parameter values storage (routing matrix)
     std::array<int16_t, 256> routingMatrix;
-    
+
+    // Grayed out state (API v10)
+    std::array<bool, 256> grayedOut{};
+
     // Observers
     std::vector<IParameterObserver*> observers;
     

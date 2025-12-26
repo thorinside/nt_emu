@@ -304,20 +304,30 @@ namespace DisplayRenderer {
                     
                     const _NT_parameter& param = parameterSystem->getParameters()[paramIdx];
                     float y = 8 + i * 10;
-                    
+
                     bool isCurrentParam = (paramListIdx == parameterSystem->getCurrentParamIndex());
-                    
-                    // PARAMETER NAME - brighter color for current parameter
-                    nvgFillColor(vg, isCurrentParam ? nvgRGB(255, 255, 255) : nvgRGB(140, 140, 140));
+                    bool isGrayed = parameterSystem->isParameterGrayedOut(paramIdx);
+                    int alpha = isGrayed ? 128 : 255;
+
+                    // PARAMETER NAME - brighter color for current parameter, dimmed if grayed
+                    if (isCurrentParam) {
+                        nvgFillColor(vg, nvgRGBA(255, 255, 255, alpha));
+                    } else {
+                        nvgFillColor(vg, nvgRGBA(140, 140, 140, alpha));
+                    }
                     nvgTextAlign(vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
                     nvgText(vg, paramColumn, y, param.name, NULL);
-                    
+
                     // PARAMETER VALUE (beside the name)
                     int value = parameterSystem->getRoutingMatrix()[paramIdx];
                     char valueStr[32];
                     formatParameterValue(valueStr, param, value);
-                    
-                    nvgFillColor(vg, isCurrentParam ? nvgRGB(255, 255, 255) : nvgRGB(160, 160, 160));
+
+                    if (isCurrentParam) {
+                        nvgFillColor(vg, nvgRGBA(255, 255, 255, alpha));
+                    } else {
+                        nvgFillColor(vg, nvgRGBA(160, 160, 160, alpha));
+                    }
                     nvgTextAlign(vg, NVG_ALIGN_RIGHT | NVG_ALIGN_TOP);
                     nvgText(vg, valueColumn + valueWidth, y, valueStr, NULL);
                 }

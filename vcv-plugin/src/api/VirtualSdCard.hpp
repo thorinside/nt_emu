@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../emulator/include/distingnt/wav.h"
+#include <distingnt/wav.h>
 #include <string>
 #include <vector>
 #include <memory>

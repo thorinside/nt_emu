@@ -1,7 +1,7 @@
 #ifndef _NT_API_INTERFACE_H
 #define _NT_API_INTERFACE_H
 
-#include "../../emulator/include/distingnt/api.h"
+#include <distingnt/api.h>
 #include <stdint.h>
 
 #ifdef __cplusplus

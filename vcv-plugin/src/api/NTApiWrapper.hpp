@@ -39,6 +39,7 @@ void clearCurrentJsonStream();
         __attribute__((visibility("default"))) uint32_t NT_parameterOffset(void);
         __attribute__((visibility("default"))) void NT_setParameterFromUi(uint32_t algorithmIndex, uint32_t parameter, int16_t value);
         __attribute__((visibility("default"))) void NT_setParameterFromAudio(uint32_t algorithmIndex, uint32_t parameter, int16_t value);
+        __attribute__((visibility("default"))) void NT_setParameterGrayedOut(uint32_t algorithmIndex, uint32_t parameter, bool gray);
         __attribute__((visibility("default"))) uint32_t NT_getCpuCycleCount(void);
         __attribute__((visibility("default"))) void NT_setParameterRange(_NT_parameter* ptr, float init, float min, float max, float step);
         
