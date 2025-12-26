@@ -947,8 +947,13 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
         // Route inputs to buses for current sample
         busSystem.routeInputs(this);
 
-        // Check if we've accumulated a full block (after routing input)
-        if (sampleCounter == BLOCK_SIZE - 1) {
+        bool processBlock = (sampleCounter == BLOCK_SIZE - 1);
+
+        // Route outputs for current sample (read previous block data first)
+        busSystem.routeOutputs(this);
+
+        // After outputting the last sample of the block, process the next block.
+        if (processBlock) {
             // Clear output buses before plugin processes (plugins use += for Add mode)
             busSystem.clearOutputBuses();
 
@@ -974,12 +979,7 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
                 // Use built-in emulator
                 emulatorCore.processAudio(busSystem.getBuses(), 1); // 1 = numFramesBy4
             }
-
-            // Don't reset - we'll output samples in sequence
         }
-
-        // Route outputs for current sample
-        busSystem.routeOutputs(this);
 
         // Increment sample counter and wrap at block size
         sampleCounter = (sampleCounter + 1) % BLOCK_SIZE;

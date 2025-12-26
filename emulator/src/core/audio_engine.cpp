@@ -292,7 +292,8 @@ void AudioEngine::processAudio(const float* input, float* output, unsigned long 
         // Process through plugin
         try {
             if (factory_ && factory_->step) {
-                factory_->step(algorithm_, flat_bus_buffer.data(), samples_to_process);
+                // API expects numFramesBy4; our block is always 4 samples.
+                factory_->step(algorithm_, flat_bus_buffer.data(), 1);
                 
                 // Copy processed data back from flat buffer to plugin_buses
                 for (int i = 0; i < NUM_BUSES; i++) {
