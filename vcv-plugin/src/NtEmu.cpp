@@ -601,6 +601,34 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
         INFO("Synced pot positions to menu state: page %d/%zu, param %d/%d, value %.3f", 
              currentPageIdx, parameterSystem->getPageCount(), currentParamIdx, currentPage.numParams, valuePosition);
     }
+
+    bool isParameterMenuActive() const {
+        return menuSystem && menuSystem->isMenuActive();
+    }
+
+    void syncPotsToPluginUi(const char* reason) {
+        if (!pluginManager->isLoaded() || !pluginManager->getFactory() ||
+            !pluginManager->getFactory()->setupUi || !pluginManager->getAlgorithm()) {
+            return;
+        }
+
+        float potValues[3] = {
+            params[POT_L_PARAM].getValue(),
+            params[POT_C_PARAM].getValue(),
+            params[POT_R_PARAM].getValue()
+        };
+
+        INFO("NtEmu: Calling setupUi after %s with pot values: %.3f %.3f %.3f",
+             reason, potValues[0], potValues[1], potValues[2]);
+        pluginManager->callSetupUi(potValues);
+
+        params[POT_L_PARAM].setValue(potValues[0]);
+        params[POT_C_PARAM].setValue(potValues[1]);
+        params[POT_R_PARAM].setValue(potValues[2]);
+
+        INFO("NtEmu: setupUi after %s returned pot values: %.3f %.3f %.3f",
+             reason, potValues[0], potValues[1], potValues[2]);
+    }
     
     void toggleMenuMode() {
         // Delegate to the new MenuSystem
@@ -631,31 +659,9 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
         } else {
             menuMode = MENU_OFF;
             
-            // When exiting menu, call setupUi if plugin supports it
             if (wasActive && pluginManager->getAlgorithm()) {
                 applyRoutingChanges();
-                
-                // Call setupUi when exiting parameter menu
-                if (pluginManager->getFactory() && pluginManager->getFactory()->setupUi) {
-                    float potValues[3] = {
-                        params[POT_L_PARAM].getValue(),
-                        params[POT_C_PARAM].getValue(),
-                        params[POT_R_PARAM].getValue()
-                    };
-                    INFO("NtEmu::toggleMenuMode calling setupUi on menu exit with pot values: %.3f %.3f %.3f", 
-                         potValues[0], potValues[1], potValues[2]);
-                    try {
-                        pluginManager->getFactory()->setupUi(pluginManager->getAlgorithm(), potValues);
-                        // Set VCV pot parameters to match what the plugin wants
-                        params[POT_L_PARAM].setValue(potValues[0]);
-                        params[POT_C_PARAM].setValue(potValues[1]);
-                        params[POT_R_PARAM].setValue(potValues[2]);
-                        INFO("NtEmu::toggleMenuMode set pot values to: %.3f %.3f %.3f", 
-                             potValues[0], potValues[1], potValues[2]);
-                    } catch (...) {
-                        WARN("Plugin crashed during setupUi on menu exit");
-                    }
-                }
+                syncPotsToPluginUi("parameter menu exit");
             }
         }
         displayDirty = true;
@@ -693,18 +699,7 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
             }
         }
         
-        // Update VCV pot positions to reflect parameter changes
-        if (pluginManager->isLoaded() && pluginManager->getFactory() && pluginManager->getFactory()->setupUi) {
-            try {
-                float potValues[3] = { 0.0f, 0.0f, 0.0f };
-                pluginManager->getFactory()->setupUi(pluginManager->getAlgorithm(), potValues);
-                params[POT_L_PARAM].setValue(potValues[0]);
-                params[POT_C_PARAM].setValue(potValues[1]);
-                params[POT_R_PARAM].setValue(potValues[2]);
-            } catch (...) {
-                WARN("NtEmu: Failed to update pot positions after parameter change");
-            }
-        }
+        syncPotsToPluginUi("parameter change");
         
         displayDirty = true;
     }
@@ -960,9 +955,11 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
             // Process algorithm with 4-sample blocks
             printf("Audio block complete, isPluginLoaded()=%s\n", isPluginLoaded() ? "true" : "false");
             if (isPluginLoaded()) {
-                // Process hardware changes for loaded plugins
-                printf("Processing hardware changes for loaded plugin\n");
-                emulatorCore.processHardwareChanges(pluginManager->getFactory(), pluginManager->getAlgorithm());
+                // Keep plugin customUi inactive while the parameter menu owns the controls.
+                if (!isParameterMenuActive()) {
+                    printf("Processing hardware changes for loaded plugin\n");
+                    emulatorCore.processHardwareChanges(pluginManager->getFactory(), pluginManager->getAlgorithm());
+                }
 
                 // Use plugin for audio processing
                 safeExecutePlugin([&]() {
@@ -1174,6 +1171,12 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
     }
     
     void onEncoderChange(int encoder, int delta) {
+        if (isParameterMenuActive()) {
+            emulatorCore.turnEncoder(encoder, delta);
+            displayDirty = true;
+            return;
+        }
+
         // Check if plugin has customUi
         if (isPluginLoaded() && pluginManager->getFactory() && pluginManager->getFactory()->customUi) {
             // Send directly to customUi
@@ -1379,17 +1382,7 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
                     INFO("NtEmu: No pending plugin state (already loaded scenario - this is expected)");
                 }
                 
-                // Call setupUi to get pot positions from plugin parameters
-                float potValues[3] = { 0.0f, 0.0f, 0.0f };
-                INFO("NtEmu: Calling setupUi via PluginManager to get pot positions from plugin parameters");
-                pluginManager->callSetupUi(potValues);
-                
-                // Update VCV pot positions based on plugin parameters
-                params[POT_L_PARAM].setValue(potValues[0]);
-                params[POT_C_PARAM].setValue(potValues[1]);
-                params[POT_R_PARAM].setValue(potValues[2]);
-                INFO("NtEmu: Updated VCV pot positions to: %.3f %.3f %.3f", 
-                     potValues[0], potValues[1], potValues[2]);
+                syncPotsToPluginUi("state restore");
                 
                 // Clean up any existing pending parameter values
                 if (pendingParameterValues) {
@@ -1485,17 +1478,7 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
             INFO("NtEmu: No pending plugin state to restore in onPluginLoaded");
         }
         
-        // Call setupUi to get pot positions from plugin parameters
-        float potValues[3] = { 0.0f, 0.0f, 0.0f };
-        INFO("NtEmu: Calling setupUi via PluginManager in onPluginLoaded to get pot positions from plugin parameters");
-        pluginManager->callSetupUi(potValues);
-        
-        // Update VCV pot positions based on plugin parameters
-        params[POT_L_PARAM].setValue(potValues[0]);
-        params[POT_C_PARAM].setValue(potValues[1]);
-        params[POT_R_PARAM].setValue(potValues[2]);
-        INFO("NtEmu: Updated VCV pot positions to: %.3f %.3f %.3f", 
-             potValues[0], potValues[1], potValues[2]);
+        syncPotsToPluginUi("plugin load");
         
         displayDirty = true;
     }
@@ -1525,6 +1508,10 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
     // Direct customUi event delivery for pot changes
     void sendCustomUiPotEvent(int potIndex, float newValue) {
         INFO("sendCustomUiPotEvent called: pot %d = %.3f", potIndex, newValue);
+
+        if (isParameterMenuActive()) {
+            return;
+        }
         
         if (!isPluginLoaded() || !pluginManager->getFactory() || !pluginManager->getAlgorithm()) {
             INFO("sendCustomUiPotEvent: plugin not loaded or no factory/algorithm");
@@ -1585,6 +1572,10 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
     // Direct customUi event for encoder changes
     void sendCustomUiEncoderEvent(int encoderIndex, int delta) {
         INFO("sendCustomUiEncoderEvent called: encoder %d, delta=%d", encoderIndex, delta);
+
+        if (isParameterMenuActive()) {
+            return;
+        }
         
         if (!isPluginLoaded() || !pluginManager->getFactory() || !pluginManager->getAlgorithm()) {
             return;
@@ -1635,6 +1626,10 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
     // Direct customUi event for button changes
     void sendCustomUiButtonEvent(int buttonIndex, bool pressed) {
         INFO("sendCustomUiButtonEvent called: button %d %s", buttonIndex, pressed ? "pressed" : "released");
+
+        if (isParameterMenuActive()) {
+            return;
+        }
         
         if (!isPluginLoaded() || !pluginManager->getFactory() || !pluginManager->getAlgorithm()) {
             return;

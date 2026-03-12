@@ -2,7 +2,7 @@
 
 # Plugin details
 SLUG = DistingNT
-VERSION = 2.0.0
+VERSION = 2.0.1
 
 # Rack SDK
 RACK_DIR ?= ./Rack-SDK
@@ -98,4 +98,3 @@ clean-example-plugins:
 list-example-plugins:
 	@echo "Available example plugins:"
 	@for src in $(EXAMPLE_SOURCES); do echo "  - $$(basename $$src .cpp)"; done
-
