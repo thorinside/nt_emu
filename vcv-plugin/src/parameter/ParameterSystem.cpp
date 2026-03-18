@@ -360,6 +360,61 @@ bool ParameterSystem::isValidParameterValue(int paramIdx, int16_t value) const {
     return value >= param.min && value <= param.max;
 }
 
+void ParameterSystem::updateParameterDefinition(uint32_t parameterIndex) {
+    if (!pluginManager || !pluginManager->isLoaded()) return;
+    _NT_algorithm* algorithm = pluginManager->getAlgorithm();
+    if (!algorithm || !algorithm->parameters) return;
+    if (parameterIndex >= parameters.size()) return;
+
+    const _NT_parameter* liveParam = &algorithm->parameters[parameterIndex];
+
+    // Update cached copy
+    parameters[parameterIndex].name = liveParam->name;
+    parameters[parameterIndex].min = liveParam->min;
+    parameters[parameterIndex].max = liveParam->max;
+    parameters[parameterIndex].def = liveParam->def;
+    parameters[parameterIndex].unit = liveParam->unit;
+    parameters[parameterIndex].scaling = liveParam->scaling;
+    parameters[parameterIndex].enumStrings = liveParam->enumStrings;
+
+    // Clamp current value to new range
+    if (parameterIndex < routingMatrix.size()) {
+        int16_t val = routingMatrix[parameterIndex];
+        routingMatrix[parameterIndex] = clamp(val, liveParam->min, liveParam->max);
+    }
+}
+
+void ParameterSystem::reExtractParameterPages() {
+    if (!pluginManager || !pluginManager->isLoaded()) return;
+    _NT_algorithm* algorithm = pluginManager->getAlgorithm();
+    if (!algorithm) return;
+
+    const _NT_parameterPages* parameterPagesPtr = algorithm->parameterPages;
+    if (!parameterPagesPtr || !isValidPointer((void*)parameterPagesPtr)) return;
+
+    // Clear existing pages and re-extract from the live plugin.
+    parameterPages.clear();
+
+    try {
+        uint32_t numPages = parameterPagesPtr->numPages;
+        const _NT_parameterPage* pagesArray = parameterPagesPtr->pages;
+
+        if (numPages > 0 && numPages <= 32 && isValidPointer((void*)pagesArray)) {
+            for (uint32_t pageIdx = 0; pageIdx < numPages; pageIdx++) {
+                extractSinglePage(&pagesArray[pageIdx], pageIdx);
+            }
+        }
+    } catch (...) {
+        WARN("ParameterSystem: Failed to re-extract parameter pages");
+    }
+
+    INFO("ParameterSystem: Re-extracted %zu parameter pages", parameterPages.size());
+
+    // Clamp current page/param indices to valid range.
+    if (currentPageIndex >= (int)parameterPages.size())
+        currentPageIndex = parameterPages.empty() ? 0 : (int)parameterPages.size() - 1;
+}
+
 void ParameterSystem::setParameterGrayedOut(int paramIdx, bool gray) {
     if (paramIdx >= 0 && paramIdx < (int)grayedOut.size()) {
         grayedOut[paramIdx] = gray;

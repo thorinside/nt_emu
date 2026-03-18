@@ -71,6 +71,12 @@ public:
     bool isValidPageIndex(int index) const;
     bool isValidParameterValue(int paramIdx, int16_t value) const;
 
+    // Update a single parameter definition from the live plugin array
+    void updateParameterDefinition(uint32_t parameterIndex);
+
+    // Re-extract parameter pages from the live plugin (e.g. after NT_updateParameterPages)
+    void reExtractParameterPages();
+
     // Grayed out state (API v10)
     void setParameterGrayedOut(int paramIdx, bool gray);
     bool isParameterGrayedOut(int paramIdx) const;

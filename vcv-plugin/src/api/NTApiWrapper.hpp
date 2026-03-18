@@ -40,6 +40,8 @@ void clearCurrentJsonStream();
         __attribute__((visibility("default"))) void NT_setParameterFromUi(uint32_t algorithmIndex, uint32_t parameter, int16_t value);
         __attribute__((visibility("default"))) void NT_setParameterFromAudio(uint32_t algorithmIndex, uint32_t parameter, int16_t value);
         __attribute__((visibility("default"))) void NT_setParameterGrayedOut(uint32_t algorithmIndex, uint32_t parameter, bool gray);
+        __attribute__((visibility("default"))) void NT_updateParameterDefinition(uint32_t algorithmIndex, uint32_t parameterIndex);
+        __attribute__((visibility("default"))) void NT_updateParameterPages(uint32_t algorithmIndex);
         __attribute__((visibility("default"))) uint32_t NT_getCpuCycleCount(void);
         __attribute__((visibility("default"))) void NT_setParameterRange(_NT_parameter* ptr, float init, float min, float max, float step);
         
@@ -73,4 +75,9 @@ void clearCurrentJsonStream();
         __attribute__((visibility("default"))) void NT_getSampleFolderInfo(uint32_t folder, struct _NT_wavFolderInfo& info);
         __attribute__((visibility("default"))) void NT_getSampleFileInfo(uint32_t folder, uint32_t sample, struct _NT_wavInfo& info);
         __attribute__((visibility("default"))) bool NT_readSampleFrames(const struct _NT_wavRequest& request);
+
+        // SCL (Scala microtuning) API
+        __attribute__((visibility("default"))) uint32_t NT_getNumScl(void);
+        __attribute__((visibility("default"))) void NT_getSclInfo(uint32_t index, struct _NT_sclInfo& info);
+        __attribute__((visibility("default"))) bool NT_readScl(struct _NT_sclRequest& request);
     }

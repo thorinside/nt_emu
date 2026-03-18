@@ -1,5 +1,6 @@
 #include "NTApiWrapper.hpp"
 #include "VirtualSdCard.hpp"
+#include "VirtualScalaLibrary.hpp"
 #include <logger.hpp>
 #include <cstdio>
 #include <cstring>
@@ -349,6 +350,20 @@ extern "C" {
         emulatorHandleSetParameterGrayedOut(parameter, gray);
     }
 
+    // Forward declaration
+    extern "C" void emulatorHandleUpdateParameterDefinition(uint32_t parameterIndex);
+
+    __attribute__((visibility("default"))) void NT_updateParameterDefinition(uint32_t algorithmIndex, uint32_t parameterIndex) {
+        emulatorHandleUpdateParameterDefinition(parameterIndex);
+    }
+
+    // Forward declaration
+    extern "C" void emulatorHandleUpdateParameterPages();
+
+    __attribute__((visibility("default"))) void NT_updateParameterPages(uint32_t algorithmIndex) {
+        emulatorHandleUpdateParameterPages();
+    }
+
     __attribute__((visibility("default"))) uint32_t NT_getCpuCycleCount(void) {
         // Simple implementation for profiling - could use mach_absolute_time() on macOS
         return 0;
@@ -544,5 +559,18 @@ extern "C" {
 
     __attribute__((visibility("default"))) bool NT_readSampleFrames(const _NT_wavRequest& request) {
         return VirtualSdCard::getInstance().readSampleFrames(request);
+    }
+
+    // SCL (Scala microtuning) API
+    __attribute__((visibility("default"))) uint32_t NT_getNumScl(void) {
+        return VirtualScalaLibrary::getInstance().getNumScl();
+    }
+
+    __attribute__((visibility("default"))) void NT_getSclInfo(uint32_t index, _NT_sclInfo& info) {
+        VirtualScalaLibrary::getInstance().getSclInfo(index, info);
+    }
+
+    __attribute__((visibility("default"))) bool NT_readScl(_NT_sclRequest& request) {
+        return VirtualScalaLibrary::getInstance().readScl(request);
     }
 }

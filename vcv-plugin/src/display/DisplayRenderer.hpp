@@ -29,7 +29,7 @@ namespace DisplayRenderer {
         void syncNTScreenToVCVBuffer(VCVDisplayBuffer& buffer);
         void drawDisplayBuffer(NVGcontext* vg, const VCVDisplayBuffer& buffer);
         void drawMenuInterface(NVGcontext* vg, IDisplayDataProvider* dataProvider);
-        void formatParameterValue(char* str, const _NT_parameter& param, int value) const;
+        void formatParameterValue(char* str, const _NT_parameter& param, int value, int paramIdx = -1) const;
     };
 
 } // namespace DisplayRenderer

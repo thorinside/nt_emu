@@ -467,6 +467,7 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
         std::string name;
         std::string description;
         std::vector<_NT_specification> specifications;
+        std::vector<std::string> specNames;  // Persistent storage for spec names (survives dlclose)
         bool hasSpecifications() const { return !specifications.empty(); }
     };
     
@@ -507,8 +508,12 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
                     // Copy specifications if they exist
                     if (factory->numSpecifications > 0 && factory->specifications) {
                         info.specifications.resize(factory->numSpecifications);
+                        info.specNames.resize(factory->numSpecifications);
                         for (uint32_t i = 0; i < factory->numSpecifications; i++) {
                             info.specifications[i] = factory->specifications[i];
+                            // Deep-copy name before dlclose invalidates the pointer
+                            info.specNames[i] = factory->specifications[i].name ? factory->specifications[i].name : "";
+                            info.specifications[i].name = info.specNames[i].c_str();
                         }
                         INFO("Discovered plugin '%s' with %u specifications", info.name.c_str(), factory->numSpecifications);
                     } else {
@@ -1223,6 +1228,16 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
         // Save plugin info if loaded
         if (!pluginManager->getPluginPath().empty()) {
             json_object_set_new(rootJ, "pluginPath", json_string(pluginManager->getPluginPath().c_str()));
+
+            // Save specifications (e.g. channel count)
+            const auto& specs = pluginManager->getSpecifications();
+            if (!specs.empty()) {
+                json_t* specsJ = json_array();
+                for (int32_t s : specs) {
+                    json_array_append_new(specsJ, json_integer(s));
+                }
+                json_object_set_new(rootJ, "specifications", specsJ);
+            }
         }
         
         // Save parameter values
@@ -1314,9 +1329,21 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
             
             // Try to load plugin - onPluginLoaded will handle state restoration
             if (!path.empty() && rack::system::exists(path)) {
-                INFO("NtEmu: Loading plugin from path: %s (pending state: %s)", 
+                INFO("NtEmu: Loading plugin from path: %s (pending state: %s)",
                      path.c_str(), pendingPluginState.empty() ? "NO" : "YES");
-                loadPlugin(path);
+
+                // Restore specifications if saved
+                json_t* specsJ = json_object_get(rootJ, "specifications");
+                if (specsJ && json_is_array(specsJ)) {
+                    std::vector<int32_t> specs;
+                    size_t specsSize = json_array_size(specsJ);
+                    for (size_t i = 0; i < specsSize; i++) {
+                        specs.push_back((int32_t)json_integer_value(json_array_get(specsJ, i)));
+                    }
+                    loadPlugin(path, specs);
+                } else {
+                    loadPlugin(path);
+                }
             }
         }
         
@@ -2135,12 +2162,9 @@ struct EmulatorWidget : ModuleWidget {
                 entry->box.size.x = menu->box.size.x;
                 entry->box.size.y = 30.0f;
                 
-                // Create label with safe string handling - avoid dereferencing bad pointers
+                // Create label - spec.name is safe because we deep-copied it in discoverPluginSpecifications
                 ui::Label* label = new ui::Label;
-                std::string specName = "Spec " + std::to_string(i); // Safe default
-                
-                // Skip any unsafe pointer access entirely for now
-                // The spec.name pointer appears to be corrupted, so use fallback naming
+                std::string specName = spec.name ? spec.name : ("Spec " + std::to_string(i));
                 label->text = specName + " (" + std::to_string(spec.min) + " to " + std::to_string(spec.max) + "):";
                 label->box.pos = math::Vec(10.0f, 8.0f);
                 label->color = nvgRGB(0xFF, 0xFF, 0xFF);
@@ -2193,6 +2217,20 @@ extern "C" void emulatorHandleSetParameterFromUi(uint32_t parameter, int16_t val
 extern "C" void emulatorHandleSetParameterGrayedOut(uint32_t parameter, bool gray) {
     if (g_currentModule && g_currentModule->parameterSystem) {
         g_currentModule->parameterSystem->setParameterGrayedOut(parameter, gray);
+        g_currentModule->displayDirty = true;
+    }
+}
+
+extern "C" void emulatorHandleUpdateParameterDefinition(uint32_t parameterIndex) {
+    if (g_currentModule && g_currentModule->parameterSystem) {
+        g_currentModule->parameterSystem->updateParameterDefinition(parameterIndex);
+        g_currentModule->displayDirty = true;
+    }
+}
+
+extern "C" void emulatorHandleUpdateParameterPages() {
+    if (g_currentModule && g_currentModule->parameterSystem) {
+        g_currentModule->parameterSystem->reExtractParameterPages();
         g_currentModule->displayDirty = true;
     }
 }

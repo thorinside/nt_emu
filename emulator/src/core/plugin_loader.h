@@ -9,7 +9,9 @@ struct PluginInstance {
     _NT_factory* factory = nullptr;
     _NT_algorithm* algorithm = nullptr;
     void* shared_memory = nullptr;
+    void* sram_memory = nullptr;
     void* instance_memory = nullptr;
+    void* dtc_memory = nullptr;
     std::string path;
     time_t last_modified = 0;
     bool is_loaded = false;

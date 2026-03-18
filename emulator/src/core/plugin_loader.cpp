@@ -99,23 +99,48 @@ bool PluginLoader::loadPlugin(const std::string& path) {
     
     _NT_algorithmRequirements reqs = {};
     plugin_.factory->calculateRequirements(reqs, nullptr);
+
+    // Allocate SRAM (algorithm struct)
+    if (reqs.sram > 0) {
+        if (posix_memalign(&plugin_.sram_memory, 16, reqs.sram) != 0) {
+            std::cerr << "Failed to allocate SRAM" << std::endl;
+            cleanup();
+            return false;
+        }
+        memset(plugin_.sram_memory, 0, reqs.sram);
+    }
+
+    // Allocate DRAM (large buffers)
     if (reqs.dram > 0) {
-        // Use posix_memalign for better compatibility
         if (posix_memalign(&plugin_.instance_memory, 16, reqs.dram) != 0) {
             std::cerr << "Failed to allocate instance memory" << std::endl;
             cleanup();
             return false;
         }
-        
+    }
+
+    // Allocate DTC (performance-critical data)
+    if (reqs.dtc > 0) {
+        if (posix_memalign(&plugin_.dtc_memory, 16, reqs.dtc) != 0) {
+            std::cerr << "Failed to allocate DTC memory" << std::endl;
+            cleanup();
+            return false;
+        }
+        memset(plugin_.dtc_memory, 0, reqs.dtc);
+    }
+
+    {
         // Construct the algorithm instance
         if (!plugin_.factory->construct) {
             std::cerr << "Plugin factory missing construct function" << std::endl;
             cleanup();
             return false;
         }
-        
+
         _NT_algorithmMemoryPtrs algPtrs = {};
+        algPtrs.sram = (uint8_t*)plugin_.sram_memory;
         algPtrs.dram = (uint8_t*)plugin_.instance_memory;
+        algPtrs.dtc = (uint8_t*)plugin_.dtc_memory;
         plugin_.algorithm = plugin_.factory->construct(algPtrs, reqs, nullptr);
         if (!plugin_.algorithm) {
             std::cerr << "Algorithm construction failed" << std::endl;
@@ -156,16 +181,26 @@ bool PluginLoader::validatePlugin(void* handle) {
 }
 
 void PluginLoader::cleanup() {
+    if (plugin_.dtc_memory) {
+        free(plugin_.dtc_memory);
+        plugin_.dtc_memory = nullptr;
+    }
+
+    if (plugin_.sram_memory) {
+        free(plugin_.sram_memory);
+        plugin_.sram_memory = nullptr;
+    }
+
     if (plugin_.instance_memory) {
         free(plugin_.instance_memory);
         plugin_.instance_memory = nullptr;
     }
-    
+
     if (plugin_.shared_memory) {
         free(plugin_.shared_memory);
         plugin_.shared_memory = nullptr;
     }
-    
+
     if (plugin_.handle) {
         dlclose(plugin_.handle);
         plugin_.handle = nullptr;

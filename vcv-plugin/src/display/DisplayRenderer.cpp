@@ -328,8 +328,8 @@ namespace DisplayRenderer {
 
                     // PARAMETER VALUE (beside the name)
                     int value = parameterSystem->getRoutingMatrix()[paramIdx];
-                    char valueStr[32];
-                    formatParameterValue(valueStr, param, value);
+                    char valueStr[kNT_parameterStringSize];
+                    formatParameterValue(valueStr, param, value, paramIdx);
 
                     if (isCurrentParam) {
                         nvgFillColor(vg, nvgRGBA(255, 255, 255, alpha));
@@ -355,7 +355,7 @@ namespace DisplayRenderer {
         }
     }
 
-    void ModuleOLEDWidget::formatParameterValue(char* str, const _NT_parameter& param, int value) const {
+    void ModuleOLEDWidget::formatParameterValue(char* str, const _NT_parameter& param, int value, int paramIdx) const {
         // Apply scaling first
         float scaledValue = value;
         switch (param.scaling) {
@@ -497,6 +497,18 @@ namespace DisplayRenderer {
                 else snprintf(str, 32, "Mode %d", value);
                 break;
                 
+            case kNT_unitHasStrings:
+            case kNT_unitConfirm:
+                if (paramIdx >= 0 && dataProvider) {
+                    PluginManager* pm = dataProvider->getPluginManagerPtr();
+                    if (pm && pm->getFactory() && pm->getFactory()->parameterString && pm->getAlgorithm()) {
+                        int len = pm->getFactory()->parameterString(pm->getAlgorithm(), paramIdx, value, str);
+                        if (len > 0) break;
+                    }
+                }
+                snprintf(str, 32, "%d", value);
+                break;
+
             default:
                 snprintf(str, 32, "%d", value);
                 break;
