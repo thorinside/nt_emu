@@ -2234,3 +2234,15 @@ extern "C" void emulatorHandleUpdateParameterPages() {
         g_currentModule->displayDirty = true;
     }
 }
+
+extern "C" void emulatorHandleSetParameterFromAudio(uint32_t parameter, int16_t value) {
+    if (g_currentModule && g_currentModule->parameterSystem) {
+        // Write directly to routing matrix without observer notification
+        // to avoid re-entrancy (plugin is already inside parameterChanged).
+        auto& rm = g_currentModule->parameterSystem->getRoutingMatrix();
+        if (parameter < rm.size()) {
+            rm[parameter] = value;
+        }
+        g_currentModule->displayDirty = true;
+    }
+}

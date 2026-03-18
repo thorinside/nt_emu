@@ -336,10 +336,11 @@ extern "C" {
         emulatorHandleSetParameterFromUi(parameter, value);
     }
     
+    // Forward declaration
+    extern "C" void emulatorHandleSetParameterFromAudio(uint32_t parameter, int16_t value);
+
     __attribute__((visibility("default"))) void NT_setParameterFromAudio(uint32_t algorithmIndex, uint32_t parameter, int16_t value) {
-        // TODO: Connect to VCV parameter system
-        // This should update VCV module parameters from audio thread
-        INFO("NT_setParameterFromAudio called: alg=%d, param=%d, value=%d", algorithmIndex, parameter, value);
+        emulatorHandleSetParameterFromAudio(parameter, value);
     }
 
     // Forward declaration for grayed out handler
