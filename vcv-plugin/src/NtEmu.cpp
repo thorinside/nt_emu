@@ -1493,6 +1493,11 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
             parameterSystem->loadParameterState(pendingParameterValues);
             json_decref(pendingParameterValues);
             pendingParameterValues = nullptr;
+
+            // Re-extract parameter pages — the plugin may have modified its
+            // page structure during parameterChanged callbacks (e.g. engine
+            // switches set pagesDirty, normally flushed in step()).
+            parameterSystem->reExtractParameterPages();
         }
         
         if (!pendingPluginState.empty()) {
