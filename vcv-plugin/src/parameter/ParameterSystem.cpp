@@ -609,7 +609,7 @@ bool ParameterSystem::extractSinglePage(const _NT_parameterPage* page, uint32_t 
     try {
         validatePageAccess(page, index);
         
-        if (page->numParams == 0 || page->numParams > parameters.size()) {
+        if (page->numParams > parameters.size()) {
             WARN("ParameterSystem: Page %u has invalid param count: %u", index, page->numParams);
             return false;
         }

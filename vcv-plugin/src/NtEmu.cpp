@@ -1387,9 +1387,8 @@ struct EmulatorModule : Module, IParameterObserver, IPluginStateObserver, IDispl
         
         // Handle parameter values restoration
         json_t* parameterValuesJ = json_object_get(rootJ, "parameterValues");
-        if (parameterValuesJ && json_is_array(parameterValuesJ)) {
-            INFO("NtEmu: Found %zu parameter values to restore (plugin loaded: %s)", 
-                 json_array_size(parameterValuesJ),
+        if (parameterValuesJ && json_is_object(parameterValuesJ)) {
+            INFO("NtEmu: Found parameter values to restore (plugin loaded: %s)",
                  pluginManager->isLoaded() ? "YES" : "NO");
             
             if (pluginManager->isLoaded()) {
