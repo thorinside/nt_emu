@@ -56,7 +56,10 @@ void clearCurrentJsonStream();
         __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse6stringERNSt3__112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE(void* self, std::string& str);
         __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse7booleanERb(void* self, bool& value);
         __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse9matchNameEPKc(void* self, const char* name);
-        
+        __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse10skipMemberEv(void* self);
+        __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse21numberOfArrayElementsERi(void* self, int& num);
+        __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse21numberOfObjectMembersERi(void* self, int& num);
+
         __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10addBooleanEb(void* self, bool value);
         __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10closeArrayEv(void* self);
         __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10openObjectEv(void* self);

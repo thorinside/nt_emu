@@ -462,6 +462,30 @@ extern "C" {
         return false;
     }
     
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse10skipMemberEv(void* self) {
+        JsonParseBridge* bridge = NTApi::getCurrentJsonParse();
+        if (bridge) {
+            return bridge->skipMember();
+        }
+        return false;
+    }
+
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse21numberOfArrayElementsERi(void* self, int& num) {
+        JsonParseBridge* bridge = NTApi::getCurrentJsonParse();
+        if (bridge) {
+            return bridge->numberOfArrayElements(num);
+        }
+        return false;
+    }
+
+    __attribute__((visibility("default"))) bool _ZN13_NT_jsonParse21numberOfObjectMembersERi(void* self, int& num) {
+        JsonParseBridge* bridge = NTApi::getCurrentJsonParse();
+        if (bridge) {
+            return bridge->numberOfObjectMembers(num);
+        }
+        return false;
+    }
+
     // JSON Stream functions
     __attribute__((visibility("default"))) void _ZN14_NT_jsonStream10addBooleanEb(void* self, bool value) {
         JsonStreamBridge* bridge = NTApi::getCurrentJsonStream();
