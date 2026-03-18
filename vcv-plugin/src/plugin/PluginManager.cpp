@@ -95,10 +95,22 @@ bool PluginManager::loadPlugin(const std::string& path) {
             
             pluginFactory = legacyFactory();
         } else {
+            // Check API version before proceeding
+            uint32_t pluginVersion = (uint32_t)pluginEntry(kNT_selector_version, 0);
+            INFO("PluginManager: Plugin API version: %u (emu supports up to %u)", pluginVersion, (uint32_t)kNT_apiVersionCurrent);
+            if (pluginVersion > (uint32_t)kNT_apiVersionCurrent) {
+                WARN("Plugin requires API v%u but emu only supports up to v%u", pluginVersion, (uint32_t)kNT_apiVersionCurrent);
+                loadingMessage = "Error: Plugin requires newer API (v" + std::to_string(pluginVersion) + ")";
+                loadingMessageTimer = 4.0f;
+                unloadPlugin();
+                notifyError("Plugin requires API v" + std::to_string(pluginVersion) + " but emu only supports up to v" + std::to_string((uint32_t)kNT_apiVersionCurrent));
+                return false;
+            }
+
             // Use new API
             pluginFactory = (_NT_factory*)pluginEntry(kNT_selector_factoryInfo, 0);
         }
-        
+
         if (!validatePlugin()) {
             unloadPlugin();
             return false;
